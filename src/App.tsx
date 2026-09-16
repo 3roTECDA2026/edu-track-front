@@ -1,6 +1,6 @@
 import AttendancePage from './pages/AttendancePage'
 
-function App() {
+export function App() {
   return <AttendancePage />
 }
 
