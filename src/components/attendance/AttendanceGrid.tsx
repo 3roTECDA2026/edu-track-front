@@ -8,12 +8,12 @@ type Alumno = {
 }
 
 type Props = {
-  alumnos: Alumno[]
-  asistencia: Record<string, string>
-  setAsistencia: (a: Record<string, string>) => void
+  students: Alumno[]
+  attendance: Record<string, string>
+  setAttendance: (a: Record<string, string>) => void
 }
 
-export default function AttendanceGrid({ alumnos, asistencia, setAsistencia }: Props) {
+export default function AttendanceGrid({ students, attendance, setAttendance }: Props) {
   return (
     <TableContainer component={Paper}>
       <Table>
@@ -26,13 +26,13 @@ export default function AttendanceGrid({ alumnos, asistencia, setAsistencia }: P
           </TableRow>
         </TableHead>
         <TableBody>
-          {alumnos.map((alumno) => (
+          {students.map((alumno) => (
             <AttendanceRow
               key={alumno.legajo}
               alumno={alumno}
-              estado={asistencia[alumno.legajo] ?? ''}
+              estado={attendance[alumno.legajo] ?? ''}
               setEstado={(valor) =>
-                setAsistencia({ ...asistencia, [alumno.legajo]: valor })
+                setAttendance({ ...attendance, [alumno.legajo]: valor })
               }
             />
           ))}

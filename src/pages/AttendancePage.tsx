@@ -2,41 +2,54 @@ import { useState } from 'react'
 import SectionSelector from '../components/attendance/SectionSelector'
 import AttendanceGrid from '../components/attendance/AttendanceGrid'
 import { Box, Button, Typography } from '@mui/material'
+import { postAttendanceBatch, EstadoAsistencia } from '../services/AttendanceService'
 
-// TODO: reemplazar con llamada al backend GET /students?seccion=X
-const ALUMNOS_MOCK = [
+// TODO: reemplazar con llamada al backend GET /students?section=X
+const STUDENTS_MOCK = [
   { legajo: '101', apellido: 'García', nombre: 'Lucas' },
   { legajo: '102', apellido: 'Martínez', nombre: 'Sofía' },
   { legajo: '103', apellido: 'López', nombre: 'Tomás' },
 ]
 
 export default function AttendancePage() {
-  const [fecha, setFecha] = useState(() => {
+  const [date, setDate] = useState(() => {
     const hoy = new Date()
     return hoy.toISOString().split('T')[0]  // formato YYYY-MM-DD
   })
-  const [seccion, setSeccion] = useState('')
-  // TODO: reemplazar con const [alumnos, setAlumnos] = useState([])
-  const [alumnos] = useState(ALUMNOS_MOCK) // se elimina momentaneamente SetAlumnos y el useState inicializa con ALUMNOS_MOCK en lugar de un array vacío
-  const [asistencia, setAsistencia] = useState({})
+  const [section, setSection] = useState('')
+  // TODO: reemplazar con const [students, setstudents] = useState([])
+  const [students] = useState(STUDENTS_MOCK) // se elimina momentaneamente Setstudents y el useState inicializa con STUDENTS_MOCK en lugar de un array vacío
+  const [attendance, setAttendance] = useState({})
 
-  const handleGuardar = () => {
-    console.log({ fecha, seccion, asistencia })
+  const handleSave = async () => {
+    const records = students.map((student) => ({
+      legajo: student.legajo,
+      date,
+      section,
+      estado: attendance[student.legajo] as EstadoAsistencia,
+    }))
+
+    try {
+      await postAttendanceBatch(records)
+      console.log('Saved successfully')
+    } catch (error) {
+      console.error('Error saving:', error)
+    }
   }
 
   return (
     <Box sx={{ p: 2 }}>
       <Typography variant="h5" mb={2}>Carga de Asistencia</Typography>
       <SectionSelector
-        fecha={fecha} setFecha={setFecha}
-        seccion={seccion} setSeccion={setSeccion}
+        date={date} setDate={setDate}
+        section={section} setSection={setSection}
       />
       <AttendanceGrid
-        alumnos={alumnos}
-        asistencia={asistencia}
-        setAsistencia={setAsistencia}
+        students={students}
+        attendance={attendance}
+        setAttendance={setAttendance}
       />
-      <Button variant="contained" onClick={handleGuardar} sx={{ mt: 2 }}>
+      <Button variant="contained" onClick={handleSave} sx={{ mt: 2 }}>
         Guardar todo
       </Button>
     </Box>
