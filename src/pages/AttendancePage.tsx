@@ -11,6 +11,8 @@ const STUDENTS_MOCK = [
   { legajo: '103', apellido: 'López', nombre: 'Tomás' },
 ]
 
+  type SaveStatus = 'unsaved' | 'saving' | 'saved'
+
 export default function AttendancePage() {
   const [date, setDate] = useState(() => {
     const hoy = new Date()
@@ -21,7 +23,10 @@ export default function AttendancePage() {
   const [students] = useState(STUDENTS_MOCK) // se elimina momentaneamente Setstudents y el useState inicializa con STUDENTS_MOCK en lugar de un array vacío
   const [attendance, setAttendance] = useState({})
 
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('unsaved')
+
   const handleSave = async () => {
+    setSaveStatus('saving')
     const records = students.map((student) => ({
       legajo: student.legajo,
       date,
@@ -31,8 +36,10 @@ export default function AttendancePage() {
 
     try {
       await postAttendanceBatch(records)
+      setSaveStatus('saved')
       console.log('Saved successfully')
     } catch (error) {
+      setSaveStatus('unsaved')
       console.error('Error saving:', error)
     }
   }
@@ -47,11 +54,31 @@ export default function AttendancePage() {
       <AttendanceGrid
         students={students}
         attendance={attendance}
-        setAttendance={setAttendance}
+        setAttendance={(newAttendance) => {
+          setAttendance(newAttendance)
+          setSaveStatus('unsaved')
+        }}
       />
-      <Button variant="contained" onClick={handleSave} sx={{ mt: 2 }}>
-        Guardar todo
-      </Button>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 2 }}>
+        <Button variant="contained" onClick={handleSave}>
+          Guardar todo
+        </Button>
+        {saveStatus === 'unsaved' && (
+          <Typography variant="body2" sx={{ border: '1px dashed gray', px: 1, borderRadius: 1 }}>
+            Sin guardar
+          </Typography>
+        )}
+        {saveStatus === 'saving' && (
+          <Typography variant="body2" color="primary">
+            Guardando...
+          </Typography>
+        )}
+        {saveStatus === 'saved' && (
+          <Typography variant="body2" color="success.main">
+            ✓ Guardado
+          </Typography>
+        )}
+      </Box>
     </Box>
   )
 }
