@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import SectionSelector from '../components/attendance/SectionSelector'
 import AttendanceGrid from '../components/attendance/AttendanceGrid'
 import { Box, Button, Typography } from '@mui/material'
@@ -24,6 +24,22 @@ export default function AttendancePage() {
   const [attendance, setAttendance] = useState({})
 
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('unsaved')
+  
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (Object.keys(attendance).length === 0) return
+
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+
+    debounceRef.current = setTimeout(() => {
+      handleSave()
+    }, 2000)
+
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+    }
+  }, [attendance])
 
   const handleSave = async () => {
     setSaveStatus('saving')
