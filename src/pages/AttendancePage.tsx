@@ -82,7 +82,7 @@ export default function AttendancePage() {
   }
 
   return (
-    <Box sx={{ p: 2 }}>
+    <Box sx={{ p: { xs: 2, sm: 3 } }}>
       <Typography variant="h5" mb={2}>Carga de Asistencia</Typography>
       <SectionSelector
         date={date} setDate={setDate}

@@ -40,7 +40,7 @@ export default function AttendanceRow({ alumno, estado, setEstado, isFocused, on
               key={e.valor}
               variant={estado === e.valor ? 'contained' : 'outlined'}
               color={e.color === 'orange' ? 'warning' : e.color}
-              size="small"
+              size="medium"
               onClick={() => setEstado(e.valor)}
               sx={e.color === 'orange' ? {
                 borderColor: '#f97316',

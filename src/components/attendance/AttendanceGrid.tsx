@@ -17,7 +17,7 @@ type Props = {
 
 export default function AttendanceGrid({ students, attendance, setAttendance, focusedIndex, setFocusedIndex }: Props) {
   return (
-    <TableContainer component={Paper}>
+    <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
       <Table>
         <TableHead>
           <TableRow>
