@@ -22,10 +22,9 @@ export default function AttendancePage() {
   // TODO: reemplazar con const [students, setstudents] = useState([])
   const [students] = useState(STUDENTS_MOCK) // se elimina momentaneamente Setstudents y el useState inicializa con STUDENTS_MOCK en lugar de un array vacío
   const [attendance, setAttendance] = useState({})
-
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('unsaved')
-  
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [focusedIndex, setFocusedIndex] = useState<number>(0)
 
   useEffect(() => {
     if (Object.keys(attendance).length === 0) return
@@ -40,6 +39,28 @@ export default function AttendancePage() {
       if (debounceRef.current) clearTimeout(debounceRef.current)
     }
   }, [attendance])
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'p' || e.key === 'P') {
+        const student = students[focusedIndex]
+        if (student) setAttendance(prev => ({ ...prev, [student.legajo]: 'Presente' }))
+      }
+      if (e.key === 'a' || e.key === 'A') {
+        const student = students[focusedIndex]
+        if (student) setAttendance(prev => ({ ...prev, [student.legajo]: 'Ausente' }))
+      }
+      if (e.key === 'ArrowDown') {
+        setFocusedIndex(prev => Math.min(prev + 1, students.length - 1))
+      }
+      if (e.key === 'ArrowUp') {
+        setFocusedIndex(prev => Math.max(prev - 1, 0))
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [focusedIndex, students])
 
   const handleSave = async () => {
     setSaveStatus('saving')
@@ -70,6 +91,8 @@ export default function AttendancePage() {
       <AttendanceGrid
         students={students}
         attendance={attendance}
+        focusedIndex={focusedIndex}
+        setFocusedIndex={setFocusedIndex}
         setAttendance={(newAttendance) => {
           setAttendance(newAttendance)
           setSaveStatus('unsaved')

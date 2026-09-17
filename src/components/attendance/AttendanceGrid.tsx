@@ -11,9 +11,11 @@ type Props = {
   students: Alumno[]
   attendance: Record<string, string>
   setAttendance: (a: Record<string, string>) => void
+  focusedIndex: number
+  setFocusedIndex: (i: number) => void
 }
 
-export default function AttendanceGrid({ students, attendance, setAttendance }: Props) {
+export default function AttendanceGrid({ students, attendance, setAttendance, focusedIndex, setFocusedIndex }: Props) {
   return (
     <TableContainer component={Paper}>
       <Table>
@@ -26,11 +28,13 @@ export default function AttendanceGrid({ students, attendance, setAttendance }: 
           </TableRow>
         </TableHead>
         <TableBody>
-          {students.map((alumno) => (
+          {students.map((alumno, index) => (
             <AttendanceRow
               key={alumno.legajo}
               alumno={alumno}
               estado={attendance[alumno.legajo] ?? ''}
+              isFocused={index === focusedIndex}
+              onClick={() => setFocusedIndex(index)}
               setEstado={(valor) =>
                 setAttendance({ ...attendance, [alumno.legajo]: valor })
               }

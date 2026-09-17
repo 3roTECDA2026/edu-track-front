@@ -10,6 +10,8 @@ type Props = {
   alumno: Alumno
   estado: string
   setEstado: (valor: string) => void
+  isFocused: boolean
+  onClick: () => void
 }
 
 const ESTADOS = [
@@ -19,9 +21,15 @@ const ESTADOS = [
   { valor: 'Cuarto falta', color: 'orange' },
 ] as const
 
-export default function AttendanceRow({ alumno, estado, setEstado }: Props) {
+export default function AttendanceRow({ alumno, estado, setEstado, isFocused, onClick }: Props) {
   return (
-    <TableRow>
+    <TableRow
+      onClick={onClick}
+      sx={{
+        backgroundColor: isFocused ? '#e3f2fd' : 'transparent',
+        cursor: 'pointer',
+      }}
+    >
       <TableCell>{alumno.legajo}</TableCell>
       <TableCell>{alumno.apellido}</TableCell>
       <TableCell>{alumno.nombre}</TableCell>
