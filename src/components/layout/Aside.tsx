@@ -180,27 +180,6 @@ export const Aside: React.FC = () => {
           </List>
         </Collapse>
       </List>
-
-      {/* Legal / Pie de página del Aside */}
-      <Box sx={{ px: 1, mt: 'auto', width: '100%' }}>
-        <Typography
-          variant="caption"
-          sx={{
-            color: '#616161',
-            fontSize: '0.55rem',
-            lineHeight: 1.2,
-            display: 'block',
-            textAlign: 'left',
-            textTransform: 'uppercase',
-          }}
-        >
-          CONSTITUYENTE Y EJECUTORA DEL SISTEMA<br />
-          EDUCATIVO EDUCATIVA<br />
-          (LE PROV N° 18.808)<br />
-          DIRECCIÓN GENERAL DE CULTURA Y<br />
-          EDUCACIÓN (DGOYE)
-        </Typography>
-      </Box>
     </Drawer>
   );
 };
