@@ -26,291 +26,203 @@ import {
 import SaveIcon from '@mui/icons-material/Save'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
 import MainLayout from '../components/layout/MainLayout'
+import {
+  COURSES,
+  SUBJECTS,
+  STUDENTS,
+  INITIAL_GRADES,
+  YEARS,
+  type Field,
+  type GradesMap,
+} from './gradesMock'
 // Cuando existan los endpoints, descomentar para usar el servicio real:
 // import { fetchApi } from '../services/api'
 
 /*
-  Pantalla 09 "Carga de calificaciones" (EduTrack / Aura) — ISFDyT Nº 166.
+  Pantalla  "Grilla de calificaciones" (EduTrack / Aura) — ISFDyT Nº 166.
 
-  Funciona con DATOS DE PRUEBA (mock). Los dropdowns (curso, materia) y la lista
-  de alumnos saldrán de sus endpoints (cursos, materias, estudiantes) cuando existan.
-  El guardado se conecta a POST /api/grades en el punto marcado "== ENCHUFE API ==".
+  Funciona con DATOS DE PRUEBA (mock, en gradesMock.ts). Los selectores y la
+  lista de alumnos saldrán de sus endpoints (cursos, materias, estudiantes)
+  cuando existan. El guardado se conecta a POST /api/grades en el punto
+  marcado "== ENCHUFE API ==".
 
   El modelo del back guarda tres notas por materia: 1° cuatrimestre (term1Score),
   2° cuatrimestre (term2Score) y nota final (finalScore); por eso hay 3 columnas.
 */
 
-// ─────────────────────────────────────────────────────────────
-// Tipos
-// ─────────────────────────────────────────────────────────────
+type Mode = 'edit' | 'view'
+type Level = 'low' | 'mid' | 'high' | 'empty'
 
-type Modo = 'edicion' | 'consulta'
-type Nivel = 'baja' | 'media' | 'alta' | 'vacia'
-type Campo = 'term1Score' | 'term2Score' | 'finalScore'
+const PAGE_SIZE = 10
 
-interface Curso {
-  id: string
-  nombre: string
-}
-interface Materia {
-  id: string
-  courseId: string
-  nombre: string
-}
-interface Alumno {
-  id: string
-  courseId: string
-  apellido: string
-  nombre: string
-  dni: string
-}
-
-// Todas las notas en un mapa plano. Clave: studentId|subjectId|year|campo
-type NotasMap = Record<string, number>
-
-// Las tres columnas de notas, en orden
-const COLUMNAS: { campo: Campo; label: string }[] = [
-  { campo: 'term1Score', label: '1° Cuatri' },
-  { campo: 'term2Score', label: '2° Cuatri' },
-  { campo: 'finalScore', label: 'Final' },
+const COLUMNS: { field: Field; label: string }[] = [
+  { field: 'term1Score', label: '1° Cuatri' },
+  { field: 'term2Score', label: '2° Cuatri' },
+  { field: 'finalScore', label: 'Final' },
 ]
 
-// ─────────────────────────────────────────────────────────────
-// DATOS DE PRUEBA (se reemplazan cuando existan los endpoints)
-// ─────────────────────────────────────────────────────────────
+const gradeKey = (studentId: string, subjectId: string, year: number, field: Field) =>
+  `${studentId}|${subjectId}|${year}|${field}`
 
-const CURSOS: Curso[] = [
-  { id: 'c1', nombre: '1° A' },
-  { id: 'c2', nombre: '2° B' },
-  { id: 'c3', nombre: '3° A' },
-]
 
-const MATERIAS: Materia[] = [
-  { id: 'm1', courseId: 'c1', nombre: 'Matemática' },
-  { id: 'm2', courseId: 'c1', nombre: 'Lengua y Literatura' },
-  { id: 'm3', courseId: 'c1', nombre: 'Ciencias Naturales' },
-  { id: 'm4', courseId: 'c2', nombre: 'Matemática' },
-  { id: 'm5', courseId: 'c2', nombre: 'Historia' },
-  { id: 'm6', courseId: 'c3', nombre: 'Prácticas del Lenguaje' },
-  { id: 'm7', courseId: 'c3', nombre: 'Física' },
-]
-
-const ALUMNOS: Alumno[] = [
-  { id: 'a1', courseId: 'c1', apellido: 'Acosta', nombre: 'María', dni: '48.111.222' },
-  { id: 'a2', courseId: 'c1', apellido: 'Benítez', nombre: 'Juan', dni: '47.333.444' },
-  { id: 'a3', courseId: 'c1', apellido: 'Coria', nombre: 'Lucía', dni: '48.555.666' },
-  { id: 'a4', courseId: 'c1', apellido: 'Domínguez', nombre: 'Tomás', dni: '47.777.888' },
-  { id: 'a5', courseId: 'c1', apellido: 'Fernández', nombre: 'Camila', dni: '48.999.000' },
-  { id: 'a11', courseId: 'c1', apellido: 'García', nombre: 'Lautaro', dni: '48.222.333' },
-  { id: 'a12', courseId: 'c1', apellido: 'Herrera', nombre: 'Sol', dni: '48.333.444' },
-  { id: 'a13', courseId: 'c1', apellido: 'Ledesma', nombre: 'Iván', dni: '48.444.555' },
-  { id: 'a14', courseId: 'c1', apellido: 'Molina', nombre: 'Abril', dni: '48.555.777' },
-  { id: 'a15', courseId: 'c1', apellido: 'Nuñez', nombre: 'Thiago', dni: '48.666.888' },
-  { id: 'a16', courseId: 'c1', apellido: 'Ortiz', nombre: 'Renata', dni: '48.777.999' },
-  { id: 'a17', courseId: 'c1', apellido: 'Paredes', nombre: 'Benjamín', dni: '48.888.000' },
-  { id: 'a18', courseId: 'c1', apellido: 'Quiroga', nombre: 'Delfina', dni: '48.999.111' },
-  { id: 'a6', courseId: 'c2', apellido: 'Gómez', nombre: 'Sofía', dni: '46.123.456' },
-  { id: 'a7', courseId: 'c2', apellido: 'Herrera', nombre: 'Mateo', dni: '46.234.567' },
-  { id: 'a8', courseId: 'c2', apellido: 'Ibáñez', nombre: 'Valentina', dni: '46.345.678' },
-  { id: 'a9', courseId: 'c3', apellido: 'Juárez', nombre: 'Bruno', dni: '45.456.789' },
-  { id: 'a10', courseId: 'c3', apellido: 'López', nombre: 'Martina', dni: '45.567.890' },
-]
-
-const NOTAS_INICIALES: NotasMap = {
-  'a1|m1|2026|term1Score': 8,
-  'a1|m1|2026|term2Score': 7,
-  'a1|m1|2026|finalScore': 8,
-  'a2|m1|2026|term1Score': 4,
-  'a2|m1|2026|term2Score': 6,
-  'a3|m1|2026|term1Score': 3,
-  'a4|m1|2026|term1Score': 10,
-  'a4|m1|2026|term2Score': 9,
-  'a4|m1|2026|finalScore': 10,
+function gradeLevel(value: number | undefined): Level {
+  if (value === undefined) return 'empty'
+  if (value < 4) return 'low'
+  if (value <= 6) return 'mid'
+  return 'high'
 }
 
-const ANIOS = [2025, 2026]
 
-// Cuantos alumnos por pagina (con datos reales seria el pageSize del back)
-const TAMANIO_PAGINA = 10
-
-// ─────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────
-
-const clave = (studentId: string, subjectId: string, year: number, campo: Campo) =>
-  `${studentId}|${subjectId}|${year}|${campo}`
-
-// Clasifica la nota para el resaltado: rojo (<4), amarillo (4-6), verde (>=7)
-function nivelNota(valor: number | undefined): Nivel {
-  if (valor === undefined) return 'vacia'
-  if (valor < 4) return 'baja'
-  if (valor <= 6) return 'media'
-  return 'alta'
+const COLORS: Record<Level, { bg: string; fg: string; bd: string }> = {
+  low: { bg: '#fdecec', fg: '#b42318', bd: '#f0b4b4' },
+  mid: { bg: '#fdf6e3', fg: '#8a6a00', bd: '#eddca0' },
+  high: { bg: '#e9f7ee', fg: '#1a7f37', bd: '#a9e0bd' },
+  empty: { bg: 'transparent', fg: 'text.disabled', bd: 'divider' },
 }
-
-// Colores por nivel (semáforo)
-const COLORES: Record<Nivel, { bg: string; fg: string; bd: string }> = {
-  baja: { bg: '#fdecec', fg: '#b42318', bd: '#f0b4b4' },
-  media: { bg: '#fdf6e3', fg: '#8a6a00', bd: '#eddca0' },
-  alta: { bg: '#e9f7ee', fg: '#1a7f37', bd: '#a9e0bd' },
-  vacia: { bg: 'transparent', fg: 'text.disabled', bd: 'divider' },
-}
-
-// ─────────────────────────────────────────────────────────────
-// Página
-// ─────────────────────────────────────────────────────────────
 
 export const GrillaCalificacionesPage: React.FC = () => {
-  const [cursoId, setCursoId] = useState<string>('c1')
-  const [materiaId, setMateriaId] = useState<string>('m1')
-  const [anio, setAnio] = useState<number>(2026)
-  const [modo, setModo] = useState<Modo>('edicion')
-  const [pagina, setPagina] = useState<number>(1)
+  const [courseId, setCourseId] = useState<string>('c1')
+  const [subjectId, setSubjectId] = useState<string>('m1')
+  const [year, setYear] = useState<number>(2026)
+  const [mode, setMode] = useState<Mode>('edit')
+  const [page, setPage] = useState<number>(1)
 
-  const [notas, setNotas] = useState<NotasMap>(NOTAS_INICIALES)
-  const [modificadas, setModificadas] = useState<Set<string>>(new Set())
-  const [aviso, setAviso] = useState<{ tipo: 'success' | 'info'; texto: string } | null>(null)
+  const [grades, setGrades] = useState<GradesMap>(INITIAL_GRADES)
+  const [modified, setModified] = useState<Set<string>>(new Set())
+  const [notice, setNotice] = useState<{ type: 'success' | 'info'; text: string } | null>(null)
 
-  // Un arreglo de refs por columna, para que Enter baje dentro de la misma columna
-  const inputsRef = useRef<Record<Campo, Array<HTMLInputElement | null>>>({
+  
+  const inputsRef = useRef<Record<Field, Array<HTMLInputElement | null>>>({
     term1Score: [],
     term2Score: [],
     finalScore: [],
   })
 
-  const soloLectura = modo === 'consulta'
+  const readOnly = mode === 'view'
 
-  const materiasDelCurso = useMemo(
-    () => MATERIAS.filter((m) => m.courseId === cursoId),
-    [cursoId],
+  const courseSubjects = useMemo(
+    () => SUBJECTS.filter((s) => s.courseId === courseId),
+    [courseId],
   )
 
-  const alumnosDelCurso = useMemo(
+  const courseStudents = useMemo(
     () =>
-      ALUMNOS.filter((a) => a.courseId === cursoId).sort((x, y) =>
-        x.apellido.localeCompare(y.apellido, 'es'),
+      STUDENTS.filter((s) => s.courseId === courseId).sort((a, b) =>
+        a.lastName.localeCompare(b.lastName, 'es'),
       ),
-    [cursoId],
+    [courseId],
   )
 
-  // Alumnos de la pagina actual (paginado del lado del front sobre el mock;
-  // con datos reales, cada pagina se pediria al back con page/pageSize).
-  const totalPaginas = Math.max(1, Math.ceil(alumnosDelCurso.length / TAMANIO_PAGINA))
-  const alumnosPagina = alumnosDelCurso.slice(
-    (pagina - 1) * TAMANIO_PAGINA,
-    pagina * TAMANIO_PAGINA,
-  )
+  const totalPages = Math.max(1, Math.ceil(courseStudents.length / PAGE_SIZE))
+  const pageStudents = courseStudents.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
-  const leerNota = (studentId: string, campo: Campo): number | undefined =>
-    notas[clave(studentId, materiaId, anio, campo)]
+  const readGrade = (studentId: string, field: Field): number | undefined =>
+    grades[gradeKey(studentId, subjectId, year, field)]
 
-  function cambiarCurso(nuevoCurso: string) {
-    setCursoId(nuevoCurso)
-    const primera = MATERIAS.find((m) => m.courseId === nuevoCurso)
-    setMateriaId(primera ? primera.id : '')
-    setPagina(1)
-    setAviso(null)
-    // == ENCHUFE API == acá va un GET de calificaciones para el nuevo curso/materia
+  function changeCourse(nextCourse: string) {
+    setCourseId(nextCourse)
+    const firstSubject = SUBJECTS.find((s) => s.courseId === nextCourse)
+    setSubjectId(firstSubject ? firstSubject.id : '')
+    setPage(1)
+    setNotice(null)
+    // == ENCHUFE API == acá iría un GET de calificaciones para el nuevo curso/materia
   }
 
-  function editarNota(studentId: string, campo: Campo, textoCrudo: string) {
-    const k = clave(studentId, materiaId, anio, campo)
+  function editGrade(studentId: string, field: Field, raw: string) {
+    const key = gradeKey(studentId, subjectId, year, field)
 
-    if (textoCrudo.trim() === '') {
-      setNotas((prev) => {
-        const copia = { ...prev }
-        delete copia[k]
-        return copia
+    if (raw.trim() === '') {
+      setGrades((prev) => {
+        const copy = { ...prev }
+        delete copy[key]
+        return copy
       })
-      setModificadas((prev) => new Set(prev).add(k))
+      setModified((prev) => new Set(prev).add(key))
       return
     }
 
-    if (!/^\d{1,2}$/.test(textoCrudo)) return
-    const valor = Number(textoCrudo)
-    if (valor < 1 || valor > 10) return
+    if (!/^\d{1,2}$/.test(raw)) return
+    const value = Number(raw)
+    if (value < 1 || value > 10) return
 
-    setNotas((prev) => ({ ...prev, [k]: valor }))
-    setModificadas((prev) => new Set(prev).add(k))
-    setAviso(null)
+    setGrades((prev) => ({ ...prev, [key]: value }))
+    setModified((prev) => new Set(prev).add(key))
+    setNotice(null)
   }
 
-  // Enter = saltar a la celda de abajo, dentro de la misma columna
-  function alPresionarTecla(e: KeyboardEvent<HTMLDivElement>, campo: Campo, indiceFila: number) {
+  function handleKeyDown(e: KeyboardEvent<HTMLDivElement>, field: Field, rowIndex: number) {
     if (e.key === 'Enter') {
       e.preventDefault()
-      inputsRef.current[campo][indiceFila + 1]?.focus()
+      inputsRef.current[field][rowIndex + 1]?.focus()
     }
   }
 
-  // Promedio de cada columna (ignora las notas vacías)
-  const promedios = useMemo(() => {
-    const resultado: Record<Campo, string | null> = {
+  const averages = useMemo(() => {
+    const result: Record<Field, string | null> = {
       term1Score: null,
       term2Score: null,
       finalScore: null,
     }
-    COLUMNAS.forEach(({ campo }) => {
-      const valores = alumnosDelCurso
-        .map((a) => leerNota(a.id, campo))
+    COLUMNS.forEach(({ field }) => {
+      const values = courseStudents
+        .map((s) => readGrade(s.id, field))
         .filter((v): v is number => typeof v === 'number')
-      if (valores.length > 0) {
-        const suma = valores.reduce((acc, v) => acc + v, 0)
-        resultado[campo] = (suma / valores.length).toFixed(1)
+      if (values.length > 0) {
+        const sum = values.reduce((acc, v) => acc + v, 0)
+        result[field] = (sum / values.length).toFixed(1)
       }
     })
-    return resultado
+    return result
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [alumnosDelCurso, notas, materiaId, anio])
+  }, [courseStudents, grades, subjectId, year])
 
-  const totalCeldas = alumnosDelCurso.length * COLUMNAS.length
-  const cargadas = alumnosDelCurso.reduce(
-    (acc, a) => acc + COLUMNAS.filter(({ campo }) => leerNota(a.id, campo) !== undefined).length,
+  const totalCells = courseStudents.length * COLUMNS.length
+  const filledCount = courseStudents.reduce(
+    (acc, s) => acc + COLUMNS.filter(({ field }) => readGrade(s.id, field) !== undefined).length,
     0,
   )
 
-  function limpiar() {
-    setNotas((prev) => {
-      const copia = { ...prev }
-      alumnosDelCurso.forEach((a) => {
-        COLUMNAS.forEach(({ campo }) => {
-          const k = clave(a.id, materiaId, anio, campo)
-          const original = NOTAS_INICIALES[k]
-          if (original === undefined) delete copia[k]
-          else copia[k] = original
+  function clearGrades() {
+    setGrades((prev) => {
+      const copy = { ...prev }
+      courseStudents.forEach((s) => {
+        COLUMNS.forEach(({ field }) => {
+          const key = gradeKey(s.id, subjectId, year, field)
+          const original = INITIAL_GRADES[key]
+          if (original === undefined) delete copy[key]
+          else copy[key] = original
         })
       })
-      return copia
+      return copy
     })
-    setModificadas((prev) => {
-      const copia = new Set(prev)
-      alumnosDelCurso.forEach((a) => {
-        COLUMNAS.forEach(({ campo }) => copia.delete(clave(a.id, materiaId, anio, campo)))
+    setModified((prev) => {
+      const copy = new Set(prev)
+      courseStudents.forEach((s) => {
+        COLUMNS.forEach(({ field }) => copy.delete(gradeKey(s.id, subjectId, year, field)))
       })
-      return copia
+      return copy
     })
-    setAviso(null)
+    setNotice(null)
   }
 
-  // Guardar: junta las notas modificadas de esta selección, agrupadas por alumno.
-  async function guardar() {
-    const alumnosTocados = new Set<string>()
-    modificadas.forEach((k) => {
-      const [studentId, sId, y] = k.split('|')
-      if (sId === materiaId && y === String(anio)) alumnosTocados.add(studentId as string)
+  async function saveGrades() {
+    const touchedStudents = new Set<string>()
+    modified.forEach((key) => {
+      const [studentId, sId, y] = key.split('|')
+      if (sId === subjectId && y === String(year)) touchedStudents.add(studentId as string)
     })
 
-    const aEnviar = [...alumnosTocados].map((studentId) => ({
+    const payload = [...touchedStudents].map((studentId) => ({
       studentId,
-      subjectId: materiaId,
-      year: anio,
-      term1Score: leerNota(studentId, 'term1Score') ?? null,
-      term2Score: leerNota(studentId, 'term2Score') ?? null,
-      finalScore: leerNota(studentId, 'finalScore') ?? null,
+      subjectId,
+      year,
+      term1Score: readGrade(studentId, 'term1Score') ?? null,
+      term2Score: readGrade(studentId, 'term2Score') ?? null,
+      finalScore: readGrade(studentId, 'finalScore') ?? null,
     }))
 
-    if (aEnviar.length === 0) {
-      setAviso({ tipo: 'info', texto: 'No hay cambios para guardar.' })
+    if (payload.length === 0) {
+      setNotice({ type: 'info', text: 'No hay cambios para guardar.' })
       return
     }
 
@@ -318,24 +230,24 @@ export const GrillaCalificacionesPage: React.FC = () => {
     // En el back, cada calificación (Grade) cuelga de la inscripción del alumno
     // a la materia (enrollment). El llamado real necesita el enrollmentId de cada
     // alumno (endpoint de inscripciones) y luego manda las tres notas a POST /grades.
-    console.log('Guardar calificaciones →', aEnviar)
+    console.log('Guardar calificaciones →', payload)
 
-    const materia = MATERIAS.find((m) => m.id === materiaId)
-    setAviso({
-      tipo: 'success',
-      texto: `Se guardarían las notas de ${aEnviar.length} alumno(s) en ${materia?.nombre ?? ''}. (Ver la consola para el detalle.)`,
+    const subject = SUBJECTS.find((s) => s.id === subjectId)
+    setNotice({
+      type: 'success',
+      text: `Se guardarían las notas de ${payload.length} alumno(s) en ${subject?.name ?? ''}. (Ver la consola para el detalle.)`,
     })
 
-    setModificadas(new Set())
+    setModified(new Set())
   }
 
-  const cursoActual = CURSOS.find((c) => c.id === cursoId)
-  const materiaActual = MATERIAS.find((m) => m.id === materiaId)
+  const currentCourse = COURSES.find((c) => c.id === courseId)
+  const currentSubject = SUBJECTS.find((s) => s.id === subjectId)
 
   return (
     <MainLayout>
       <Box sx={{ maxWidth: 900, mx: 'auto' }}>
-        {/* Encabezado: título a la izquierda, Edición/Consulta a la derecha */}
+       
         <Box
           sx={{
             display: 'flex',
@@ -358,9 +270,9 @@ export const GrillaCalificacionesPage: React.FC = () => {
           <ToggleButtonGroup
             size="small"
             exclusive
-            value={modo}
-            onChange={(_, nuevo: Modo | null) => {
-              if (nuevo) setModo(nuevo)
+            value={mode}
+            onChange={(_, next: Mode | null) => {
+              if (next) setMode(next)
             }}
             aria-label="Modo de la planilla"
             sx={{
@@ -376,8 +288,8 @@ export const GrillaCalificacionesPage: React.FC = () => {
               },
             }}
           >
-            <ToggleButton value="edicion">Edición</ToggleButton>
-            <ToggleButton value="consulta">Consulta</ToggleButton>
+            <ToggleButton value="edit">Edición</ToggleButton>
+            <ToggleButton value="view">Consulta</ToggleButton>
           </ToggleButtonGroup>
         </Box>
 
@@ -385,54 +297,54 @@ export const GrillaCalificacionesPage: React.FC = () => {
         <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ flexWrap: 'wrap' }}>
             <FormControl size="small" sx={{ minWidth: 140 }}>
-              <InputLabel id="lbl-curso">Curso</InputLabel>
+              <InputLabel id="lbl-course">Curso</InputLabel>
               <Select
-                labelId="lbl-curso"
+                labelId="lbl-course"
                 label="Curso"
-                value={cursoId}
-                onChange={(e) => cambiarCurso(e.target.value)}
+                value={courseId}
+                onChange={(e) => changeCourse(e.target.value)}
               >
-                {CURSOS.map((c) => (
+                {COURSES.map((c) => (
                   <MenuItem key={c.id} value={c.id}>
-                    {c.nombre}
+                    {c.name}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
 
             <FormControl size="small" sx={{ minWidth: 200 }}>
-              <InputLabel id="lbl-materia">Materia</InputLabel>
+              <InputLabel id="lbl-subject">Materia</InputLabel>
               <Select
-                labelId="lbl-materia"
+                labelId="lbl-subject"
                 label="Materia"
-                value={materiaId}
+                value={subjectId}
                 onChange={(e) => {
-                  setMateriaId(e.target.value)
-                  setPagina(1)
-                  setAviso(null)
+                  setSubjectId(e.target.value)
+                  setPage(1)
+                  setNotice(null)
                 }}
               >
-                {materiasDelCurso.map((m) => (
-                  <MenuItem key={m.id} value={m.id}>
-                    {m.nombre}
+                {courseSubjects.map((s) => (
+                  <MenuItem key={s.id} value={s.id}>
+                    {s.name}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
 
             <FormControl size="small" sx={{ minWidth: 110 }}>
-              <InputLabel id="lbl-anio">Año</InputLabel>
+              <InputLabel id="lbl-year">Año</InputLabel>
               <Select
-                labelId="lbl-anio"
+                labelId="lbl-year"
                 label="Año"
-                value={anio}
+                value={year}
                 onChange={(e) => {
-                  setAnio(Number(e.target.value))
-                  setPagina(1)
-                  setAviso(null)
+                  setYear(Number(e.target.value))
+                  setPage(1)
+                  setNotice(null)
                 }}
               >
-                {ANIOS.map((y) => (
+                {YEARS.map((y) => (
                   <MenuItem key={y} value={y}>
                     {y}
                   </MenuItem>
@@ -456,7 +368,7 @@ export const GrillaCalificacionesPage: React.FC = () => {
             }}
           >
             <Typography variant="body2" color="text.secondary">
-              {cursoActual?.nombre} · {materiaActual?.nombre} · {anio}
+              {currentCourse?.name} · {currentSubject?.name} · {year}
             </Typography>
             <Typography variant="caption" color="text.secondary">
               Escala: 1 a 10
@@ -471,8 +383,8 @@ export const GrillaCalificacionesPage: React.FC = () => {
                 </TableCell>
                 <TableCell>Apellido y Nombre</TableCell>
                 <TableCell width={120}>DNI</TableCell>
-                {COLUMNAS.map(({ campo, label }) => (
-                  <TableCell key={campo} width={90} align="center">
+                {COLUMNS.map(({ field, label }) => (
+                  <TableCell key={field} width={90} align="center">
                     {label}
                   </TableCell>
                 ))}
@@ -480,24 +392,24 @@ export const GrillaCalificacionesPage: React.FC = () => {
             </TableHead>
 
             <TableBody>
-              {alumnosPagina.map((alumno, i) => (
-                <TableRow key={alumno.id} hover>
+              {pageStudents.map((student, i) => (
+                <TableRow key={student.id} hover>
                   <TableCell align="right" sx={{ color: 'text.disabled' }}>
-                    {(pagina - 1) * TAMANIO_PAGINA + i + 1}
+                    {(page - 1) * PAGE_SIZE + i + 1}
                   </TableCell>
                   <TableCell>
-                    {alumno.apellido}, {alumno.nombre}
+                    {student.lastName}, {student.firstName}
                   </TableCell>
-                  <TableCell sx={{ color: 'text.secondary' }}>{alumno.dni}</TableCell>
-                  {COLUMNAS.map(({ campo }) => {
-                    const valor = leerNota(alumno.id, campo)
-                    const nivel = nivelNota(valor)
-                    const color = COLORES[nivel]
+                  <TableCell sx={{ color: 'text.secondary' }}>{student.dni}</TableCell>
+                  {COLUMNS.map(({ field }) => {
+                    const value = readGrade(student.id, field)
+                    const level = gradeLevel(value)
+                    const color = COLORS[level]
                     return (
-                      <TableCell key={campo} align="center">
-                        {soloLectura ? (
+                      <TableCell key={field} align="center">
+                        {readOnly ? (
                           <Chip
-                            label={valor ?? '—'}
+                            label={value ?? '—'}
                             size="small"
                             sx={{
                               minWidth: 44,
@@ -511,18 +423,18 @@ export const GrillaCalificacionesPage: React.FC = () => {
                         ) : (
                           <TextField
                             size="small"
-                            value={valor ?? ''}
+                            value={value ?? ''}
                             placeholder="—"
                             inputRef={(el: HTMLInputElement | null) => {
-                              inputsRef.current[campo][i] = el
+                              inputsRef.current[field][i] = el
                             }}
-                            onChange={(e) => editarNota(alumno.id, campo, e.target.value)}
-                            onKeyDown={(e) => alPresionarTecla(e, campo, i)}
+                            onChange={(e) => editGrade(student.id, field, e.target.value)}
+                            onKeyDown={(e) => handleKeyDown(e, field, i)}
                             slotProps={{
                               htmlInput: {
                                 inputMode: 'numeric',
                                 maxLength: 2,
-                                'aria-label': `Nota de ${alumno.apellido}, ${alumno.nombre}`,
+                                'aria-label': `Nota de ${student.lastName}, ${student.firstName}`,
                                 style: { textAlign: 'center', width: 40, fontWeight: 600 },
                               },
                             }}
@@ -546,13 +458,13 @@ export const GrillaCalificacionesPage: React.FC = () => {
                   Promedio de la materia
                 </TableCell>
                 <TableCell />
-                {COLUMNAS.map(({ campo }) => (
+                {COLUMNS.map(({ field }) => (
                   <TableCell
-                    key={campo}
+                    key={field}
                     align="center"
                     sx={{ fontWeight: 700, color: 'text.primary' }}
                   >
-                    {promedios[campo] ?? '—'}
+                    {averages[field] ?? '—'}
                   </TableCell>
                 ))}
               </TableRow>
@@ -560,8 +472,6 @@ export const GrillaCalificacionesPage: React.FC = () => {
           </Table>
         </TableContainer>
 
-        {/* Paginado: botones anterior/siguiente. Con datos reales, cada cambio
-            de pagina pediria al back GET /api/grades?page=...&pageSize=... */}
         <Box
           sx={{
             display: 'flex',
@@ -571,14 +481,14 @@ export const GrillaCalificacionesPage: React.FC = () => {
           }}
         >
           <Typography variant="body2" color="text.secondary">
-            Página {pagina} de {totalPaginas}
+            Página {page} de {totalPages}
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button
               size="small"
               variant="outlined"
-              disabled={pagina <= 1}
-              onClick={() => setPagina((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
               sx={{ color: '#1a1a1a', borderColor: '#1a1a1a' }}
             >
               Anterior
@@ -586,8 +496,8 @@ export const GrillaCalificacionesPage: React.FC = () => {
             <Button
               size="small"
               variant="outlined"
-              disabled={pagina >= totalPaginas}
-              onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               sx={{ color: '#1a1a1a', borderColor: '#1a1a1a' }}
             >
               Siguiente
@@ -595,7 +505,6 @@ export const GrillaCalificacionesPage: React.FC = () => {
           </Box>
         </Box>
 
-        {/* Pie: progreso + acciones */}
         <Box
           sx={{
             display: 'flex',
@@ -608,15 +517,15 @@ export const GrillaCalificacionesPage: React.FC = () => {
           }}
         >
           <Typography variant="body2" color="text.secondary">
-            {cargadas} de {totalCeldas} notas cargadas
+            {filledCount} de {totalCells} notas cargadas
           </Typography>
 
-          {!soloLectura && (
+          {!readOnly && (
             <Box sx={{ display: 'flex', gap: 1, ml: 'auto' }}>
               <Button
                 variant="outlined"
                 startIcon={<RestartAltIcon />}
-                onClick={limpiar}
+                onClick={clearGrades}
                 sx={{
                   color: '#1a1a1a',
                   borderColor: '#1a1a1a',
@@ -628,7 +537,7 @@ export const GrillaCalificacionesPage: React.FC = () => {
               <Button
                 variant="contained"
                 startIcon={<SaveIcon />}
-                onClick={guardar}
+                onClick={saveGrades}
                 sx={{
                   bgcolor: '#1a1a1a',
                   color: '#fff',
@@ -642,12 +551,12 @@ export const GrillaCalificacionesPage: React.FC = () => {
           )}
         </Box>
 
-        {aviso && (
+        {notice && (
           <Typography
             variant="body2"
-            sx={{ mt: 1.5, color: aviso.tipo === 'success' ? '#1a7f37' : 'text.secondary' }}
+            sx={{ mt: 1.5, color: notice.type === 'success' ? '#1a7f37' : 'text.secondary' }}
           >
-            {aviso.texto}
+            {notice.text}
           </Typography>
         )}
       </Box>
