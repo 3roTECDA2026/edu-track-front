@@ -1,0 +1,245 @@
+// src/pages/StudentsPage.tsx
+import { useEffect, useMemo, useState } from 'react';
+import { Alert, Box, Button, Pagination, Paper, Snackbar, Typography } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import { MainLayout } from '@/components/layout/MainLayout';
+import { StudentFilters, type StudentFiltersState } from '@/components/students/StudentFilters';
+import { StudentsTable } from '@/components/students/StudentsTable';
+import { StudentsEmptyState } from '@/components/students/StudentsEmptyState';
+import { DeactivateStudentDialog } from '@/components/students/DeactivateStudentDialog';
+import { useDebounce } from '@/hooks/useDebounce';
+import {
+  deactivateStudent,
+  getStudents,
+  type PaginatedResponse,
+  type StudentListItem,
+  type StudentListParams,
+} from '@/services/students.service';
+
+const PAGE_SIZE = 20;
+
+const INITIAL_FILTERS: StudentFiltersState = {
+  search: '',
+  grade: '',
+  division: '',
+  shift: '',
+  status: 'active',
+};
+
+interface StudentsRequest {
+  params: StudentListParams;
+  reloadKey: number;
+}
+
+interface StudentsResponse {
+  request: StudentsRequest;
+  data?: PaginatedResponse<StudentListItem>;
+  error?: string;
+}
+
+interface SnackbarState {
+  message: string;
+  severity: 'success' | 'error';
+}
+
+const StudentsPage = () => {
+  const navigate = useNavigate();
+
+  const [filters, setFilters] = useState<StudentFiltersState>(INITIAL_FILTERS);
+  const [page, setPage] = useState(1);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [response, setResponse] = useState<StudentsResponse | null>(null);
+
+  const [studentToDeactivate, setStudentToDeactivate] = useState<StudentListItem | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deactivating, setDeactivating] = useState(false);
+  const [snackbar, setSnackbar] = useState<SnackbarState | null>(null);
+
+  const debouncedSearch = useDebounce(filters.search.trim(), 400);
+
+  const request = useMemo<StudentsRequest>(
+    () => ({
+      reloadKey,
+      params: {
+        page,
+        limit: PAGE_SIZE,
+        search: debouncedSearch,
+        grade: filters.grade,
+        division: filters.division,
+        shift: filters.shift,
+        status: filters.status,
+      },
+    }),
+    [reloadKey, page, debouncedSearch, filters.grade, filters.division, filters.shift, filters.status],
+  );
+
+  useEffect(() => {
+    // Aborts the previous request if filters change before it finishes.
+    const controller = new AbortController();
+
+    getStudents(request.params, controller.signal)
+      .then((data) => setResponse({ request, data }))
+      .catch((error: unknown) => {
+        if (controller.signal.aborted) return;
+        const message = error instanceof Error ? error.message : 'Error inesperado';
+        setResponse({ request, error: message });
+      });
+
+    return () => controller.abort();
+  }, [request]);
+
+  // Loading until the response belongs to the current request.
+  const loading = response?.request !== request;
+  const result = loading ? undefined : response?.data;
+  const error = loading ? undefined : response?.error;
+
+  const hasActiveFilters =
+    filters.search.trim() !== '' ||
+    filters.grade !== '' ||
+    filters.division !== '' ||
+    filters.shift !== '' ||
+    filters.status !== INITIAL_FILTERS.status;
+
+  const handleFiltersChange = (changes: Partial<StudentFiltersState>) => {
+    setFilters((prev) => ({ ...prev, ...changes }));
+    setPage(1);
+  };
+
+  const handleClearFilters = () => {
+    setFilters(INITIAL_FILTERS);
+    setPage(1);
+  };
+
+  const handleOpenDeactivate = (student: StudentListItem) => {
+    setStudentToDeactivate(student);
+    setDialogOpen(true);
+  };
+
+  const handleConfirmDeactivate = async () => {
+    if (!studentToDeactivate) return;
+    setDeactivating(true);
+
+    try {
+      await deactivateStudent(studentToDeactivate.id);
+      setDialogOpen(false);
+      setSnackbar({
+        message: `${studentToDeactivate.firstName} ${studentToDeactivate.lastName} fue dado de baja.`,
+        severity: 'success',
+      });
+
+      // If it was the only row of the last page, go back one page.
+      if (result && result.data.length === 1 && page > 1) {
+        setPage((prev) => prev - 1);
+      } else {
+        setReloadKey((prev) => prev + 1);
+      }
+    } catch (err: unknown) {
+      setSnackbar({
+        message: err instanceof Error ? err.message : 'No se pudo dar de baja al estudiante.',
+        severity: 'error',
+      });
+    } finally {
+      setDeactivating(false);
+    }
+  };
+
+  const from = result && result.total > 0 ? (result.page - 1) * PAGE_SIZE + 1 : 0;
+  const to = result ? from + result.data.length - 1 : 0;
+
+  return (
+    <MainLayout>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h5" sx={{ fontWeight: 700 }}>
+          Listado de estudiantes
+        </Typography>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          Buscá, filtrá y gestioná los estudiantes de la institución.
+        </Typography>
+      </Box>
+
+      <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+        <StudentFilters
+          filters={filters}
+          hasActiveFilters={hasActiveFilters}
+          onChange={handleFiltersChange}
+          onClear={handleClearFilters}
+        />
+
+        {error ? (
+          <Alert
+            severity="error"
+            sx={{ m: 2 }}
+            action={
+              <Button color="inherit" size="small" onClick={() => setReloadKey((prev) => prev + 1)}>
+                Reintentar
+              </Button>
+            }
+          >
+            No se pudo cargar el listado de estudiantes. {error}
+          </Alert>
+        ) : !loading && result?.total === 0 ? (
+          <StudentsEmptyState hasActiveFilters={hasActiveFilters} onClear={handleClearFilters} />
+        ) : (
+          <>
+            <StudentsTable
+              students={result?.data ?? []}
+              loading={loading}
+              onView={(student) => navigate(`/students/${student.id}`)}
+              onEdit={(student) => navigate(`/students/${student.id}/edit`)}
+              onDeactivate={handleOpenDeactivate}
+            />
+
+            {result && (
+              <Box
+                sx={{
+                  px: 2,
+                  py: 1.5,
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 2,
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  Mostrando {from}–{to} de {result.total} estudiantes
+                </Typography>
+                {result.totalPages > 1 && (
+                  <Pagination
+                    count={result.totalPages}
+                    page={page}
+                    onChange={(_, value) => setPage(value)}
+                    shape="rounded"
+                  />
+                )}
+              </Box>
+            )}
+          </>
+        )}
+      </Paper>
+
+      <DeactivateStudentDialog
+        open={dialogOpen}
+        student={studentToDeactivate}
+        loading={deactivating}
+        onConfirm={handleConfirmDeactivate}
+        onClose={() => setDialogOpen(false)}
+      />
+
+      <Snackbar
+        open={snackbar !== null}
+        autoHideDuration={4000}
+        onClose={() => setSnackbar(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+      >
+        {snackbar ? (
+          <Alert severity={snackbar.severity} variant="filled" onClose={() => setSnackbar(null)}>
+            {snackbar.message}
+          </Alert>
+        ) : undefined}
+      </Snackbar>
+    </MainLayout>
+  );
+};
+
+export default StudentsPage;
