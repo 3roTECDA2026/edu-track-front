@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
+import StudentsPage from '@/pages/StudentsPage'; // nuevo
 import GrillaCalificacionesPage from '../pages/GrillaCalificacionesPage';
 
 const AppRouter = () => {
@@ -13,6 +14,9 @@ const AppRouter = () => {
 
         {/* Dashboard principal */}
         <Route path="/home" element={<HomePage />} />
+
+        {/* Listado de estudiantes */}
+        <Route path="/students" element={<StudentsPage />} /> {/* nuevo */}
 
         {/* Carga de calificaciones */}
         <Route path="/calificaciones" element={<GrillaCalificacionesPage />} />
