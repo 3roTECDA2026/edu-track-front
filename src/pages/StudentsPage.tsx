@@ -1,5 +1,5 @@
 // src/pages/StudentsPage.tsx
-import { useEffect, useMemo, useState } from 'react';
+import { useState } from 'react';
 import { Alert, Box, Button, Pagination, Paper, Snackbar, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -8,13 +8,8 @@ import { StudentsTable } from '@/components/students/StudentsTable';
 import { StudentsEmptyState } from '@/components/students/StudentsEmptyState';
 import { DeactivateStudentDialog } from '@/components/students/DeactivateStudentDialog';
 import { useDebounce } from '@/hooks/useDebounce';
-import {
-  deactivateStudent,
-  getStudents,
-  type PaginatedResponse,
-  type StudentListItem,
-  type StudentListParams,
-} from '@/services/students.service';
+import { useStudents } from '@/hooks/useStudents';
+import { deactivateStudent, type StudentListItem } from '@/services/students.service';
 
 const PAGE_SIZE = 20;
 
@@ -26,17 +21,6 @@ const INITIAL_FILTERS: StudentFiltersState = {
   status: 'active',
 };
 
-interface StudentsRequest {
-  params: StudentListParams;
-  reloadKey: number;
-}
-
-interface StudentsResponse {
-  request: StudentsRequest;
-  data?: PaginatedResponse<StudentListItem>;
-  error?: string;
-}
-
 interface SnackbarState {
   message: string;
   severity: 'success' | 'error';
@@ -47,8 +31,6 @@ const StudentsPage = () => {
 
   const [filters, setFilters] = useState<StudentFiltersState>(INITIAL_FILTERS);
   const [page, setPage] = useState(1);
-  const [reloadKey, setReloadKey] = useState(0);
-  const [response, setResponse] = useState<StudentsResponse | null>(null);
 
   const [studentToDeactivate, setStudentToDeactivate] = useState<StudentListItem | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -57,41 +39,20 @@ const StudentsPage = () => {
 
   const debouncedSearch = useDebounce(filters.search.trim(), 400);
 
-  const request = useMemo<StudentsRequest>(
-    () => ({
-      reloadKey,
-      params: {
-        page,
-        limit: PAGE_SIZE,
-        search: debouncedSearch,
-        grade: filters.grade,
-        division: filters.division,
-        shift: filters.shift,
-        status: filters.status,
-      },
-    }),
-    [reloadKey, page, debouncedSearch, filters.grade, filters.division, filters.shift, filters.status],
-  );
-
-  useEffect(() => {
-    // Aborts the previous request if filters change before it finishes.
-    const controller = new AbortController();
-
-    getStudents(request.params, controller.signal)
-      .then((data) => setResponse({ request, data }))
-      .catch((error: unknown) => {
-        if (controller.signal.aborted) return;
-        const message = error instanceof Error ? error.message : 'Error inesperado';
-        setResponse({ request, error: message });
-      });
-
-    return () => controller.abort();
-  }, [request]);
-
-  // Loading until the response belongs to the current request.
-  const loading = response?.request !== request;
-  const result = loading ? undefined : response?.data;
-  const error = loading ? undefined : response?.error;
+  const {
+    data: result,
+    loading,
+    error,
+    reload,
+  } = useStudents({
+    page,
+    limit: PAGE_SIZE,
+    search: debouncedSearch,
+    grade: filters.grade,
+    division: filters.division,
+    shift: filters.shift,
+    status: filters.status,
+  });
 
   const hasActiveFilters =
     filters.search.trim() !== '' ||
@@ -131,7 +92,7 @@ const StudentsPage = () => {
       if (result && result.data.length === 1 && page > 1) {
         setPage((prev) => prev - 1);
       } else {
-        setReloadKey((prev) => prev + 1);
+        reload();
       }
     } catch (err: unknown) {
       setSnackbar({
@@ -170,7 +131,7 @@ const StudentsPage = () => {
             severity="error"
             sx={{ m: 2 }}
             action={
-              <Button color="inherit" size="small" onClick={() => setReloadKey((prev) => prev + 1)}>
+              <Button color="inherit" size="small" onClick={reload}>
                 Reintentar
               </Button>
             }
