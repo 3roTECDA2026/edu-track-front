@@ -1,4 +1,6 @@
-// src/pages/LoginPage.tsx
+// ==========================================
+// 1. IMPORTACIONES
+// ==========================================
 import React, { useState } from 'react';
 import {
   Box,
@@ -10,26 +12,35 @@ import {
   InputAdornment,
   IconButton,
   Alert,
+  FormControlLabel,
+  Checkbox,
+  Link,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 // Assets institucionales
-import logoEscuela from '../assets/logo.png';
+import logoEscuela from '../assets/logo-normal.jpg';
 import logoProvincia from '../assets/bsas.png';
 
-// Credenciales por defecto solicitadas
-const DEFAULT_USER = 'normal';
-const DEFAULT_PASS = '1234';
-
+// ==========================================
+// 2. COMPONENTE PRINCIPAL
+// ==========================================
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
 
-  const [usuario, setUsuario] = useState(DEFAULT_USER);
-  const [password, setPassword] = useState(DEFAULT_PASS);
+  // ----------------------------------------
+  // Estados del formulario
+  // ----------------------------------------
+  const [usuario, setUsuario] = useState('admin.escola');
+  const [password, setPassword] = useState('********');
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // ----------------------------------------
+  // Manejadores de eventos (Handlers)
+  // ----------------------------------------
   const handleClickShowPassword = () => {
     setShowPassword((prev) => !prev);
   };
@@ -37,22 +48,34 @@ export const LoginPage: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validación básica
     if (!usuario || !password) {
-      setError('Por favor, ingresa tu usuario y contraseña.');
+      setError('Por favor, ingresa tus credenciales.');
       return;
     }
 
     setError(null);
+    // Aquí puedes realizar tu fetch si lo necesitas más adelante
     navigate('/home');
   };
 
+  // ----------------------------------------
+  // Renderizado (JSX)
+  // ----------------------------------------
   return (
-    <Box sx={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: '#f2f4f7' }}>
-      {/* Header Superior Institucional */}
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: '#f9fafb',
+      }}
+    >
+      {/* 1. Header Superior Institucional (Provincia de Buenos Aires) */}
       <Box
         component="header"
         sx={{
-          height: 60,
+          height: 65,
           backgroundColor: '#000000',
           display: 'flex',
           alignItems: 'center',
@@ -63,11 +86,11 @@ export const LoginPage: React.FC = () => {
           component="img"
           src={logoProvincia}
           alt="Gobierno de la Provincia de Buenos Aires"
-          sx={{ height: 36, objectFit: 'contain' }}
+          sx={{ height: 65, objectFit: 'contain' }}
         />
       </Box>
 
-      {/* Formulario de Login */}
+      {/* 2. Contenedor Central del Formulario */}
       <Box
         sx={{
           flexGrow: 1,
@@ -78,86 +101,93 @@ export const LoginPage: React.FC = () => {
         }}
       >
         <Container maxWidth="xs">
+          
+          {/* TARJETA PRINCIPAL (PAPER) */}
           <Paper
-            elevation={3}
+            elevation={0}
             sx={{
               p: 4,
               display: 'flex',
               flexDirection: 'column',
               alignItems: 'center',
               backgroundColor: '#ffffff',
-              borderRadius: 2,
-              borderTop: '6px solid #003366',
+              borderRadius: 3,
+              border: '1px solid #e5e7eb',
             }}
           >
-            {/* Escudo de la Escuela Normal */}
+            {/* Logo / Icono Superior */}
             <Box
               sx={{
-                width: 80,
-                height: 100,
-                mb: 2,
-                border: '2px solid #003366',
-                backgroundColor: '#002244',
+                width: 43,
+                height: 64,
+                mb: 2.5,
+                borderRadius: 0,
+                border: '1px solid #d1d5db',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                p: 0.5,
+                backgroundColor: '#ffffff',
               }}
             >
               <Box
                 component="img"
                 src={logoEscuela}
-                alt="Escuela Normal Logo"
-                sx={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                alt="Ícono Escuela"
+                sx={{ width: 64, height: 64, objectFit: 'contain' }}
               />
             </Box>
 
-            <Typography variant="caption" sx={{ color: '#003366', textTransform: 'uppercase', fontSize: '0.7rem', fontWeight: 'bold', letterSpacing: '0.05em' }}>
-              ESCUELA NORMAL S 10
+            {/* Encabezado de Títulos */}
+            <Typography variant="h6" sx={{ fontWeight: 700, color: '#111827', mb: 0.5 }}>
+              Gestión Escolar
             </Typography>
-            <Typography variant="h5" sx={{ fontWeight: 800, color: '#111111', mt: 0.5, mb: 2 }}>
-              Acceso al SGE
+            <Typography variant="body2" sx={{ color: '#6b7280', mb: 3, fontSize: '0.85rem' }}>
+              Ingresá tu usuario y contraseña para acceder al sistema
             </Typography>
 
-            {/* Aviso de credenciales prestablecidas */}
-            <Alert severity="info" sx={{ width: '100%', mb: 2, fontSize: '0.8rem' }}>
-              <strong>Credenciales de prueba:</strong><br />
-              Usuario: <code>normal</code><br />
-              Contraseña: <code>1234</code>
-            </Alert>
-
+            {/* Alerta de Error (si existe) */}
             {error && (
               <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
                 {error}
               </Alert>
             )}
 
+            {/* FORMULARIO */}
             <Box component="form" onSubmit={handleSubmit} noValidate sx={{ width: '100%' }}>
+              
+              {/* Input: Usuario */}
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#374151', display: 'block', mb: 0.5, letterSpacing: '0.05em' }}>
+                USUARIO
+              </Typography>
               <TextField
-                margin="normal"
+                margin="dense"
                 required
                 fullWidth
                 id="usuario"
-                label="Usuario o correo institucional"
                 name="usuario"
                 autoComplete="username"
                 size="small"
                 value={usuario}
                 onChange={(e) => setUsuario(e.target.value)}
+                sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
               />
 
+              {/* Input: Contraseña */}
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#374151', display: 'block', mb: 0.5, letterSpacing: '0.05em' }}>
+                CONTRASEÑA
+              </Typography>
               <TextField
-                margin="normal"
+                margin="dense"
                 required
                 fullWidth
                 name="password"
-                label="Contraseña"
                 type={showPassword ? 'text' : 'password'}
                 id="password"
                 autoComplete="current-password"
                 size="small"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                sx={{ mb: 1, '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
                 slotProps={{
                   input: {
                     endAdornment: (
@@ -166,8 +196,9 @@ export const LoginPage: React.FC = () => {
                           aria-label="mostrar u ocultar contraseña"
                           onClick={handleClickShowPassword}
                           edge="end"
+                          size="small"
                         >
-                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                          {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                         </IconButton>
                       </InputAdornment>
                     ),
@@ -175,44 +206,56 @@ export const LoginPage: React.FC = () => {
                 }}
               />
 
+              {/* Opciones adicionales (Recordarme / Olvidé contraseña) */}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3, mt: 1 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={rememberMe}
+                      onChange={(e) => setRememberMe(e.target.checked)}
+                      size="small"
+                      sx={{ color: '#4b5563', '&.Mui-checked': { color: '#111827' } }}
+                    />
+                  }
+                  label={<Typography sx={{ fontSize: '0.85rem', color: '#4b5563' }}>Recordarme</Typography>}
+                />
+                <Link href="#" variant="body2" sx={{ fontSize: '0.85rem', color: '#4b5563', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                  Olvidé mi contraseña
+                </Link>
+              </Box>
+
+              {/* Botón de Envío */}
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
                 sx={{
-                  mt: 3,
-                  mb: 1,
                   py: 1.2,
-                  backgroundColor: '#a70012',
+                  backgroundColor: '#1f2937',
                   color: '#ffffff',
                   textTransform: 'none',
-                  fontWeight: 'bold',
-                  fontSize: '0.95rem',
-                  borderRadius: '20px',
-                  '&:hover': { backgroundColor: '#88000e' },
+                  fontWeight: 600,
+                  fontSize: '0.9rem',
+                  borderRadius: '8px',
+                  boxShadow: 'none',
+                  '&:hover': { backgroundColor: '#111827', boxShadow: 'none' },
                 }}
               >
-                Ingresar al Sistema
+                Iniciar sesión →
               </Button>
             </Box>
           </Paper>
 
+          {/* PIE DE PÁGINA / FOOTER */}
           <Box sx={{ mt: 3, textAlign: 'center' }}>
-            <Typography
-              variant="caption"
-              sx={{
-                color: '#666666',
-                fontSize: '0.65rem',
-                lineHeight: 1.3,
-                display: 'block',
-                textTransform: 'uppercase',
-              }}
-            >
-              CONSTITUYENTE Y EJECUTORA DEL SISTEMA EDUCATIVO
-              <br />
-              DIRECCIÓN GENERAL DE CULTURA Y EDUCACIÓN (DGOYE)
+            <Typography variant="caption" sx={{ color: '#9ca3af', fontSize: '0.75rem', display: 'block', mb: 0.5 }}>
+              Sistema de Gestión Escolar v1.0
             </Typography>
+            <Link href="#" variant="caption" sx={{ color: '#6b7280', fontSize: '0.75rem', textDecoration: 'underline' }}>
+              Soporte técnico
+            </Link>
           </Box>
+
         </Container>
       </Box>
     </Box>
