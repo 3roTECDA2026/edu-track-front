@@ -38,6 +38,60 @@ export interface StudentListParams {
   status: StatusFilter;
 }
 
+export interface Guardian {
+  id: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  dni: string | null;
+  relationship: string | null;
+  isPrimary: boolean;
+}
+
+export interface StudentDetail {
+  id: string;
+  dni: string;
+  firstName: string;
+  lastName: string;
+  dateOfBirth: string;
+  placeOfBirth: string;
+  address: string;
+  city: string;
+  phone: string;
+  recordNumber: string;
+  status: StudentStatus;
+  createdAt: string;
+  updatedAt: string;
+  currentSection: CurrentSection | null;
+  guardians: Guardian[];
+}
+
+export interface CreateStudentInput {
+  firstName: string;
+  lastName: string;
+  dni: string;
+  dateOfBirth: string; // "YYYY-MM-DD"
+  placeOfBirth: string;
+  address: string;
+  city: string;
+  phone: string;
+  classSectionId: string;
+  guardianName: string;
+  guardianPhone: string;
+  guardianEmail: string;
+  guardianDni?: string;
+  guardianRelationship?: string;
+}
+
+export interface ClassSectionOption {
+  id: string;
+  year: number;
+  grade: number;
+  division: string;
+  shift: Shift;
+}
+
 export function getStudents(params: StudentListParams, signal?: AbortSignal) {
   const query = new URLSearchParams({
     page: String(params.page),
@@ -60,4 +114,16 @@ export function deactivateStudent(id: string) {
   return fetchApi<Pick<StudentListItem, 'id' | 'status'>>(`/api/students/${id}/deactivate`, {
     method: 'PATCH',
   });
+}
+
+
+export function createStudent(data: CreateStudentInput) {
+  return fetchApi<StudentDetail>('/api/students', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+}
+
+export function getClassSections() {
+  return fetchApi<ClassSectionOption[]>('/api/class-sections');
 }
