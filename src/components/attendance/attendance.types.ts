@@ -7,6 +7,7 @@ export type JustificationRecord = {
 
 export type AttendanceRecord = {
   id: number;
+  sectionId?: string;
   student: string;
   dni: string;
   course: string;
@@ -22,4 +23,28 @@ export type AttendanceFilters = {
   from: string;
   to: string;
   search: string;
+};
+
+export type AttendanceSummaryResponse = {
+  items: Array<{
+    studentId: string;
+    student: string;
+    dni: string;
+    sectionId: string;
+    course: string;
+    date: string;
+    absences: number;
+    halfAbsences: number;
+    quarterAbsences: number;
+    total: number;
+    justified: number;
+    unjustified: number;
+    justifications: JustificationRecord[];
+  }>;
+  pagination: {
+    page: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
 };

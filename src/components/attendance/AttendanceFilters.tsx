@@ -12,6 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import type { AttendanceFilters as AttendanceFilterValues } from './attendance.types';
 
 type AttendanceFiltersProps = {
@@ -19,9 +20,10 @@ type AttendanceFiltersProps = {
   courses: string[];
   onChange: (filters: AttendanceFilterValues) => void;
   onApply: () => void;
+  onReset: () => void;
 };
 
-const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({ value, courses, onChange, onApply }) => {
+const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({ value, courses, onChange, onApply, onReset }) => {
   const update = (field: keyof AttendanceFilterValues, fieldValue: string) => {
     onChange({ ...value, [field]: fieldValue });
   };
@@ -44,6 +46,9 @@ const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({ value, courses, o
         <TextField label="Hasta" type="date" value={value.to} onChange={(event) => update('to', event.target.value)} size="small" fullWidth InputLabelProps={{ shrink: true }} />
         <Button variant="contained" startIcon={<FilterAltIcon />} onClick={onApply} sx={{ minWidth: 120, textTransform: 'none', backgroundColor: '#222', '&:hover': { backgroundColor: '#444' } }}>
           Filtrar
+        </Button>
+        <Button variant="outlined" startIcon={<RestartAltIcon />} onClick={onReset} sx={{ minWidth: 140, textTransform: 'none', borderColor: '#555', color: '#333' }}>
+          Limpiar filtros
         </Button>
       </Stack>
     </Paper>
