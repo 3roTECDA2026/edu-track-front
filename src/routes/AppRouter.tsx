@@ -4,6 +4,7 @@ import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
 import StudentsPage from '@/pages/StudentsPage'; // nuevo
 import GrillaCalificacionesPage from '../pages/GrillaCalificacionesPage';
+import NewStudentPage from '@/pages/NewStudentPage';
 
 const AppRouter = () => {
   return (
@@ -17,6 +18,9 @@ const AppRouter = () => {
 
         {/* Listado de estudiantes */}
         <Route path="/students" element={<StudentsPage />} /> {/* nuevo */}
+
+        {/* Formulario para crear un nuevo estudiante */}
+        <Route path="/students/new" element={<NewStudentPage />} />
 
         {/* Carga de calificaciones */}
         <Route path="/calificaciones" element={<GrillaCalificacionesPage />} />
