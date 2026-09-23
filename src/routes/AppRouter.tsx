@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
 import CursosPage from '../pages/CursosPage'; 
+import StudentsPage from '@/pages/StudentsPage'; // nuevo
+import GrillaCalificacionesPage from '../pages/GrillaCalificacionesPage';
 
 const AppRouter = () => {
   return (
@@ -16,6 +18,11 @@ const AppRouter = () => {
 
         {/* Estructura institucional / Cursos */}
         <Route path="/cursos" element={<CursosPage />} />
+        {/* Listado de estudiantes */}
+        <Route path="/students" element={<StudentsPage />} /> {/* nuevo */}
+
+        {/* Carga de calificaciones */}
+        <Route path="/calificaciones" element={<GrillaCalificacionesPage />} />
 
         {/* Redirección por defecto al Login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
