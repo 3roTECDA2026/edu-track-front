@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from '@mui/material';
 import type { UserListItem } from '@/services/users.service';
+import { getFullName } from './userLabels';
 
 interface SuspendUserDialogProps {
   open: boolean;
@@ -25,6 +26,7 @@ export const SuspendUserDialog = ({
   onClose,
 }: SuspendUserDialogProps) => {
   const suspending = user?.active ?? true;
+  const name = user ? getFullName(user) : '';
 
   return (
     <Dialog open={open} onClose={loading ? undefined : onClose} maxWidth="xs" fullWidth>
@@ -32,8 +34,8 @@ export const SuspendUserDialog = ({
       <DialogContent>
         <DialogContentText>
           {suspending
-            ? `${user?.name} no va a poder iniciar sesión hasta que lo reactives.`
-            : `${user?.name} va a poder volver a iniciar sesión.`}
+            ? `${name} no va a poder iniciar sesión hasta que lo reactives.`
+            : `${name} va a poder volver a iniciar sesión.`}
         </DialogContentText>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
