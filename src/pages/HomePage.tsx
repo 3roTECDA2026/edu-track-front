@@ -1,9 +1,14 @@
 // src/pages/HomePage.tsx
 import React from 'react';
 import { Box, Typography, Grid, Card, CardContent, Button, Stack } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
 
 export const HomePage: React.FC = () => {
+  const navigate = useNavigate();
+
+  const goTo = (path: string) => navigate(path);
+
   return (
     <MainLayout>
       <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
@@ -34,7 +39,7 @@ export const HomePage: React.FC = () => {
                 </Typography>
               </CardContent>
               <Box sx={{ p: 2, pt: 0 }}>
-                <Button fullWidth variant="contained" sx={{ backgroundColor: '#1976d2', textTransform: 'none', fontWeight: 'bold' }}>
+                <Button fullWidth variant="contained" onClick={() => goTo('/students')} sx={{ backgroundColor: '#1976d2', textTransform: 'none', fontWeight: 'bold' }}>
                   Ver listado
                 </Button>
               </Box>
@@ -56,7 +61,7 @@ export const HomePage: React.FC = () => {
                 </Typography>
               </CardContent>
               <Box sx={{ p: 2, pt: 0 }}>
-                <Button fullWidth variant="contained" color="success" sx={{ textTransform: 'none', fontWeight: 'bold' }}>
+                <Button fullWidth variant="contained" color="success" onClick={() => goTo('/courses')} sx={{ textTransform: 'none', fontWeight: 'bold' }}>
                   Gestionar Cursos
                 </Button>
               </Box>
@@ -74,6 +79,7 @@ export const HomePage: React.FC = () => {
                   <Button
                     fullWidth
                     variant="outlined"
+                    onClick={() => goTo('/students')}
                     sx={{
                       justifyContent: 'flex-start',
                       color: '#37474f',
@@ -89,6 +95,7 @@ export const HomePage: React.FC = () => {
                   <Button
                     fullWidth
                     variant="outlined"
+                    onClick={() => goTo('/attendance')}
                     sx={{
                       justifyContent: 'flex-start',
                       color: '#37474f',
