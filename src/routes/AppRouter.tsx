@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
+import CursosPage from '../pages/CursosPage'; 
 
 const AppRouter = () => {
   return (
@@ -12,6 +13,9 @@ const AppRouter = () => {
 
         {/* Dashboard principal */}
         <Route path="/home" element={<HomePage />} />
+
+        {/* Estructura institucional / Cursos */}
+        <Route path="/cursos" element={<CursosPage />} />
 
         {/* Redirección por defecto al Login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
