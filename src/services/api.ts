@@ -5,6 +5,23 @@ export interface HealthResponse {
   message: string;
 }
 
+export interface ApiErrorBody {
+  error: string;
+  details?: unknown;
+}
+
+export class ApiError extends Error {
+  readonly status: number;
+  readonly details?: unknown;
+
+  constructor(status: number, body: ApiErrorBody) {
+    super(body.error || `Error ${status}`);
+    this.name = 'ApiError';
+    this.status = status;
+    this.details = body.details;
+  }
+}
+
 export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const config: RequestInit = {
     headers: {
@@ -14,11 +31,13 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
     ...options,
   };
 
-  const response = await fetch(`${API_URL}${endpoint}`, config);
+  const baseUrl = API_URL.replace(/\/+$/, '');
+  const path = endpoint.replace(/^\/+/, '');
+  const response = await fetch(`${baseUrl}/${path}`, config);
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    throw new Error(errorData.message || `Error ${response.status}: ${response.statusText}`);
+    const errorData = await response.json().catch(() => ({ error: response.statusText }));
+    throw new ApiError(response.status, errorData);
   }
 
   return response.json() as Promise<T>;

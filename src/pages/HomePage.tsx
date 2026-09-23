@@ -2,6 +2,7 @@
 import React from 'react';
 import { Box, Typography, Grid, Card, CardContent, Button, Stack } from '@mui/material';
 import MainLayout from '../components/layout/MainLayout';
+import { Link } from 'react-router-dom';
 
 export const HomePage: React.FC = () => {
   return (
@@ -34,7 +35,7 @@ export const HomePage: React.FC = () => {
                 </Typography>
               </CardContent>
               <Box sx={{ p: 2, pt: 0 }}>
-                <Button fullWidth variant="contained" sx={{ backgroundColor: '#1976d2', textTransform: 'none', fontWeight: 'bold' }}>
+                <Button fullWidth variant="contained" component={Link} to="/students" sx={{ backgroundColor: '#1976d2', textTransform: 'none', fontWeight: 'bold' }}>
                   Ver listado
                 </Button>
               </Box>
@@ -74,6 +75,8 @@ export const HomePage: React.FC = () => {
                   <Button
                     fullWidth
                     variant="outlined"
+                    component={Link}
+                    to="/students/new"
                     sx={{
                       justifyContent: 'flex-start',
                       color: '#37474f',

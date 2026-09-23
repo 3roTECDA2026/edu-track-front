@@ -39,7 +39,7 @@ export const AttendanceSummaryPage: React.FC = () => {
         if (nextFilters.search.trim()) query.set('search', nextFilters.search.trim());
         const selectedCourse = courseOptions.find((course) => course.label === nextFilters.course);
         if (selectedCourse) query.set('sectionId', selectedCourse.sectionId);
-        const response = await fetchApi<AttendanceSummaryResponse>(`/attendance/summary?${query}`);
+        const response = await fetchApi<AttendanceSummaryResponse>(`/api/attendance/summary?${query}`);
         const nextRecords = response.items.map((item) => ({
           id: item.studentId,
           sectionId: item.sectionId,
