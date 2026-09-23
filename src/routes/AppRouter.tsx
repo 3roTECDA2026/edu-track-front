@@ -4,6 +4,7 @@ import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
 import StudentsPage from '@/pages/StudentsPage'; // nuevo
 import GrillaCalificacionesPage from '../pages/GrillaCalificacionesPage';
+import UsersPage from '@/pages/UsersPage';
 
 const AppRouter = () => {
   return (
@@ -20,6 +21,9 @@ const AppRouter = () => {
 
         {/* Carga de calificaciones */}
         <Route path="/calificaciones" element={<GrillaCalificacionesPage />} />
+        
+        {/* Administración de usuarios */}
+        <Route path="/users" element={<UsersPage />} />
 
         {/* Redirección por defecto al Login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
