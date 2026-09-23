@@ -9,6 +9,7 @@ import { UserFormDialog } from '@/components/users/UserFormDialog';
 import { UsersTable } from '@/components/users/UsersTable';
 import { useUsers } from '@/hooks/useUsers';
 import { activateUser, suspendUser, type UserListItem } from '@/services/users.service';
+import './usersMock';
 
 const UsersPage = () => {
   const notify = useNotify();
