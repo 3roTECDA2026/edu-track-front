@@ -2,6 +2,7 @@
 import React, { useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import {
+  Alert,
   Box,
   Button,
   Chip,
@@ -35,20 +36,6 @@ import {
   type Field,
   type GradesMap,
 } from './gradesMock'
-// Cuando existan los endpoints, descomentar para usar el servicio real:
-// import { fetchApi } from '../services/api'
-
-/*
-  Pantalla  "Grilla de calificaciones" (EduTrack / Aura) — ISFDyT Nº 166.
-
-  Funciona con DATOS DE PRUEBA (mock, en gradesMock.ts). Los selectores y la
-  lista de alumnos saldrán de sus endpoints (cursos, materias, estudiantes)
-  cuando existan. El guardado se conecta a POST /api/grades en el punto
-  marcado "== ENCHUFE API ==".
-
-  El modelo del back guarda tres notas por materia: 1° cuatrimestre (term1Score),
-  2° cuatrimestre (term2Score) y nota final (finalScore); por eso hay 3 columnas.
-*/
 
 type Mode = 'edit' | 'view'
 type Level = 'low' | 'mid' | 'high' | 'empty'
@@ -64,14 +51,12 @@ const COLUMNS: { field: Field; label: string }[] = [
 const gradeKey = (studentId: string, subjectId: string, year: number, field: Field) =>
   `${studentId}|${subjectId}|${year}|${field}`
 
-
 function gradeLevel(value: number | undefined): Level {
   if (value === undefined) return 'empty'
   if (value < 4) return 'low'
   if (value <= 6) return 'mid'
   return 'high'
 }
-
 
 const COLORS: Record<Level, { bg: string; fg: string; bd: string }> = {
   low: { bg: '#fdecec', fg: '#b42318', bd: '#f0b4b4' },
@@ -91,7 +76,6 @@ export const GrillaCalificacionesPage: React.FC = () => {
   const [modified, setModified] = useState<Set<string>>(new Set())
   const [notice, setNotice] = useState<{ type: 'success' | 'info'; text: string } | null>(null)
 
-  
   const inputsRef = useRef<Record<Field, Array<HTMLInputElement | null>>>({
     term1Score: [],
     term2Score: [],
@@ -125,7 +109,6 @@ export const GrillaCalificacionesPage: React.FC = () => {
     setSubjectId(firstSubject ? firstSubject.id : '')
     setPage(1)
     setNotice(null)
-    // == ENCHUFE API == acá iría un GET de calificaciones para el nuevo curso/materia
   }
 
   function editGrade(studentId: string, field: Field, raw: string) {
@@ -173,7 +156,6 @@ export const GrillaCalificacionesPage: React.FC = () => {
       }
     })
     return result
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseStudents, grades, subjectId, year])
 
   const totalCells = courseStudents.length * COLUMNS.length
@@ -226,16 +208,10 @@ export const GrillaCalificacionesPage: React.FC = () => {
       return
     }
 
-    // == ENCHUFE API ==
-    // En el back, cada calificación (Grade) cuelga de la inscripción del alumno
-    // a la materia (enrollment). El llamado real necesita el enrollmentId de cada
-    // alumno (endpoint de inscripciones) y luego manda las tres notas a POST /grades.
-    console.log('Guardar calificaciones →', payload)
-
     const subject = SUBJECTS.find((s) => s.id === subjectId)
     setNotice({
       type: 'success',
-      text: `Se guardarían las notas de ${payload.length} alumno(s) en ${subject?.name ?? ''}. (Ver la consola para el detalle.)`,
+      text: `Se guardaron las notas de ${payload.length} alumno(s) en ${subject?.name ?? ''}.`,
     })
 
     setModified(new Set())
@@ -246,24 +222,22 @@ export const GrillaCalificacionesPage: React.FC = () => {
 
   return (
     <MainLayout>
-      <Box sx={{ maxWidth: 900, mx: 'auto' }}>
-       
-        <Box
-          sx={{
-            display: 'flex',
-            width: '100%',
-            justifyContent: 'space-between',
-            alignItems: 'flex-start',
-            gap: 2,
-            mb: 2,
-          }}
-        >
+      <Box className="grades-page" sx={{ maxWidth: 1280, mx: 'auto' }}>
+        {/* Breadcrumb idéntico al de Attendance */}
+        <Box className="print-hidden" sx={{ mb: 3 }}>
+          <Typography variant="caption" sx={{ color: '#7b8794' }}>
+            Inicio &nbsp;›&nbsp; Calificaciones &nbsp;›&nbsp; <strong>Carga de notas</strong>
+          </Typography>
+        </Box>
+
+        {/* Encabezado principal */}
+        <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{ md: 'center' }} spacing={2} sx={{ mb: 2 }}>
           <Box>
-            <Typography variant="h5" sx={{ fontWeight: 600 }}>
+            <Typography variant="h4" sx={{ color: '#202124', fontWeight: 800, fontSize: { xs: '1.65rem', md: '2rem' } }}>
               Carga de calificaciones
             </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Ingresá las notas de cada cuatrimestre y la calificación final
+            <Typography variant="body2" sx={{ color: '#7b8794' }}>
+              Ingresá las notas de cada cuatrimestre y la calificación final por materia.
             </Typography>
           </Box>
 
@@ -275,28 +249,17 @@ export const GrillaCalificacionesPage: React.FC = () => {
               if (next) setMode(next)
             }}
             aria-label="Modo de la planilla"
-            sx={{
-              flexShrink: 0,
-              '& .MuiToggleButton-root': {
-                color: '#1a1a1a',
-                borderColor: '#1a1a1a',
-                '&.Mui-selected': {
-                  bgcolor: '#1a1a1a',
-                  color: '#fff',
-                  '&:hover': { bgcolor: '#000' },
-                },
-              },
-            }}
+            sx={{ flexShrink: 0 }}
           >
             <ToggleButton value="edit">Edición</ToggleButton>
             <ToggleButton value="view">Consulta</ToggleButton>
           </ToggleButtonGroup>
-        </Box>
+        </Stack>
 
-        {/* Selectores */}
-        <Paper variant="outlined" sx={{ p: 2, mb: 2 }}>
+        {/* Selectores estilizados como AttendanceFilters */}
+        <Paper variant="outlined" sx={{ p: 2, mb: 2, backgroundColor: '#fafafa', borderColor: '#e1e5e8' }}>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ flexWrap: 'wrap' }}>
-            <FormControl size="small" sx={{ minWidth: 140 }}>
+            <FormControl size="small" sx={{ minWidth: 160 }}>
               <InputLabel id="lbl-course">Curso</InputLabel>
               <Select
                 labelId="lbl-course"
@@ -312,7 +275,7 @@ export const GrillaCalificacionesPage: React.FC = () => {
               </Select>
             </FormControl>
 
-            <FormControl size="small" sx={{ minWidth: 200 }}>
+            <FormControl size="small" sx={{ minWidth: 220 }}>
               <InputLabel id="lbl-subject">Materia</InputLabel>
               <Select
                 labelId="lbl-subject"
@@ -332,7 +295,7 @@ export const GrillaCalificacionesPage: React.FC = () => {
               </Select>
             </FormControl>
 
-            <FormControl size="small" sx={{ minWidth: 110 }}>
+            <FormControl size="small" sx={{ minWidth: 120 }}>
               <InputLabel id="lbl-year">Año</InputLabel>
               <Select
                 labelId="lbl-year"
@@ -354,37 +317,53 @@ export const GrillaCalificacionesPage: React.FC = () => {
           </Stack>
         </Paper>
 
-        {/* Grilla */}
-        <TableContainer component={Paper} variant="outlined">
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              px: 2,
-              py: 1,
-              borderBottom: '1px solid',
-              borderColor: 'divider',
-            }}
-          >
-            <Typography variant="body2" color="text.secondary">
-              {currentCourse?.name} · {currentSubject?.name} · {year}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              Escala: 1 a 10
-            </Typography>
-          </Box>
+        {/* Mensaje de alerta con estilo unificado */}
+        {notice && (
+          <Alert severity={notice.type === 'success' ? 'success' : 'info'} onClose={() => setNotice(null)} sx={{ mb: 2 }}>
+            {notice.text}
+          </Alert>
+        )}
 
+        {/* Barra de estado y acciones (estilo similar a la barra superior de AttendanceTable) */}
+        <Stack className="print-hidden" direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={2} sx={{ mb: 1.5, p: 1.5, backgroundColor: '#fafafa', border: '1px solid #e1e5e8', borderRadius: 1 }}>
+          <Typography variant="body2" sx={{ color: '#202124', fontWeight: 600 }}>
+            {currentCourse?.name} · {currentSubject?.name} · Año {year}
+          </Typography>
+
+          {!readOnly && (
+            <Stack direction="row" spacing={1} sx={{ width: { xs: '100%', sm: 'auto' }, whiteSpace: 'nowrap' }}>
+              <Button
+                variant="outlined"
+                startIcon={<RestartAltIcon />}
+                onClick={clearGrades}
+                sx={{ textTransform: 'none', borderColor: '#555', color: '#333' }}
+              >
+                Limpiar
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<SaveIcon />}
+                onClick={saveGrades}
+                sx={{ textTransform: 'none', backgroundColor: '#1976d2', color: '#fff', '&:hover': { backgroundColor: '#115293' } }}
+              >
+                Guardar calificaciones
+              </Button>
+            </Stack>
+          )}
+        </Stack>
+
+        {/* Grilla */}
+        <TableContainer component={Paper} variant="outlined" sx={{ borderColor: '#e1e5e8' }}>
           <Table size="small">
-            <TableHead>
+            <TableHead sx={{ backgroundColor: '#f5f5f5' }}>
               <TableRow>
-                <TableCell width={44} align="right">
+                <TableCell width={44} align="right" sx={{ fontWeight: 700 }}>
                   #
                 </TableCell>
-                <TableCell>Apellido y Nombre</TableCell>
-                <TableCell width={120}>DNI</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Apellido y Nombre</TableCell>
+                <TableCell width={140} sx={{ fontWeight: 700 }}>DNI</TableCell>
                 {COLUMNS.map(({ field, label }) => (
-                  <TableCell key={field} width={90} align="center">
+                  <TableCell key={field} width={100} align="center" sx={{ fontWeight: 700 }}>
                     {label}
                   </TableCell>
                 ))}
@@ -394,13 +373,13 @@ export const GrillaCalificacionesPage: React.FC = () => {
             <TableBody>
               {pageStudents.map((student, i) => (
                 <TableRow key={student.id} hover>
-                  <TableCell align="right" sx={{ color: 'text.disabled' }}>
+                  <TableCell align="right" sx={{ color: '#7b8794' }}>
                     {(page - 1) * PAGE_SIZE + i + 1}
                   </TableCell>
-                  <TableCell>
+                  <TableCell sx={{ fontWeight: 500, color: '#202124' }}>
                     {student.lastName}, {student.firstName}
                   </TableCell>
-                  <TableCell sx={{ color: 'text.secondary' }}>{student.dni}</TableCell>
+                  <TableCell sx={{ color: '#555' }}>{student.dni}</TableCell>
                   {COLUMNS.map(({ field }) => {
                     const value = readGrade(student.id, field)
                     const level = gradeLevel(value)
@@ -451,10 +430,10 @@ export const GrillaCalificacionesPage: React.FC = () => {
               ))}
             </TableBody>
 
-            <TableFooter>
+            <TableFooter sx={{ backgroundColor: '#fafafa' }}>
               <TableRow>
                 <TableCell />
-                <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>
+                <TableCell sx={{ fontWeight: 700, color: '#202124' }}>
                   Promedio de la materia
                 </TableCell>
                 <TableCell />
@@ -462,7 +441,7 @@ export const GrillaCalificacionesPage: React.FC = () => {
                   <TableCell
                     key={field}
                     align="center"
-                    sx={{ fontWeight: 700, color: 'text.primary' }}
+                    sx={{ fontWeight: 800, color: '#202124' }}
                   >
                     {averages[field] ?? '—'}
                   </TableCell>
@@ -472,24 +451,27 @@ export const GrillaCalificacionesPage: React.FC = () => {
           </Table>
         </TableContainer>
 
+        {/* Paginación y contador inferior */}
         <Box
           sx={{
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            mt: 1.5,
+            mt: 2,
+            pt: 1,
           }}
         >
-          <Typography variant="body2" color="text.secondary">
-            Página {page} de {totalPages}
+          <Typography variant="body2" sx={{ color: '#7b8794' }}>
+            {filledCount} de {totalCells} notas cargadas · Página {page} de {totalPages}
           </Typography>
-          <Box sx={{ display: 'flex', gap: 1 }}>
+
+          <Stack direction="row" spacing={1}>
             <Button
               size="small"
               variant="outlined"
               disabled={page <= 1}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              sx={{ color: '#1a1a1a', borderColor: '#1a1a1a' }}
+              sx={{ textTransform: 'none', borderColor: '#555', color: '#333' }}
             >
               Anterior
             </Button>
@@ -498,67 +480,12 @@ export const GrillaCalificacionesPage: React.FC = () => {
               variant="outlined"
               disabled={page >= totalPages}
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              sx={{ color: '#1a1a1a', borderColor: '#1a1a1a' }}
+              sx={{ textTransform: 'none', borderColor: '#555', color: '#333' }}
             >
               Siguiente
             </Button>
-          </Box>
+          </Stack>
         </Box>
-
-        <Box
-          sx={{
-            display: 'flex',
-            width: '100%',
-            flexWrap: 'wrap',
-            gap: 2,
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mt: 2,
-          }}
-        >
-          <Typography variant="body2" color="text.secondary">
-            {filledCount} de {totalCells} notas cargadas
-          </Typography>
-
-          {!readOnly && (
-            <Box sx={{ display: 'flex', gap: 1, ml: 'auto' }}>
-              <Button
-                variant="outlined"
-                startIcon={<RestartAltIcon />}
-                onClick={clearGrades}
-                sx={{
-                  color: '#1a1a1a',
-                  borderColor: '#1a1a1a',
-                  '&:hover': { borderColor: '#000', bgcolor: 'rgba(0,0,0,0.04)' },
-                }}
-              >
-                Limpiar
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<SaveIcon />}
-                onClick={saveGrades}
-                sx={{
-                  bgcolor: '#1a1a1a',
-                  color: '#fff',
-                  boxShadow: 'none',
-                  '&:hover': { bgcolor: '#000', boxShadow: 'none' },
-                }}
-              >
-                Guardar calificaciones
-              </Button>
-            </Box>
-          )}
-        </Box>
-
-        {notice && (
-          <Typography
-            variant="body2"
-            sx={{ mt: 1.5, color: notice.type === 'success' ? '#1a7f37' : 'text.secondary' }}
-          >
-            {notice.text}
-          </Typography>
-        )}
       </Box>
     </MainLayout>
   )

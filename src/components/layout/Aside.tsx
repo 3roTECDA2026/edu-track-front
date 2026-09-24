@@ -33,6 +33,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Panel', icon: <DashboardIcon />, path: '/home' },
+  { label: 'Alta estudiantes', icon: <DashboardIcon />, path: '/students/new' },  
   { label: 'Calificaciones', icon: <GradingIcon />, path: '/calificaciones' },
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
   { label: 'Cursos', icon: <SchoolIcon /> },

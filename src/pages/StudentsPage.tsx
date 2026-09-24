@@ -1,8 +1,8 @@
 // src/pages/StudentsPage.tsx
 import { useState } from 'react';
-import { Alert, Box, Button, Pagination, Paper, Snackbar, Typography } from '@mui/material';
+import { Alert, Box, Button, Pagination, Paper, Snackbar, Stack, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { MainLayout } from '@/components/layout/MainLayout';
+import MainLayout from '@/components/layout/MainLayout';
 import { StudentFilters, type StudentFiltersState } from '@/components/students/StudentFilters';
 import { StudentsTable } from '@/components/students/StudentsTable';
 import { StudentsEmptyState } from '@/components/students/StudentsEmptyState';
@@ -26,7 +26,7 @@ interface SnackbarState {
   severity: 'success' | 'error';
 }
 
-const StudentsPage = () => {
+export const StudentsPage = () => {
   const navigate = useNavigate();
 
   const [filters, setFilters] = useState<StudentFiltersState>(INITIAL_FILTERS);
@@ -88,7 +88,6 @@ const StudentsPage = () => {
         severity: 'success',
       });
 
-      // If it was the only row of the last page, go back one page.
       if (result && result.data.length === 1 && page > 1) {
         setPage((prev) => prev - 1);
       } else {
@@ -109,75 +108,93 @@ const StudentsPage = () => {
 
   return (
     <MainLayout>
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="h5" sx={{ fontWeight: 700 }}>
-          Listado de estudiantes
-        </Typography>
-        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          Buscá, filtrá y gestioná los estudiantes de la institución.
-        </Typography>
-      </Box>
+      <Box className="students-page" sx={{ maxWidth: 1280, mx: 'auto' }}>
+        {/* Breadcrumbs con el estilo de Attendance */}
+        <Box className="print-hidden" sx={{ mb: 3 }}>
+          <Typography variant="caption" sx={{ color: '#7b8794' }}>
+            Inicio &nbsp;›&nbsp; Estudiantes &nbsp;›&nbsp; <strong>Listado</strong>
+          </Typography>
+        </Box>
 
-      <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
-        <StudentFilters
-          filters={filters}
-          hasActiveFilters={hasActiveFilters}
-          onChange={handleFiltersChange}
-          onClear={handleClearFilters}
-        />
+        {/* Encabezado correcto del módulo */}
+        <Stack sx={{ mb: 2 }}>
+          <Box>
+            <Typography variant="h4" sx={{ color: '#202124', fontWeight: 800, fontSize: { xs: '1.65rem', md: '2rem' } }}>
+              Listado de estudiantes
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#7b8794' }}>
+              Buscá, filtrá y gestioná los estudiantes de la institución.
+            </Typography>
+          </Box>
+        </Stack>
 
-        {error ? (
-          <Alert
-            severity="error"
-            sx={{ m: 2 }}
-            action={
-              <Button color="inherit" size="small" onClick={reload}>
-                Reintentar
-              </Button>
-            }
-          >
-            No se pudo cargar el listado de estudiantes. {error}
-          </Alert>
-        ) : !loading && result?.total === 0 ? (
-          <StudentsEmptyState hasActiveFilters={hasActiveFilters} onClear={handleClearFilters} />
-        ) : (
-          <>
-            <StudentsTable
-              students={result?.data ?? []}
-              loading={loading}
-              onView={(student) => navigate(`/students/${student.id}`)}
-              onEdit={(student) => navigate(`/students/${student.id}/edit`)}
-              onDeactivate={handleOpenDeactivate}
+        {/* Contenedor principal con estilo Attendance */}
+        <Paper variant="outlined" sx={{ borderRadius: 1, borderColor: '#e1e5e8', overflow: 'hidden' }}>
+          <Box sx={{ p: 2, backgroundColor: '#fafafa', borderBottom: '1px solid #e1e5e8' }}>
+            <StudentFilters
+              filters={filters}
+              hasActiveFilters={hasActiveFilters}
+              onChange={handleFiltersChange}
+              onClear={handleClearFilters}
             />
+          </Box>
 
-            {result && (
-              <Box
-                sx={{
-                  px: 2,
-                  py: 1.5,
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: 2,
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  Mostrando {from}–{to} de {result.total} estudiantes
-                </Typography>
-                {result.totalPages > 1 && (
-                  <Pagination
-                    count={result.totalPages}
-                    page={page}
-                    onChange={(_, value) => setPage(value)}
-                    shape="rounded"
-                  />
-                )}
-              </Box>
-            )}
-          </>
-        )}
-      </Paper>
+          {error ? (
+            <Alert
+              severity="error"
+              sx={{ m: 2 }}
+              action={
+                <Button color="inherit" size="small" onClick={reload}>
+                  Reintentar
+                </Button>
+              }
+            >
+              No se pudo cargar el listado de estudiantes. {error}
+            </Alert>
+          ) : !loading && result?.total === 0 ? (
+            <StudentsEmptyState hasActiveFilters={hasActiveFilters} onClear={handleClearFilters} />
+          ) : (
+            <>
+              <StudentsTable
+                students={result?.data ?? []}
+                loading={loading}
+                onView={(student) => navigate(`/students/${student.id}`)}
+                onEdit={(student) => navigate(`/students/${student.id}/edit`)}
+                onDeactivate={handleOpenDeactivate}
+              />
+
+              {result && (
+                <Box
+                  sx={{
+                    px: 2,
+                    py: 1.5,
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: 2,
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    backgroundColor: '#fafafa',
+                    borderTop: '1px solid #e1e5e8',
+                  }}
+                >
+                  <Typography variant="body2" sx={{ color: '#7b8794' }}>
+                    Mostrando {from}–{to} de {result.total} estudiantes
+                  </Typography>
+                  {result.totalPages > 1 && (
+                    <Pagination
+                      count={result.totalPages}
+                      page={page}
+                      onChange={(_, value) => setPage(value)}
+                      shape="rounded"
+                      size="small"
+                    />
+                  )}
+                </Box>
+              )}
+            </>
+          )}
+        </Paper>
+      </Box>
 
       <DeactivateStudentDialog
         open={dialogOpen}
