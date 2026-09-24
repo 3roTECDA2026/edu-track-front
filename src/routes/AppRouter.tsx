@@ -16,12 +16,16 @@ const AppRouter = () => {
         <Route path="/login" element={<LoginPage />} />
         {/* Dashboard principal */}
         <Route path="/home" element={<HomePage />} />
+        {/* Secciones generales */}
+<!--         <Route path="/students" element={<StudentsPage />} /> -->
+        <Route path="/courses" element={<CoursesPage />} />
+<!--         <Route path="/attendance" element={<AttendancePage />} /> -->
         {/* Resumen de inasistencias */}
         <Route path="/attendance" element={<AttendanceSummaryPage />} />
         {/* Estructura institucional / Cursos */}
-        <Route path="/cursos" element={<CursosPage />} />
+<!--         <Route path="/cursos" element={<CursosPage />} /> -->
         {/* Listado de estudiantes */}
-        <Route path="/students" element={<StudentsPage />} /> {/* nuevo */}
+        <Route path="/students" element={<StudentsPage />} />
         {/* Formulario para crear un nuevo estudiante */}
         <Route path="/students/new" element={<NewStudentPage />} />
         {/* Carga de calificaciones */}

@@ -1,4 +1,4 @@
-// src/pages/StudentsPage.tsx
+
 import { useState } from 'react';
 import { Alert, Box, Button, Pagination, Paper, Snackbar, Stack, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';

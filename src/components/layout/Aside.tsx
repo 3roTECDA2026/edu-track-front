@@ -11,7 +11,6 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
-import DashboardIcon from '@mui/icons-material/Dashboard';
 import PeopleIcon from '@mui/icons-material/People';
 import SchoolIcon from '@mui/icons-material/School';
 import EventNoteIcon from '@mui/icons-material/EventNote';
@@ -23,7 +22,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 // Importación de asset local
 import logoEscuela from '../../assets/logo.png';
 
-const drawerWidth = 240;
+const drawerWidth = 250;
 
 interface NavItem {
   label: string;
@@ -32,12 +31,15 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
+  { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
+//   { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
+  { label: 'Inasistencias', icon: <EventNoteIcon />, path: '/attendance' },
   { label: 'Panel', icon: <DashboardIcon />, path: '/home' },
-  { label: 'Alta estudiantes', icon: <DashboardIcon />, path: '/students/new' },  
+  { label: 'Alta estudiantes', icon: <DashboardIcon />, path: '/students/new' },  // Tal vez sea modal
   { label: 'Calificaciones', icon: <GradingIcon />, path: '/calificaciones' },
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
   { label: 'Inasistencias', icon: <EventNoteIcon />, path: '/attendance' },
-  { label: 'Cursos', icon: <SchoolIcon />, path: '/cursos' }, // <-- Agregado el path aquí
+  { label: 'Cursos', icon: <SchoolIcon />, path: '/cursos' },
 ];
 
 export const Aside: React.FC = () => {
@@ -60,31 +62,42 @@ export const Aside: React.FC = () => {
         '& .MuiDrawer-paper': {
           width: drawerWidth,
           boxSizing: 'border-box',
-          backgroundColor: '#e0e0e0', // Fondo gris del aside
-          color: '#000000',
+          backgroundColor: '#ffffff',
+          color: '#37474f',
           display: 'flex',
           flexDirection: 'column',
-          alignItems: 'center',
           px: 2,
           py: 3,
-          borderRight: '1px solid #bdbdbd',
+          borderRight: '1px solid #eceff1',
         },
       }}
     >
-      {/* Logo de la Escuela */}
-      <Box sx={{ textAlign: 'center', mb: 2 }}>
+      {/* Logo de la Escuela (clicable → Panel) */}
+      <Box
+        onClick={() => navigate('/home')}
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 1.5,
+          mb: 3,
+          px: 1,
+          cursor: 'pointer',
+          borderRadius: '10px',
+          py: 0.75,
+          '&:hover': { backgroundColor: '#f4f6f8' },
+        }}
+      >
         <Box
           sx={{
-            width: 90,
-            height: 110,
-            mx: 'auto',
-            mb: 1.5,
-            border: '2px solid #000000',
-            backgroundColor: '#ffffff',
+            width: 52,
+            height: 52,
+            flexShrink: 0,
+            borderRadius: '12px',
+            backgroundColor: '#f1f4f8',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            p: 0.5,
+            p: 0.75,
           }}
         >
           <Box
@@ -94,72 +107,80 @@ export const Aside: React.FC = () => {
             sx={{ width: '100%', height: '100%', objectFit: 'contain' }}
           />
         </Box>
-
-        <Typography
-          variant="caption"
-          sx={{
-            color: '#424242',
-            textTransform: 'uppercase',
-            fontSize: '0.65rem',
-            display: 'block',
-            mt: 0.5,
-          }}
-        >
-          ESCUELA NORMAL S 10
-        </Typography>
-      </Box>
-
-      {/* Título de la navegación (desplegable) */}
-      <List sx={{ mt: 3, px: 1, width: '100%' }}>
-        <ListItem disablePadding sx={{ mb: 1 }}>
-          <ListItemButton
-            onClick={() => setOpen((prev) => !prev)}
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
             sx={{
-              borderRadius: '12px',
-              py: 1,
-              px: 1.5,
-              backgroundColor: '#9e9e9e',
-              color: '#ffffff',
-              '&:hover': { backgroundColor: '#757575' },
+              color: '#102a43',
+              fontWeight: 'bold',
+              fontSize: '0.85rem',
+              lineHeight: 1.2,
             }}
           >
-            <ListItemText
-              primary={
-                <Typography sx={{ fontSize: '0.95rem', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                  Navegación
-                </Typography>
-              }
-            />
-            <ListItemIcon sx={{ minWidth: 24, color: '#ffffff' }}>
-              {open ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-            </ListItemIcon>
-          </ListItemButton>
+            Escuela Normal
+          </Typography>
+        </Box>
+      </Box>
+
+      {/* Separador sutil */}
+      <Box sx={{ borderBottom: '1px solid #eceff1', mb: 2 }} />
+
+      <List sx={{ px: 0, width: '100%' }} disablePadding>
+        <ListItem
+          disablePadding
+          onClick={() => setOpen((prev) => !prev)}
+          sx={{
+            mb: 1,
+            px: 1,
+            py: 0.5,
+            display: 'flex',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+            borderRadius: '8px',
+            '&:hover': { backgroundColor: '#f4f6f8' },
+          }}
+        >
+          <Typography
+            sx={{
+              color: '#90a4ae',
+              fontSize: '0.72rem',
+              fontWeight: 'bold',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+            }}
+          >
+            Navegación
+          </Typography>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {open ? (
+              <ExpandLessIcon sx={{ fontSize: '1.1rem', color: '#90a4ae' }} />
+            ) : (
+              <ExpandMoreIcon sx={{ fontSize: '1.1rem', color: '#90a4ae' }} />
+            )}
+          </Box>
         </ListItem>
 
-        {/* Botones de navegación desplegables */}
         <Collapse in={open} timeout="auto" unmountOnExit>
           <List disablePadding>
             {NAV_ITEMS.map((item) => {
               const isActive = item.path === location.pathname;
               return (
-                <ListItem key={item.label} disablePadding sx={{ mb: 1.5 }}>
+                <ListItem key={item.label} disablePadding sx={{ mb: 0.5, px: 0.5 }}>
                   <ListItemButton
                     onClick={() => handleNavigation(item)}
                     sx={{
-                      backgroundColor: isActive ? '#000000' : '#f5f5f5',
-                      color: isActive ? '#ffffff' : '#000000',
-                      borderRadius: '12px',
-                      py: 1,
+                      borderRadius: '10px',
                       px: 1.5,
+                      py: 0.9,
+                      backgroundColor: isActive ? '#eaf1fa' : 'transparent',
                       '&:hover': {
-                        backgroundColor: isActive ? '#000000' : '#cfcfcf',
+                        backgroundColor: isActive ? '#eaf1fa' : '#f4f6f8',
                       },
                     }}
                   >
                     <ListItemIcon
                       sx={{
                         minWidth: 36,
-                        color: isActive ? '#ffffff' : '#000000',
+                        color: isActive ? '#0a2540' : '#607d8b',
                       }}
                     >
                       {item.icon}
@@ -169,7 +190,8 @@ export const Aside: React.FC = () => {
                         <Typography
                           sx={{
                             fontSize: '0.9rem',
-                            fontWeight: isActive ? 'bold' : 'normal',
+                            fontWeight: isActive ? 'bold' : 500,
+                            color: isActive ? '#0a2540' : '#37474f',
                           }}
                         >
                           {item.label}
@@ -183,6 +205,20 @@ export const Aside: React.FC = () => {
           </List>
         </Collapse>
       </List>
+
+      {/* Pie del aside */}
+      <Box sx={{ mt: 'auto', px: 1, pt: 2 }}>
+        <Typography
+          sx={{
+            color: '#b0bec5',
+            fontSize: '0.65rem',
+            textAlign: 'center',
+            lineHeight: 1.4,
+          }}
+        >
+          ISFDyT Nº 166 · Tandil
+        </Typography>
+      </Box>
     </Drawer>
   );
 };

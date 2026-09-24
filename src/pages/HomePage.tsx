@@ -1,10 +1,15 @@
 // src/pages/HomePage.tsx
 import React from 'react';
 import { Box, Typography, Grid, Card, CardContent, Button, Stack } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
 import { Link } from 'react-router-dom';
 
 export const HomePage: React.FC = () => {
+  const navigate = useNavigate();
+
+  const goTo = (path: string) => navigate(path);
+
   return (
     <MainLayout>
       <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
@@ -99,6 +104,7 @@ export const HomePage: React.FC = () => {
                   <Button
                     fullWidth
                     variant="outlined"
+                    onClick={() => goTo('/attendance')}
                     sx={{
                       justifyContent: 'flex-start',
                       color: '#37474f',
