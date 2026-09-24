@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import HomePage from '../pages/HomePage';
 import LoginPage from '../pages/LoginPage';
+import CursosPage from '../pages/CursosPage'; 
 import StudentsPage from '@/pages/StudentsPage'; // nuevo
 import GrillaCalificacionesPage from '../pages/GrillaCalificacionesPage';
 import NewStudentPage from '@/pages/NewStudentPage';
@@ -16,6 +17,8 @@ const AppRouter = () => {
         {/* Dashboard principal */}
         <Route path="/home" element={<HomePage />} />
 
+        {/* Estructura institucional / Cursos */}
+        <Route path="/cursos" element={<CursosPage />} />
         {/* Listado de estudiantes */}
         <Route path="/students" element={<StudentsPage />} /> {/* nuevo */}
 

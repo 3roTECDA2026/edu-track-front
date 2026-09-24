@@ -43,26 +43,33 @@ export const HomePage: React.FC = () => {
           </Grid>
 
           {/* Tarjeta 2: Cursos Activos */}
-          <Grid size={{ xs: 12, md: 4 }}>
-            <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: 2, borderRadius: 2 }}>
-              <CardContent>
-                <Typography variant="h6" sx={{ color: '#37474f', fontWeight: 'bold', mb: 1 }}>
-                  Cursos Activos
-                </Typography>
-                <Typography variant="h3" sx={{ color: '#2e7d32', fontWeight: 900, my: 1 }}>
-                  45
-                </Typography>
-                <Typography variant="caption" sx={{ color: '#78909c', fontWeight: 'medium' }}>
-                  Materias dictándose
-                </Typography>
-              </CardContent>
-              <Box sx={{ p: 2, pt: 0 }}>
-                <Button fullWidth variant="contained" color="success" sx={{ textTransform: 'none', fontWeight: 'bold' }}>
-                  Gestionar Cursos
-                </Button>
-              </Box>
-            </Card>
-          </Grid>
+<Grid size={{ xs: 12, md: 4 }}>
+  <Card sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: 2, borderRadius: 2 }}>
+    <CardContent>
+      <Typography variant="h6" sx={{ color: '#37474f', fontWeight: 'bold', mb: 1 }}>
+        Cursos Activos
+      </Typography>
+      <Typography variant="h3" sx={{ color: '#2e7d32', fontWeight: 900, my: 1 }}>
+        45
+      </Typography>
+      <Typography variant="caption" sx={{ color: '#78909c', fontWeight: 'medium' }}>
+        Materias dictándose
+      </Typography>
+    </CardContent>
+    <Box sx={{ p: 2, pt: 0 }}>
+      <Button 
+        component={Link} 
+        to="/cursos" 
+        fullWidth 
+        variant="contained" 
+        color="success" 
+        sx={{ textTransform: 'none', fontWeight: 'bold' }}
+      >
+        Gestionar Cursos
+      </Button>
+    </Box>
+  </Card>
+</Grid>
 
           {/* Tarjeta 3: Acciones Rápidas */}
           <Grid size={{ xs: 12, md: 4 }}>
