@@ -36,8 +36,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Alta estudiantes', icon: <DashboardIcon />, path: '/students/new' },  
   { label: 'Calificaciones', icon: <GradingIcon />, path: '/calificaciones' },
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
-  { label: 'Cursos', icon: <SchoolIcon /> },
   { label: 'Inasistencias', icon: <EventNoteIcon />, path: '/attendance' },
+  { label: 'Cursos', icon: <SchoolIcon />, path: '/cursos' }, // <-- Agregado el path aquí
 ];
 
 export const Aside: React.FC = () => {
