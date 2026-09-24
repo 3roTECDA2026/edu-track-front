@@ -17,6 +17,7 @@ import {
   TableContainer,
   TableFooter,
   TableHead,
+  TablePagination,
   TableRow,
   TextField,
   ToggleButton,
@@ -450,40 +451,22 @@ export const CalificationGridPage: React.FC = () => {
           </Table>
         </TableContainer>
 
-        {/* Paginación y contador inferior */}
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mt: 2,
-            pt: 1,
-          }}
-        >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 2 }}>
           <Typography variant="body2" sx={{ color: '#7b8794' }}>
-            {filledCount} de {totalCells} notas cargadas · Página {page} de {totalPages}
+            {filledCount} de {totalCells} notas cargadas
           </Typography>
-
-          <Stack direction="row" spacing={1}>
-            <Button
-              size="small"
-              variant="outlined"
-              disabled={page <= 1}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              sx={{ textTransform: 'none', borderColor: '#555', color: '#333' }}
-            >
-              Anterior
-            </Button>
-            <Button
-              size="small"
-              variant="outlined"
-              disabled={page >= totalPages}
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              sx={{ textTransform: 'none', borderColor: '#555', color: '#333' }}
-            >
-              Siguiente
-            </Button>
-          </Stack>
+          <TablePagination
+            rowsPerPageOptions={[10, 25, 50]}
+            component="div"
+            count={courseStudents.length}
+            rowsPerPage={PAGE_SIZE}
+            page={page - 1}
+            onPageChange={(_, newPage) => setPage(newPage + 1)}
+            onRowsPerPageChange={() => {}}
+            labelDisplayedRows={({ from, to, count: total }) =>
+              `${from}–${to} de ${total === -1 ? total : total}`
+            }
+          />
         </Box>
       </Box>
     </MainLayout>
