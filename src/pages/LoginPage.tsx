@@ -241,7 +241,7 @@ export const LoginPage: React.FC = () => {
                   '&:hover': { backgroundColor: '#111827', boxShadow: 'none' },
                 }}
               >
-                Iniciar sesión →
+                Iniciar sesión
               </Button>
             </Box>
           </Paper>

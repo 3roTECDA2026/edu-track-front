@@ -5,8 +5,8 @@ import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
 import AttendanceSummaryPage from '@/pages/AttendanceSummaryPage';
 import StudentsPage from '@/pages/StudentsPage';
-import GrillaCalificacionesPage from '@/pages/GrillaCalificacionesPage';
-import CursosPage from '@/pages/CursosPage'; 
+import CalificationGridPage from '@/pages/CalificationGridPage';
+import CoursesPage from '@/pages/CoursesPage';
 import NewStudentPage from '@/pages/NewStudentPage';
 
 const AppRouter = () => {
@@ -15,26 +15,16 @@ const AppRouter = () => {
       <Routes>
         {/* Ruta pública de Login */}
         <Route path="/login" element={<LoginPage />} />
-        {/* Dashboard principal */}
         <Route path="/home" element={<HomePage />} />
-        {/* Secciones generales */}
-<!--         <Route path="/students" element={<StudentsPage />} /> -->
         <Route path="/courses" element={<CoursesPage />} />
-<!--         <Route path="/attendance" element={<AttendancePage />} /> -->
         {/* Resumen de inasistencias */}
         <Route path="/attendance" element={<AttendanceSummaryPage />} />
-        {/* Estructura institucional / Cursos */}
-<!--         <Route path="/cursos" element={<CursosPage />} /> -->
-        {/* Listado de estudiantes */}
         <Route path="/students" element={<StudentsPage />} />
-        {/* Formulario para crear un nuevo estudiante */}
         <Route path="/students/new" element={<NewStudentPage />} />
         {/* Carga de calificaciones */}
-        <Route path="/calificaciones" element={<GrillaCalificacionesPage />} />
-        
+        <Route path="/calification-grid" element={<CalificationGridPage />} />
         {/* Administración de usuarios */}
         <Route path="/users" element={<UsersPage />} />
-
         {/* Redirección por defecto al Login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

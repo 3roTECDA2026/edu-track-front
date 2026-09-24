@@ -1,4 +1,3 @@
-// src/pages/GrillaCalificacionesPage.tsx
 import React, { useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
 import {
@@ -65,7 +64,7 @@ const COLORS: Record<Level, { bg: string; fg: string; bd: string }> = {
   empty: { bg: 'transparent', fg: 'text.disabled', bd: 'divider' },
 }
 
-export const GrillaCalificacionesPage: React.FC = () => {
+export const CalificationGridPage: React.FC = () => {
   const [courseId, setCourseId] = useState<string>('c1')
   const [subjectId, setSubjectId] = useState<string>('m1')
   const [year, setYear] = useState<number>(2026)
@@ -491,4 +490,4 @@ export const GrillaCalificacionesPage: React.FC = () => {
   )
 }
 
-export default GrillaCalificacionesPage
+export default CalificationGridPage

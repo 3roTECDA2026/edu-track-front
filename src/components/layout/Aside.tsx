@@ -17,10 +17,12 @@ import EventNoteIcon from '@mui/icons-material/EventNote';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GradingIcon from '@mui/icons-material/Grading';
+import DashboardIcon from '@mui/icons-material/Dashboard';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // Importación de asset local
 import logoEscuela from '../../assets/logo.png';
+import { PlusIcon, UserIcon } from 'lucide-react';
 
 const drawerWidth = 250;
 
@@ -31,15 +33,13 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
-//   { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
-  { label: 'Inasistencias', icon: <EventNoteIcon />, path: '/attendance' },
   { label: 'Panel', icon: <DashboardIcon />, path: '/home' },
-  { label: 'Alta estudiantes', icon: <DashboardIcon />, path: '/students/new' },  // Tal vez sea modal
-  { label: 'Calificaciones', icon: <GradingIcon />, path: '/calificaciones' },
+  { label: 'Usuarios', icon: <UserIcon />, path: '/users' },
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
+  { label: 'Alta estudiantes', icon: <PlusIcon />, path: '/students/new' },  // Tal vez sea modal
+  { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
   { label: 'Inasistencias', icon: <EventNoteIcon />, path: '/attendance' },
-  { label: 'Cursos', icon: <SchoolIcon />, path: '/cursos' },
+  { label: 'Calificaciones', icon: <GradingIcon />, path: '/calification-grid' },
 ];
 
 export const Aside: React.FC = () => {
