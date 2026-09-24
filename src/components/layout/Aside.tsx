@@ -16,6 +16,7 @@ import SchoolIcon from '@mui/icons-material/School';
 import EventNoteIcon from '@mui/icons-material/EventNote';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import GradingIcon from '@mui/icons-material/Grading';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // Importación de asset local
@@ -31,8 +32,14 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
-  { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
+//   { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
   { label: 'Inasistencias', icon: <EventNoteIcon />, path: '/attendance' },
+  { label: 'Panel', icon: <DashboardIcon />, path: '/home' },
+  { label: 'Alta estudiantes', icon: <DashboardIcon />, path: '/students/new' },  // Tal vez sea modal
+  { label: 'Calificaciones', icon: <GradingIcon />, path: '/calificaciones' },
+  { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
+  { label: 'Inasistencias', icon: <EventNoteIcon />, path: '/attendance' },
+  { label: 'Cursos', icon: <SchoolIcon />, path: '/cursos' },
 ];
 
 export const Aside: React.FC = () => {

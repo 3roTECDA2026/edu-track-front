@@ -1,1 +1,16 @@
+@media print {
+	.MuiDrawer-root,
+	header,
+	.print-hidden {
+		display: none !important;
+	}
+
+	main {
+		padding: 0 !important;
+	}
+
+	.attendance-page {
+		max-width: none !important;
+	}
+}
 
