@@ -2,14 +2,13 @@ import React, { useState } from 'react';
 import {
   Box,
   Typography,
-  Tabs,
-  Tab,
   Button,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
   Paper,
   IconButton,
@@ -25,7 +24,8 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import MainLayout from '../components/layout/MainLayout';
+import MainLayout from '@/components/layout/MainLayout';
+import CustomTabs from '@/components/common/CustomTabs';
 
 // Interfaces de Cursos
 interface CourseSection {
@@ -76,6 +76,8 @@ export const CoursesPage: React.FC = () => {
 
   // Estados de Cursos
   const [courses, setCourses] = useState<CourseSection[]>(initialCourses);
+  const [coursePage, setCoursePage] = useState(0);
+  const [courseRowsPerPage, setCourseRowsPerPage] = useState(10);
   const [openCourseModal, setOpenCourseModal] = useState(false);
   const [editingCourse, setEditingCourse] = useState<CourseSection | null>(null);
   const [courseForm, setCourseForm] = useState({
@@ -89,6 +91,8 @@ export const CoursesPage: React.FC = () => {
 
   // Estados de Materias
   const [subjects, setSubjects] = useState<Subject[]>(initialSubjects);
+  const [subjectPage, setSubjectPage] = useState(0);
+  const [subjectRowsPerPage, setSubjectRowsPerPage] = useState(10);
   const [openSubjectModal, setOpenSubjectModal] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [subjectForm, setSubjectForm] = useState<{
@@ -178,13 +182,36 @@ export const CoursesPage: React.FC = () => {
     if (deletingTarget) {
       if (deletingTarget.type === 'course') {
         setCourses(prev => prev.filter(item => item.id !== deletingTarget.id));
+        setCoursePage(0);
       } else {
         setSubjects(prev => prev.filter(item => item.id !== deletingTarget.id));
+        setSubjectPage(0);
       }
     }
     setOpenDeleteModal(false);
     setDeletingTarget(null);
   };
+
+  const handleCoursePageChange = (_: unknown, newPage: number) => {
+    setCoursePage(newPage);
+  };
+
+  const handleCourseRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setCourseRowsPerPage(parseInt(event.target.value, 10));
+    setCoursePage(0);
+  };
+
+  const handleSubjectPageChange = (_: unknown, newPage: number) => {
+    setSubjectPage(newPage);
+  };
+
+  const handleSubjectRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    setSubjectRowsPerPage(parseInt(event.target.value, 10));
+    setSubjectPage(0);
+  };
+
+  const paginatedCourses = courses.slice(coursePage * courseRowsPerPage, coursePage * courseRowsPerPage + courseRowsPerPage);
+  const paginatedSubjects = subjects.slice(subjectPage * subjectRowsPerPage, subjectPage * subjectRowsPerPage + subjectRowsPerPage);
 
   return (
     <MainLayout>
@@ -205,27 +232,11 @@ export const CoursesPage: React.FC = () => {
         {/* Tarjeta Contenedora Principal */}
         <Paper variant="outlined" sx={{ borderRadius: 2, borderColor: '#e5e7eb', overflow: 'hidden' }}>
           {/* Navegación por Solapas / Tabs */}
-          <Box sx={{ borderBottom: 1, borderColor: '#e5e7eb', px: 2, pt: 1 }}>
-            <Tabs
-              value={currentTab}
-              onChange={handleTabChange}
-              textColor="inherit"
-              TabIndicatorProps={{ style: { backgroundColor: '#111827', height: 2 } }}
-              sx={{
-                '& .MuiTab-root': {
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  fontSize: '0.95rem',
-                  color: '#6b7280',
-                  '&.Mui-selected': { color: '#111827' }
-                }
-              }}
-            >
-              <Tab label="Cursos y secciones" />
-              <Tab label="Materias" />
-              <Tab label="Asignación docente" />
-            </Tabs>
-          </Box>
+          <CustomTabs
+            tabs={['Cursos y secciones', 'Materias', 'Asignación docente']}
+            value={currentTab}
+            onChange={handleTabChange}
+          />
 
           {/* SOLAPA 0: CURSOS Y SECCIONES */}
           {currentTab === 0 && (
@@ -263,7 +274,7 @@ export const CoursesPage: React.FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {courses.map((row) => (
+                    {paginatedCourses.map((row) => (
                       <TableRow key={row.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                         <TableCell sx={{ fontWeight: 600, color: '#111827' }}>{row.year}</TableCell>
                         <TableCell sx={{ color: '#374151' }}>{row.section}</TableCell>
@@ -297,11 +308,18 @@ export const CoursesPage: React.FC = () => {
                 </Table>
               </TableContainer>
 
-              <Box sx={{ p: 2, borderTop: '1px solid #e5e7eb', backgroundColor: '#ffffff' }}>
-                <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
-                  {courses.length} {courses.length === 1 ? 'curso/sección en total' : 'cursos/secciones en total'}
-                </Typography>
-              </Box>
+              <TablePagination
+                rowsPerPageOptions={[5, 10, 25]}
+                component="div"
+                count={courses.length}
+                rowsPerPage={courseRowsPerPage}
+                page={coursePage}
+                onPageChange={handleCoursePageChange}
+                onRowsPerPageChange={handleCourseRowsPerPageChange}
+                labelDisplayedRows={({ from, to, count: total }) =>
+                  `${from}–${to} de ${total === -1 ? total : total}`
+                }
+              />
             </Box>
           )}
 
@@ -339,7 +357,7 @@ export const CoursesPage: React.FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {subjects.map((row) => (
+                    {paginatedSubjects.map((row) => (
                       <TableRow key={row.id} hover sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
                         <TableCell sx={{ fontWeight: 600, color: '#111827' }}>{row.name}</TableCell>
                         <TableCell>
@@ -374,11 +392,18 @@ export const CoursesPage: React.FC = () => {
                 </Table>
               </TableContainer>
 
-              <Box sx={{ p: 2, borderTop: '1px solid #e5e7eb', backgroundColor: '#ffffff' }}>
-                <Typography variant="body2" sx={{ color: '#6b7280', fontWeight: 500 }}>
-                  {subjects.length} {subjects.length === 1 ? 'materia en total' : 'materias en total'}
-                </Typography>
-              </Box>
+              <TablePagination
+                rowsPerPageOptions={[5, 10, 25]}
+                component="div"
+                count={subjects.length}
+                rowsPerPage={subjectRowsPerPage}
+                page={subjectPage}
+                onPageChange={handleSubjectPageChange}
+                onRowsPerPageChange={handleSubjectRowsPerPageChange}
+                labelDisplayedRows={({ from, to, count: total }) =>
+                  `${from}–${to} de ${total === -1 ? total : total}`
+                }
+              />
             </Box>
           )}
 
