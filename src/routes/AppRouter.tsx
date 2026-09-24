@@ -1,5 +1,6 @@
 // src/routes/AppRouter.tsx
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import UsersPage from '@/pages/UsersPage';
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
 import AttendanceSummaryPage from '@/pages/AttendanceSummaryPage';
@@ -30,6 +31,10 @@ const AppRouter = () => {
         <Route path="/students/new" element={<NewStudentPage />} />
         {/* Carga de calificaciones */}
         <Route path="/calificaciones" element={<GrillaCalificacionesPage />} />
+        
+        {/* Administración de usuarios */}
+        <Route path="/users" element={<UsersPage />} />
+
         {/* Redirección por defecto al Login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

@@ -36,8 +36,12 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
   const response = await fetch(`${baseUrl}/${path}`, config);
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: response.statusText }));
-    throw new ApiError(response.status, errorData);
+    const errorData = await response.json().catch(() => ({}));
+    throw new ApiError(
+     errorData.message || errorData.error || `Error ${response.status}: ${response.statusText}`,
+     response.status,
+  errorData.details,
+);
   }
 
   return response.json() as Promise<T>;
