@@ -23,9 +23,9 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import AddIcon from '@mui/icons-material/Add';
 import MainLayout from '@/components/layout/MainLayout';
 import CustomTabs from '@/components/common/CustomTabs';
+import AddButton from '@/components/common/AddButton';
 
 // Interfaces de Cursos
 interface CourseSection {
@@ -242,22 +242,7 @@ export const CoursesPage: React.FC = () => {
           {currentTab === 0 && (
             <Box>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2, borderBottom: '1px solid #f3f4f6' }}>
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={handleOpenCourseCreate}
-                  sx={{
-                    backgroundColor: '#111827',
-                    color: '#ffffff',
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    borderRadius: 1.5,
-                    px: 2,
-                    '&:hover': { backgroundColor: '#1f2937' }
-                  }}
-                >
-                  Nuevo curso
-                </Button>
+                <AddButton label="Nuevo curso" onClick={handleOpenCourseCreate} />
               </Box>
 
               <TableContainer>
@@ -327,22 +312,7 @@ export const CoursesPage: React.FC = () => {
           {currentTab === 1 && (
             <Box>
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2, borderBottom: '1px solid #f3f4f6' }}>
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={handleOpenSubjectCreate}
-                  sx={{
-                    backgroundColor: '#111827',
-                    color: '#ffffff',
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    borderRadius: 1.5,
-                    px: 2,
-                    '&:hover': { backgroundColor: '#1f2937' }
-                  }}
-                >
-                  Nueva materia
-                </Button>
+                <AddButton label="Nueva materia" onClick={handleOpenSubjectCreate} />
               </Box>
 
               <TableContainer>
