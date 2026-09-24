@@ -5,15 +5,20 @@ export interface HealthResponse {
   message: string;
 }
 
-export class ApiError extends Error {
-  status: number;
+export interface ApiErrorBody {
+  error: string;
   details?: unknown;
+}
 
-  constructor(message: string, status: number, details?: unknown) {
-    super(message);
+export class ApiError extends Error {
+  readonly status: number;
+  readonly details?: unknown;
+
+  constructor(status: number, body: ApiErrorBody) {
+    super(body.error || `Error ${status}`);
     this.name = 'ApiError';
     this.status = status;
-    this.details = details;
+    this.details = body.details;
   }
 }
 
@@ -26,7 +31,9 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
     ...options,
   };
 
-  const response = await fetch(`${API_URL}${endpoint}`, config);
+  const baseUrl = API_URL.replace(/\/+$/, '');
+  const path = endpoint.replace(/^\/+/, '');
+  const response = await fetch(`${baseUrl}/${path}`, config);
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
