@@ -31,7 +31,9 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
     ...options,
   };
 
-  const response = await fetch(`${API_URL}${endpoint}`, config);
+  const baseUrl = API_URL.replace(/\/+$/, '');
+  const path = endpoint.replace(/^\/+/, '');
+  const response = await fetch(`${baseUrl}/${path}`, config);
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ error: response.statusText }));
