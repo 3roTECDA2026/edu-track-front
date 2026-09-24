@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Alert, Box, Button, Paper, Stack, Typography } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import MainLayout from '@/components/layout/MainLayout';
 import { useNotify } from '@/components/layout/NotificationProvider';
 import { SuspendUserDialog } from '@/components/users/SuspendUserDialog';
 import { UserFilters } from '@/components/users/UserFilters';
@@ -51,7 +52,8 @@ const UsersPage = () => {
   };
 
   return (
-    <Box sx={{ p: { xs: 2, md: 4 }, bgcolor: '#f4f4f4', minHeight: '100%' }}>
+    <MainLayout>
+      <Box sx={{ p: { xs: 2, md: 4 }, bgcolor: '#f4f4f4', minHeight: '100%' }}>
       <Stack
         direction="row"
         sx={{ mb: 3, justifyContent: 'space-between', alignItems: 'flex-start' }}
@@ -117,7 +119,8 @@ const UsersPage = () => {
         onConfirm={confirmToggle}
         onClose={() => setToToggle(null)}
       />
-    </Box>
+      </Box>
+    </MainLayout>
   );
 };
 
