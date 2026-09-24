@@ -22,7 +22,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 // Importación de asset local
 import logoEscuela from '../../assets/logo.png';
-import { PlusIcon, UserIcon } from 'lucide-react';
+import { UserIcon } from 'lucide-react';
+import { GroupAdd } from '@mui/icons-material';
 
 const drawerWidth = 250;
 
@@ -36,7 +37,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Panel', icon: <DashboardIcon />, path: '/home' },
   { label: 'Usuarios', icon: <UserIcon />, path: '/users' },
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
-  { label: 'Alta estudiantes', icon: <PlusIcon />, path: '/students/new' },  // Tal vez sea modal
+  { label: 'Alta estudiantes', icon: <GroupAdd />, path: '/students/new' },  // Tal vez sea modal
   { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
   { label: 'Inasistencias', icon: <EventNoteIcon />, path: '/attendance' },
   { label: 'Calificaciones', icon: <GradingIcon />, path: '/calification-grid' },
