@@ -7,7 +7,6 @@ import AttendanceSummaryPage from '@/pages/AttendanceSummaryPage';
 import StudentsPage from '@/pages/StudentsPage';
 import CalificationGridPage from '@/pages/CalificationGridPage';
 import CoursesPage from '@/pages/CoursesPage';
-import NewStudentPage from '@/pages/NewStudentPage';
 
 const AppRouter = () => {
   return (
@@ -20,7 +19,6 @@ const AppRouter = () => {
         {/* Resumen de inasistencias */}
         <Route path="/attendance" element={<AttendanceSummaryPage />} />
         <Route path="/students" element={<StudentsPage />} />
-        <Route path="/students/new" element={<NewStudentPage />} />
         {/* Carga de calificaciones */}
         <Route path="/calification-grid" element={<CalificationGridPage />} />
         {/* Administración de usuarios */}

@@ -10,7 +10,8 @@ import { DeactivateStudentDialog } from '@/components/students/DeactivateStudent
 import { useDebounce } from '@/hooks/useDebounce';
 import { useStudents } from '@/hooks/useStudents';
 import { deactivateStudent, type StudentListItem } from '@/services/students.service';
-
+import { AddButton } from '@/components/common/AddButton';
+import { StudentFormDialog } from '@/components/students/StudentFormDialog';
 const PAGE_SIZE = 20;
 
 const INITIAL_FILTERS: StudentFiltersState = {
@@ -36,6 +37,7 @@ export const StudentsPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
   const [snackbar, setSnackbar] = useState<SnackbarState | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   const debouncedSearch = useDebounce(filters.search.trim(), 400);
 
@@ -126,6 +128,7 @@ export const StudentsPage = () => {
               Buscá, filtrá y gestioná los estudiantes de la institución.
             </Typography>
           </Box>
+          <AddButton label="Alta estudiante" onClick={() => setCreateOpen(true)} />
         </Stack>
 
         {/* Contenedor principal con estilo Attendance */}
@@ -202,6 +205,12 @@ export const StudentsPage = () => {
         loading={deactivating}
         onConfirm={handleConfirmDeactivate}
         onClose={() => setDialogOpen(false)}
+      />
+
+      <StudentFormDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onSaved={reload}
       />
 
       <Snackbar
