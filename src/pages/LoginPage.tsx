@@ -1,6 +1,3 @@
-// ==========================================
-// 1. IMPORTACIONES
-// ==========================================
 import React, { useState } from 'react';
 import {
   Box,
@@ -15,53 +12,71 @@ import {
   FormControlLabel,
   Checkbox,
   Link,
+  CircularProgress,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
-// Assets institucionales
 import logoEscuela from '../assets/logo-normal.jpg';
 import logoProvincia from '../assets/bsas.png';
 
-// ==========================================
-// 2. COMPONENTE PRINCIPAL
-// ==========================================
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
 
-  // ----------------------------------------
-  // Estados del formulario
-  // ----------------------------------------
-  const [usuario, setUsuario] = useState('admin.escola');
-  const [password, setPassword] = useState('********');
+  const [user, setUser] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // ----------------------------------------
-  // Manejadores de eventos (Handlers)
-  // ----------------------------------------
   const handleClickShowPassword = () => {
     setShowPassword((prev) => !prev);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validación básica
-    if (!usuario || !password) {
-      setError('Por favor, ingresa tus credenciales.');
+    if (!user || !password) {
+      setError('Por favor, ingresa tu usuario y contraseña.');
       return;
     }
 
     setError(null);
-    // Aquí puedes realizar tu fetch si lo necesitas más adelante
-    navigate('/home');
+    setLoading(true);
+
+    try {
+
+      const response = await fetch('http://localhost:3000/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ user, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Credenciales inválidas o error en el servidor.');
+      }
+
+      const storage = rememberMe ? localStorage : sessionStorage;
+      storage.setItem('token', data.token);
+      
+      if (data.user) {
+        storage.setItem('user', JSON.stringify(data.user));
+      }
+
+      navigate('/home');
+
+    } catch (err: any) {
+      setError(err.message || 'No se pudo conectar con el servidor.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // ----------------------------------------
-  // Renderizado (JSX)
-  // ----------------------------------------
   return (
     <Box
       sx={{
@@ -71,7 +86,6 @@ export const LoginPage: React.FC = () => {
         backgroundColor: '#f9fafb',
       }}
     >
-      {/* 1. Header Superior Institucional (Provincia de Buenos Aires) */}
       <Box
         component="header"
         sx={{
@@ -90,7 +104,6 @@ export const LoginPage: React.FC = () => {
         />
       </Box>
 
-      {/* 2. Contenedor Central del Formulario */}
       <Box
         sx={{
           flexGrow: 1,
@@ -101,8 +114,6 @@ export const LoginPage: React.FC = () => {
         }}
       >
         <Container maxWidth="xs">
-          
-          {/* TARJETA PRINCIPAL (PAPER) */}
           <Paper
             elevation={0}
             sx={{
@@ -115,7 +126,6 @@ export const LoginPage: React.FC = () => {
               border: '1px solid #e5e7eb',
             }}
           >
-            {/* Logo / Icono Superior */}
             <Box
               sx={{
                 width: 43,
@@ -137,7 +147,6 @@ export const LoginPage: React.FC = () => {
               />
             </Box>
 
-            {/* Encabezado de Títulos */}
             <Typography variant="h6" sx={{ fontWeight: 700, color: '#111827', mb: 0.5 }}>
               Gestión Escolar
             </Typography>
@@ -145,17 +154,14 @@ export const LoginPage: React.FC = () => {
               Ingresá tu usuario y contraseña para acceder al sistema
             </Typography>
 
-            {/* Alerta de Error (si existe) */}
             {error && (
               <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
                 {error}
               </Alert>
             )}
 
-            {/* FORMULARIO */}
             <Box component="form" onSubmit={handleSubmit} noValidate sx={{ width: '100%' }}>
               
-              {/* Input: Usuario */}
               <Typography variant="caption" sx={{ fontWeight: 700, color: '#374151', display: 'block', mb: 0.5, letterSpacing: '0.05em' }}>
                 USUARIO
               </Typography>
@@ -163,16 +169,15 @@ export const LoginPage: React.FC = () => {
                 margin="dense"
                 required
                 fullWidth
-                id="usuario"
-                name="usuario"
-                autoComplete="username"
+                id="user"
+                name="user"
+                autoComplete="user"
                 size="small"
-                value={usuario}
-                onChange={(e) => setUsuario(e.target.value)}
+                value={user}
+                onChange={(e) => setUser(e.target.value)}
                 sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
               />
 
-              {/* Input: Contraseña */}
               <Typography variant="caption" sx={{ fontWeight: 700, color: '#374151', display: 'block', mb: 0.5, letterSpacing: '0.05em' }}>
                 CONTRASEÑA
               </Typography>
@@ -206,7 +211,7 @@ export const LoginPage: React.FC = () => {
                 }}
               />
 
-              {/* Opciones adicionales (Recordarme / Olvidé contraseña) */}
+              {/* (Recordarme / Olvidé contraseña) */}
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3, mt: 1 }}>
                 <FormControlLabel
                   control={
@@ -224,11 +229,11 @@ export const LoginPage: React.FC = () => {
                 </Link>
               </Box>
 
-              {/* Botón de Envío */}
               <Button
                 type="submit"
                 fullWidth
                 variant="contained"
+                disabled={loading}
                 sx={{
                   py: 1.2,
                   backgroundColor: '#1f2937',
@@ -241,12 +246,11 @@ export const LoginPage: React.FC = () => {
                   '&:hover': { backgroundColor: '#111827', boxShadow: 'none' },
                 }}
               >
-                Iniciar sesión
+                {loading ? <CircularProgress size={24} color="inherit" /> : 'Iniciar sesión'}
               </Button>
             </Box>
           </Paper>
 
-          {/* PIE DE PÁGINA / FOOTER */}
           <Box sx={{ mt: 3, textAlign: 'center' }}>
             <Typography variant="caption" sx={{ color: '#9ca3af', fontSize: '0.75rem', display: 'block', mb: 0.5 }}>
               Sistema de Gestión Escolar v1.0
@@ -261,5 +265,6 @@ export const LoginPage: React.FC = () => {
     </Box>
   );
 };
+
 
 export default LoginPage;
