@@ -8,6 +8,7 @@ import StudentsPage from '@/pages/StudentsPage';
 import CalificationGridPage from '@/pages/CalificationGridPage';
 import CoursesPage from '@/pages/CoursesPage';
 import NewStudentPage from '@/pages/NewStudentPage';
+import StudentProfilePage from '@/pages/StudentProfilePage'; // nuevo
 
 const AppRouter = () => {
   return (
@@ -21,6 +22,8 @@ const AppRouter = () => {
         <Route path="/attendance" element={<AttendanceSummaryPage />} />
         <Route path="/students" element={<StudentsPage />} />
         <Route path="/students/new" element={<NewStudentPage />} />
+        {/* Ficha del alumno */}
+        <Route path="/students/:id" element={<StudentProfilePage />} /> {/* nuevo */}
         {/* Carga de calificaciones */}
         <Route path="/calification-grid" element={<CalificationGridPage />} />
         {/* Administración de usuarios */}
