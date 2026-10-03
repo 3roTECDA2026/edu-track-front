@@ -21,7 +21,7 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // Importación de asset local
-import logoEscuela from '../../assets/logo.png';
+import logoEscuela from '@/assets/logo.png';
 import { UserIcon } from 'lucide-react';
 import { GroupAdd } from '@mui/icons-material';
 

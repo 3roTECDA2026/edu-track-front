@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { listUsers, type Role, type UserListItem } from '@/services/users.service';
-import { useDebounce } from './useDebounce';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export const useUsers = () => {
   const [users, setUsers] = useState<UserListItem[]>([]);

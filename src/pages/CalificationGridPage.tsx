@@ -26,7 +26,7 @@ import {
 } from '@mui/material'
 import SaveIcon from '@mui/icons-material/Save'
 import RestartAltIcon from '@mui/icons-material/RestartAlt'
-import MainLayout from '../components/layout/MainLayout'
+import MainLayout from '@/components/layout/MainLayout'
 import {
   COURSES,
   SUBJECTS,
@@ -35,7 +35,7 @@ import {
   YEARS,
   type Field,
   type GradesMap,
-} from './gradesMock'
+} from '@/pages/gradesMock'
 
 type Mode = 'edit' | 'view'
 type Level = 'low' | 'mid' | 'high' | 'empty'

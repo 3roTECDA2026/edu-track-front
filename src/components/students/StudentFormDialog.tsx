@@ -10,8 +10,8 @@ import { useNotify } from '@/components/layout/NotificationProvider';
 import { useClassSections } from '@/hooks/useClassSections';
 import { ApiError } from '@/services/api';
 import { createStudent, type CreateStudentInput, type StudentDetail } from '@/services/students.service';
-import { SHIFT_LABELS } from './studentLabels';
-import { studentSchema, EMPTY_STUDENT_FORM, BACKEND_FIELD_MAP, type StudentFormValues } from './studentSchema';
+import { SHIFT_LABELS } from '@/components/students/studentLabels';
+import { studentSchema, EMPTY_STUDENT_FORM, BACKEND_FIELD_MAP, type StudentFormValues } from '@/components/students/studentSchema';
 
 interface StudentFormDialogProps {
   open: boolean;
