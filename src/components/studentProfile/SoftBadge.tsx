@@ -1,4 +1,4 @@
-import { Box, Tooltip } from '@mui/material';
+import { Chip, Tooltip } from '@mui/material';
 
 interface SoftBadgeProps {
   label: string;
@@ -7,24 +7,22 @@ interface SoftBadgeProps {
   title?: string;
 }
 
+// Chip de MUI con los colores suaves de la referencia de diseño.
 export const SoftBadge = ({ label, color, background, title }: SoftBadgeProps) => {
   const badge = (
-    <Box
-      component="span"
+    <Chip
+      label={label}
+      size="small"
       sx={{
-        display: 'inline-block',
-        px: 1,
-        py: 0.25,
+        height: 22,
         borderRadius: '4px',
         fontSize: '0.75rem',
         fontWeight: 600,
         color,
         backgroundColor: background,
-        whiteSpace: 'nowrap',
+        '& .MuiChip-label': { px: 1 },
       }}
-    >
-      {label}
-    </Box>
+    />
   );
 
   return title ? <Tooltip title={title}>{badge}</Tooltip> : badge;

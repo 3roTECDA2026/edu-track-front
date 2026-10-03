@@ -3,7 +3,7 @@ import type { StudentDetail } from '@/services/students.service';
 import { StudentStatusChip } from '@/components/students/StudentStatusChip';
 import { InfoCard } from '@/components/studentProfile/InfoCard';
 import { SoftBadge } from '@/components/studentProfile/SoftBadge';
-import { cardsGridSx } from '@/components/studentProfile/profileStyles';
+import { COLORS, cardsGridSx } from '@/components/studentProfile/profileStyles';
 import { formatDate, getAge } from '@/components/studentProfile/profileLabels';
 
 interface PersonalDataTabProps {
@@ -58,13 +58,13 @@ export const PersonalDataTab = ({ student }: PersonalDataTabProps) => {
             {student.guardians.map((guardian, index) => (
               <Box
                 key={guardian.id}
-                sx={{ pt: index === 0 ? 0 : 2, borderTop: index === 0 ? 'none' : '1px solid #eeeeee' }}
+                sx={{ pt: index === 0 ? 0 : 2, borderTop: index === 0 ? 'none' : `1px solid ${COLORS.border}` }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 0.5 }}>
-                  <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>
+                  <Typography sx={{ fontWeight: 600, fontSize: '0.875rem', color: COLORS.ink }}>
                     {guardian.lastName}, {guardian.firstName}
                   </Typography>
-                  {guardian.isPrimary && <SoftBadge label="Principal" color="#1967d2" background="#e8f0fe" />}
+                  {guardian.isPrimary && <SoftBadge label="Principal" color="#1e40af" background="#dbeafe" />}
                 </Box>
                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                   {[guardian.relationship, guardian.dni ? `DNI ${guardian.dni}` : null].filter(Boolean).join(' · ') ||

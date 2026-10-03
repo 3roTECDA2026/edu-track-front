@@ -10,10 +10,10 @@ import {
   Typography,
 } from '@mui/material';
 import SchoolIcon from '@mui/icons-material/School';
-import type { PreliminaryAssessment, StudentGrade } from '@/components/StudentProfile/studentProfile.service';
+import type { PreliminaryAssessment, StudentGrade } from '@/services/studentProfile.service';
 import { SoftBadge } from '@/components/studentProfile/SoftBadge';
 import { TabEmpty, TabError, TabLoading } from '@/components/studentProfile/TabStates';
-import { bodyCellSx, headerCellSx, sectionTitleSx } from '@/components/studentProfile/profileStyles';
+import { COLORS, bodyCellSx, cardSx, headerCellSx } from '@/components/studentProfile/profileStyles';
 import {
   ASSESSMENT_CONFIG,
   EMPTY,
@@ -36,12 +36,12 @@ const AssessmentBadge = ({ value }: { value: PreliminaryAssessment | null }) => 
   return <SoftBadge label={value} color={config.color} background={config.background} title={config.description} />;
 };
 
-// Scores below the passing grade are highlighted in red.
+// Las notas por debajo de la aprobación se resaltan en rojo.
 const Score = ({ value }: { value: number | null }) => {
   if (value === null) return <>{EMPTY}</>;
   const failing = value < PASSING_SCORE;
   return (
-    <Box component="span" sx={{ fontWeight: failing ? 700 : 500, color: failing ? '#c5221f' : 'inherit' }}>
+    <Box component="span" sx={{ fontWeight: failing ? 700 : 500, color: failing ? COLORS.danger : 'inherit' }}>
       {value}
     </Box>
   );
@@ -66,12 +66,12 @@ export const GradesTab = ({ grades, loading, error, onRetry }: GradesTabProps) =
     .sort((a, b) => a.enrollment.subject.name.localeCompare(b.enrollment.subject.name, 'es'));
 
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+    <Paper variant="outlined" sx={{ ...cardSx, overflow: 'hidden' }}>
       <Box
         sx={{
           px: 2.5,
           pt: 2.5,
-          pb: 1,
+          pb: 1.5,
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
@@ -79,7 +79,7 @@ export const GradesTab = ({ grades, loading, error, onRetry }: GradesTabProps) =
           gap: 1.5,
         }}
       >
-        <Typography sx={{ ...sectionTitleSx, mb: 0 }}>Calificaciones · Ciclo lectivo {latestYear}</Typography>
+        <Typography variant="h6">Calificaciones · Ciclo lectivo {latestYear}</Typography>
         <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'center' }}>
           {(Object.keys(ASSESSMENT_CONFIG) as PreliminaryAssessment[]).map((key) => (
             <Box key={key} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
@@ -110,7 +110,9 @@ export const GradesTab = ({ grades, loading, error, onRetry }: GradesTabProps) =
           <TableBody>
             {rows.map((grade) => (
               <TableRow key={grade.id} hover>
-                <TableCell sx={{ ...bodyCellSx, fontWeight: 500 }}>{grade.enrollment.subject.name}</TableCell>
+                <TableCell sx={{ ...bodyCellSx, fontWeight: 700, color: COLORS.ink }}>
+                  {grade.enrollment.subject.name}
+                </TableCell>
                 <TableCell align="center" sx={bodyCellSx}>
                   <AssessmentBadge value={grade.preliminaryAssessment1} />
                 </TableCell>

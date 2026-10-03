@@ -14,9 +14,9 @@ export interface LazyResource<T> {
   reload: () => void;
 }
 
-// Fetches data only when `key` is not null (e.g. the first time a tab is opened).
-// Changing the key or calling reload() fetches again and aborts the previous request.
-// While reloading the same resource, the previous data stays visible.
+// Trae los datos solo cuando `key` no es null (por ejemplo, la primera vez que se abre un tab).
+// Si cambia la key o se llama a reload(), vuelve a pedir los datos y cancela el pedido anterior.
+// Mientras se recarga el mismo recurso, se siguen mostrando los datos anteriores.
 export function useLazyResource<T>(
   key: string | null,
   fetcher: (signal: AbortSignal) => Promise<T>,

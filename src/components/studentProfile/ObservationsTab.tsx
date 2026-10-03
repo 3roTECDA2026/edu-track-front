@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Box, Button, Paper, TextField, Typography } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
-import { darkButtonSx, sectionTitleSx } from '@/components/studentProfile/profileStyles';
+import { cardSx } from '@/components/studentProfile/profileStyles';
 
 const MAX_LENGTH = 2000;
 
@@ -18,8 +18,8 @@ function readSaved(storageKey: string): string {
   }
 }
 
-// There is no backend field for observations yet, so they are stored in this browser.
-// When the endpoint exists, only handleSave and readSaved need to change.
+// Todavía no hay un campo en el back para las observaciones, así que se guardan en este navegador.
+// Cuando exista el endpoint, solo hay que cambiar handleSave y readSaved.
 export const ObservationsTab = ({ studentId, onSaved }: ObservationsTabProps) => {
   const storageKey = `edutrack:student-observations:${studentId}`;
   const [savedText, setSavedText] = useState(() => readSaved(storageKey));
@@ -37,8 +37,10 @@ export const ObservationsTab = ({ studentId, onSaved }: ObservationsTabProps) =>
   };
 
   return (
-    <Paper variant="outlined" sx={{ borderRadius: 2, p: 2.5 }}>
-      <Typography sx={sectionTitleSx}>Observaciones</Typography>
+    <Paper variant="outlined" sx={{ ...cardSx, p: 2.5 }}>
+      <Typography variant="h6" sx={{ mb: 2 }}>
+        Observaciones
+      </Typography>
 
       <TextField
         multiline
@@ -63,12 +65,7 @@ export const ObservationsTab = ({ studentId, onSaved }: ObservationsTabProps) =>
           {text.length}/{MAX_LENGTH} caracteres
         </Typography>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button
-            color="inherit"
-            disabled={!hasChanges}
-            onClick={() => setText(savedText)}
-            sx={{ textTransform: 'none' }}
-          >
+          <Button color="inherit" disabled={!hasChanges} onClick={() => setText(savedText)}>
             Descartar
           </Button>
           <Button
@@ -77,7 +74,6 @@ export const ObservationsTab = ({ studentId, onSaved }: ObservationsTabProps) =>
             startIcon={<SaveIcon />}
             disabled={!hasChanges}
             onClick={handleSave}
-            sx={darkButtonSx}
           >
             Guardar
           </Button>

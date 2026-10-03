@@ -11,9 +11,9 @@ import {
   Typography,
 } from '@mui/material';
 import EventNoteIcon from '@mui/icons-material/EventNote';
-import type { AttendanceRecord } from '@/components/StudentProfile/studentProfile.service';
+import type { AttendanceRecord } from '@/services/studentProfile.service';
 import { TabEmpty, TabError, TabLoading } from '@/components/studentProfile/TabStates';
-import { bodyCellSx, headerCellSx, sectionTitleSx } from '@/components/studentProfile/profileStyles';
+import { COLORS, bodyCellSx, cardSx, headerCellSx, labelSx } from '@/components/studentProfile/profileStyles';
 import { ATTENDANCE_WEIGHT, formatAbsences, formatMonth } from '@/components/studentProfile/profileLabels';
 
 interface AttendanceTabProps {
@@ -34,6 +34,7 @@ interface MonthRow {
 }
 
 const MONTH_COLUMNS = ['Mes', 'Días registrados', 'Ausentes', 'Medias faltas', 'Cuartos de falta', 'Total', 'Justificadas'];
+const UNJUSTIFIED_ALERT_LIMIT = 5;
 
 function buildMonthlySummary(records: AttendanceRecord[]) {
   const months = new Map<string, MonthRow>();
@@ -78,9 +79,11 @@ interface StatCardProps {
 }
 
 const StatCard = ({ label, value, caption, highlight }: StatCardProps) => (
-  <Paper variant="outlined" sx={{ borderRadius: 2, p: 2 }}>
-    <Typography sx={{ ...sectionTitleSx, mb: 1 }}>{label}</Typography>
-    <Typography sx={{ fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.2, color: highlight ? '#c5221f' : 'inherit' }}>
+  <Paper variant="outlined" sx={{ ...cardSx, p: 2 }}>
+    <Typography sx={{ ...labelSx, mb: 1 }}>{label}</Typography>
+    <Typography
+      sx={{ fontSize: '1.75rem', fontWeight: 700, lineHeight: 1.2, color: highlight ? COLORS.danger : COLORS.ink }}
+    >
       {value}
     </Typography>
     {caption && (
@@ -90,6 +93,8 @@ const StatCard = ({ label, value, caption, highlight }: StatCardProps) => (
     )}
   </Paper>
 );
+
+const totalCellSx = { ...bodyCellSx, fontWeight: 700, color: COLORS.ink };
 
 export const AttendanceTab = ({ records, loading, error, onRetry }: AttendanceTabProps) => {
   const summary = useMemo(() => (records ? buildMonthlySummary(records) : null), [records]);
@@ -118,12 +123,18 @@ export const AttendanceTab = ({ records, loading, error, onRetry }: AttendanceTa
           caption={`${totals.absent} ausentes · ${totals.half} medias · ${totals.quarter} cuartos`}
         />
         <StatCard label="Justificadas" value={formatAbsences(totals.justified)} />
-        <StatCard label="Injustificadas" value={formatAbsences(unjustified)} highlight={unjustified > 0} />
+        <StatCard
+          label="Injustificadas"
+          value={formatAbsences(unjustified)}
+          highlight={unjustified > UNJUSTIFIED_ALERT_LIMIT}
+        />
         <StatCard label="Días registrados" value={String(totals.days)} caption="En el ciclo lectivo actual" />
       </Box>
 
-      <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
-        <Typography sx={{ ...sectionTitleSx, px: 2.5, pt: 2.5, mb: 1 }}>Detalle por mes</Typography>
+      <Paper variant="outlined" sx={{ ...cardSx, overflow: 'hidden' }}>
+        <Typography variant="h6" sx={{ px: 2.5, pt: 2.5, pb: 1.5 }}>
+          Detalle por mes
+        </Typography>
         <TableContainer sx={{ overflowX: 'auto' }}>
           <Table sx={{ minWidth: 720 }}>
             <TableHead>
@@ -138,7 +149,7 @@ export const AttendanceTab = ({ records, loading, error, onRetry }: AttendanceTa
             <TableBody>
               {rows.map((row) => (
                 <TableRow key={row.month} hover>
-                  <TableCell sx={bodyCellSx}>{formatMonth(row.month)}</TableCell>
+                  <TableCell sx={{ ...bodyCellSx, fontWeight: 700, color: COLORS.ink }}>{formatMonth(row.month)}</TableCell>
                   <TableCell align="right" sx={bodyCellSx}>{row.days}</TableCell>
                   <TableCell align="right" sx={bodyCellSx}>{row.absent}</TableCell>
                   <TableCell align="right" sx={bodyCellSx}>{row.half}</TableCell>
@@ -150,17 +161,13 @@ export const AttendanceTab = ({ records, loading, error, onRetry }: AttendanceTa
                 </TableRow>
               ))}
               <TableRow sx={{ backgroundColor: '#fafafa' }}>
-                <TableCell sx={{ ...bodyCellSx, fontWeight: 700 }}>Total</TableCell>
-                <TableCell align="right" sx={{ ...bodyCellSx, fontWeight: 700 }}>{totals.days}</TableCell>
-                <TableCell align="right" sx={{ ...bodyCellSx, fontWeight: 700 }}>{totals.absent}</TableCell>
-                <TableCell align="right" sx={{ ...bodyCellSx, fontWeight: 700 }}>{totals.half}</TableCell>
-                <TableCell align="right" sx={{ ...bodyCellSx, fontWeight: 700 }}>{totals.quarter}</TableCell>
-                <TableCell align="right" sx={{ ...bodyCellSx, fontWeight: 700 }}>
-                  {formatAbsences(totals.total)}
-                </TableCell>
-                <TableCell align="right" sx={{ ...bodyCellSx, fontWeight: 700 }}>
-                  {formatAbsences(totals.justified)}
-                </TableCell>
+                <TableCell sx={totalCellSx}>Total</TableCell>
+                <TableCell align="right" sx={totalCellSx}>{totals.days}</TableCell>
+                <TableCell align="right" sx={totalCellSx}>{totals.absent}</TableCell>
+                <TableCell align="right" sx={totalCellSx}>{totals.half}</TableCell>
+                <TableCell align="right" sx={totalCellSx}>{totals.quarter}</TableCell>
+                <TableCell align="right" sx={totalCellSx}>{formatAbsences(totals.total)}</TableCell>
+                <TableCell align="right" sx={totalCellSx}>{formatAbsences(totals.justified)}</TableCell>
               </TableRow>
             </TableBody>
           </Table>

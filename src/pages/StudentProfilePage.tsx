@@ -1,21 +1,10 @@
 // src/pages/StudentProfilePage.tsx
 import { useState, type SyntheticEvent } from 'react';
-import {
-  Alert,
-  Box,
-  Breadcrumbs,
-  Button,
-  Link,
-  Paper,
-  Skeleton,
-  Snackbar,
-  Tab,
-  Tabs,
-  Typography,
-} from '@mui/material';
-import NavigateNextIcon from '@mui/icons-material/NavigateNext';
-import { Link as RouterLink, useNavigate, useParams } from 'react-router-dom';
+import { Alert, Box, Button, Paper, Skeleton, Snackbar } from '@mui/material';
+import { useNavigate, useParams } from 'react-router-dom';
 import { MainLayout } from '@/components/layout/MainLayout';
+import { PageHeader } from '@/components/common/PageHeader';
+import { CustomTabs } from '@/components/common/CustomTabs';
 import { DeactivateStudentDialog } from '@/components/students/DeactivateStudentDialog';
 import { ProfileHeader } from '@/components/studentProfile/ProfileHeader';
 import { PersonalDataTab } from '@/components/studentProfile/PersonalDataTab';
@@ -23,6 +12,7 @@ import { EnrollmentTab } from '@/components/studentProfile/EnrollmentTab';
 import { AttendanceTab } from '@/components/studentProfile/AttendanceTab';
 import { GradesTab } from '@/components/studentProfile/GradesTab';
 import { ObservationsTab } from '@/components/studentProfile/ObservationsTab';
+import { cardSx } from '@/components/studentProfile/profileStyles';
 import { useLazyResource } from '@/hooks/useLazyResource';
 import { deactivateStudent } from '@/services/students.service';
 import {
@@ -52,7 +42,7 @@ const StudentProfilePage = () => {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState<TabKey>('personal');
-  // Tabs load their data the first time they are opened.
+  // Cada tab carga sus datos la primera vez que se abre.
   const [visitedTabs, setVisitedTabs] = useState<TabKey[]>(['personal']);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
@@ -73,9 +63,13 @@ const StudentProfilePage = () => {
     getStudentGrades(id, signal),
   );
 
-  const handleTabChange = (_: SyntheticEvent, value: TabKey) => {
-    setActiveTab(value);
-    setVisitedTabs((prev) => (prev.includes(value) ? prev : [...prev, value]));
+  const activeIndex = TABS.findIndex((tab) => tab.key === activeTab);
+
+  // CustomTabs trabaja con el índice de la pestaña, por eso acá se traduce a su clave.
+  const handleTabChange = (_: SyntheticEvent, index: number) => {
+    const key = TABS[index].key;
+    setActiveTab(key);
+    setVisitedTabs((prev) => (prev.includes(key) ? prev : [...prev, key]));
   };
 
   const handleConfirmDeactivate = async () => {
@@ -121,15 +115,14 @@ const StudentProfilePage = () => {
 
       return (
         <>
-          <Paper variant="outlined" sx={{ borderRadius: 2, p: 3, display: 'flex', gap: 3, alignItems: 'center' }}>
+          <Paper variant="outlined" sx={{ ...cardSx, p: 3, display: 'flex', gap: 3, alignItems: 'center' }}>
             <Skeleton variant="circular" width={72} height={72} />
             <Box sx={{ flex: 1 }}>
-              <Skeleton variant="text" width="40%" height={36} />
+              <Skeleton variant="text" width="40%" height={32} />
               <Skeleton variant="text" width="60%" />
             </Box>
           </Paper>
-          <Skeleton variant="rounded" height={48} sx={{ mt: 3 }} />
-          <Skeleton variant="rounded" height={240} sx={{ mt: 3 }} />
+          <Skeleton variant="rounded" height={320} sx={{ mt: 3 }} />
         </>
       );
     }
@@ -139,76 +132,67 @@ const StudentProfilePage = () => {
         <ProfileHeader
           student={student}
           onEdit={() =>
-            // TODO: navigate(`/students/${student.id}/edit`) when the edit page exists.
+            // TODO: navigate(`/students/${student.id}/edit`) cuando exista la pantalla de edición.
             setSnackbar({ message: 'La edición de datos va a estar disponible próximamente.', severity: 'info' })
           }
           onRegisterAttendance={() => navigate('/attendance')}
           onChangeStatus={() => setDialogOpen(true)}
         />
 
-        <Box sx={{ borderBottom: '1px solid #e0e0e0', mt: 3, mb: 3 }}>
-          <Tabs
-            value={activeTab}
+        {/* Pestañas dentro de una tarjeta, como en la pantalla tipo del estándar */}
+        <Paper variant="outlined" sx={{ ...cardSx, overflow: 'hidden', mt: 3 }}>
+          <CustomTabs
+            tabs={TABS.map((tab) => tab.label)}
+            value={activeIndex}
             onChange={handleTabChange}
             variant="scrollable"
-            scrollButtons="auto"
-            allowScrollButtonsMobile
-            textColor="inherit"
-            sx={{ '& .MuiTabs-indicator': { backgroundColor: '#202124' } }}
-          >
-            {TABS.map((tab) => (
-              <Tab
-                key={tab.key}
-                value={tab.key}
-                label={tab.label}
-                sx={{ textTransform: 'none', fontWeight: 600, fontSize: '0.9rem' }}
-              />
-            ))}
-          </Tabs>
-        </Box>
+          />
 
-        {activeTab === 'personal' && <PersonalDataTab student={student} />}
-        {activeTab === 'enrollment' && (
-          <EnrollmentTab
-            student={student}
-            history={history.data}
-            loading={history.loading}
-            error={history.error}
-            onRetry={history.reload}
-          />
-        )}
-        {activeTab === 'attendance' && (
-          <AttendanceTab
-            records={attendance.data}
-            loading={attendance.loading}
-            error={attendance.error}
-            onRetry={attendance.reload}
-          />
-        )}
-        {activeTab === 'grades' && (
-          <GradesTab grades={grades.data} loading={grades.loading} error={grades.error} onRetry={grades.reload} />
-        )}
-        {activeTab === 'observations' && (
-          <ObservationsTab
-            key={student.id}
-            studentId={student.id}
-            onSaved={(message, severity) => setSnackbar({ message, severity })}
-          />
-        )}
+          <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
+            {activeTab === 'personal' && <PersonalDataTab student={student} />}
+            {activeTab === 'enrollment' && (
+              <EnrollmentTab
+                student={student}
+                history={history.data}
+                loading={history.loading}
+                error={history.error}
+                onRetry={history.reload}
+              />
+            )}
+            {activeTab === 'attendance' && (
+              <AttendanceTab
+                records={attendance.data}
+                loading={attendance.loading}
+                error={attendance.error}
+                onRetry={attendance.reload}
+              />
+            )}
+            {activeTab === 'grades' && (
+              <GradesTab grades={grades.data} loading={grades.loading} error={grades.error} onRetry={grades.reload} />
+            )}
+            {activeTab === 'observations' && (
+              <ObservationsTab
+                key={student.id}
+                studentId={student.id}
+                onSaved={(message, severity) => setSnackbar({ message, severity })}
+              />
+            )}
+          </Box>
+        </Paper>
       </>
     );
   };
 
   return (
     <MainLayout>
-      <Breadcrumbs separator={<NavigateNextIcon fontSize="small" />} sx={{ mb: 2 }}>
-        <Link component={RouterLink} to="/students" underline="hover" color="inherit">
-          Alumnos
-        </Link>
-        <Typography sx={{ color: 'text.primary' }}>
-          {student ? `Ficha de ${student.firstName} ${student.lastName}` : 'Ficha del alumno'}
-        </Typography>
-      </Breadcrumbs>
+      <PageHeader
+        title="Ficha del alumno"
+        subtitle="Datos personales, inscripción, asistencia y calificaciones del estudiante."
+        breadcrumbs={[
+          { label: 'Alumnos', href: '/students', onClick: () => navigate('/students') },
+          { label: student ? `Ficha de ${student.firstName} ${student.lastName}` : 'Ficha del alumno' },
+        ]}
+      />
 
       {renderContent()}
 

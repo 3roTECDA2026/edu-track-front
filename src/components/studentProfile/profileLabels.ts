@@ -2,7 +2,7 @@ import type {
   AttendanceValue,
   PreliminaryAssessment,
   SubjectStatus,
-} from '@/components/StudentProfile/studentProfile.service';
+} from '@/services/studentProfile.service';
 
 export const ASSESSMENT_CONFIG: Record<
   PreliminaryAssessment,
@@ -23,7 +23,7 @@ export const SUBJECT_STATUS_LABELS: Record<SubjectStatus, string> = {
   MPAA: 'MPAA',
 };
 
-// Same weights the backend uses to compute absences.
+// Los mismos pesos que usa el back para calcular las inasistencias.
 export const ATTENDANCE_WEIGHT: Record<AttendanceValue, number> = {
   PRESENT: 0,
   ABSENT: 1,
@@ -34,7 +34,7 @@ export const ATTENDANCE_WEIGHT: Record<AttendanceValue, number> = {
 export const PASSING_SCORE = 7;
 export const EMPTY = '—';
 
-// Dates come as UTC midnight, so they are formatted in UTC to avoid shifting a day.
+// Las fechas llegan a medianoche UTC, por eso se formatean en UTC para que no se corran un día.
 export function formatDate(iso: string | null | undefined): string {
   if (!iso) return EMPTY;
   return new Date(iso).toLocaleDateString('es-AR', { timeZone: 'UTC' });

@@ -10,12 +10,12 @@ import {
   Typography,
 } from '@mui/material';
 import type { StudentDetail } from '@/services/students.service';
-import type { EnrollmentHistoryItem } from '@/components/StudentProfile/studentProfile.service';
+import type { EnrollmentHistoryItem } from '@/services/studentProfile.service';
 import { SHIFT_LABELS } from '@/components/students/studentLabels';
 import { InfoCard } from '@/components/studentProfile/InfoCard';
 import { SoftBadge } from '@/components/studentProfile/SoftBadge';
 import { TabError, TabLoading } from '@/components/studentProfile/TabStates';
-import { bodyCellSx, headerCellSx, sectionTitleSx } from '@/components/studentProfile/profileStyles';
+import { COLORS, bodyCellSx, cardSx, headerCellSx } from '@/components/studentProfile/profileStyles';
 import { EMPTY, formatDate } from '@/components/studentProfile/profileLabels';
 
 interface EnrollmentTabProps {
@@ -51,8 +51,10 @@ export const EnrollmentTab = ({ student, history, loading, error, onRetry }: Enr
         </InfoCard>
       )}
 
-      <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
-        <Typography sx={{ ...sectionTitleSx, px: 2.5, pt: 2.5, mb: 1 }}>Historial de inscripciones</Typography>
+      <Paper variant="outlined" sx={{ ...cardSx, overflow: 'hidden' }}>
+        <Typography variant="h6" sx={{ px: 2.5, pt: 2.5, pb: 1.5 }}>
+          Historial de inscripciones
+        </Typography>
 
         {loading && !history ? (
           <Box sx={{ p: 2.5 }}>
@@ -81,10 +83,10 @@ export const EnrollmentTab = ({ student, history, loading, error, onRetry }: Enr
               <TableBody>
                 {history.map((item) => (
                   <TableRow key={item.id} hover>
-                    <TableCell sx={bodyCellSx}>
+                    <TableCell sx={{ ...bodyCellSx, fontWeight: 700, color: COLORS.ink }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         {item.year}
-                        {!item.endDate && <SoftBadge label="Actual" color="#1e8e3e" background="#e6f4ea" />}
+                        {!item.endDate && <SoftBadge label="Actual" color="#15803d" background="#dcfce7" />}
                       </Box>
                     </TableCell>
                     <TableCell sx={bodyCellSx}>{item.section}</TableCell>

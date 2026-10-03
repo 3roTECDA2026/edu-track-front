@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Alert, Box, Button, Skeleton, Typography } from '@mui/material';
+import { COLORS } from '@/components/studentProfile/profileStyles';
 
 export const TabLoading = () => (
   <Box sx={{ display: 'grid', gap: 2 }}>
@@ -35,7 +36,7 @@ interface TabEmptyProps {
 }
 
 export const TabEmpty = ({ icon, title, text }: TabEmptyProps) => (
-  <Box sx={{ py: 7, px: 2, textAlign: 'center', border: '1px dashed #e0e0e0', borderRadius: 2 }}>
+  <Box sx={{ py: 7, px: 2, textAlign: 'center', border: `1px dashed ${COLORS.border}`, borderRadius: 2 }}>
     <Box
       sx={{
         width: 80,
@@ -43,8 +44,8 @@ export const TabEmpty = ({ icon, title, text }: TabEmptyProps) => (
         mx: 'auto',
         mb: 2,
         borderRadius: '50%',
-        backgroundColor: '#f1f3f4',
-        color: '#5f6368',
+        backgroundColor: COLORS.surface,
+        color: COLORS.muted,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -53,7 +54,9 @@ export const TabEmpty = ({ icon, title, text }: TabEmptyProps) => (
     >
       {icon}
     </Box>
-    <Typography sx={{ fontWeight: 700, mb: 0.5 }}>{title}</Typography>
+    <Typography variant="h6" sx={{ mb: 0.5 }}>
+      {title}
+    </Typography>
     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
       {text}
     </Typography>

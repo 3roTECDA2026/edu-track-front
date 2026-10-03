@@ -6,7 +6,7 @@ import type { StudentDetail } from '@/services/students.service';
 import { StudentStatusChip } from '@/components/students/StudentStatusChip';
 import { SHIFT_LABELS } from '@/components/students/studentLabels';
 import { getInitials } from '@/components/studentProfile/profileLabels';
-import { darkButtonSx } from '@/components/studentProfile/profileStyles';
+import { COLORS, cardSx } from '@/components/studentProfile/profileStyles';
 
 interface ProfileHeaderProps {
   student: StudentDetail;
@@ -15,7 +15,7 @@ interface ProfileHeaderProps {
   onChangeStatus: () => void;
 }
 
-const outlinedButtonSx = { textTransform: 'none', borderColor: '#dadce0' } as const;
+const outlinedButtonSx = { borderColor: COLORS.border, color: COLORS.tableText } as const;
 
 export const ProfileHeader = ({ student, onEdit, onRegisterAttendance, onChangeStatus }: ProfileHeaderProps) => {
   const section = student.currentSection;
@@ -31,7 +31,7 @@ export const ProfileHeader = ({ student, onEdit, onRegisterAttendance, onChangeS
     <Paper
       variant="outlined"
       sx={{
-        borderRadius: 2,
+        ...cardSx,
         p: { xs: 2, sm: 3 },
         display: 'flex',
         flexWrap: 'wrap',
@@ -39,13 +39,13 @@ export const ProfileHeader = ({ student, onEdit, onRegisterAttendance, onChangeS
         gap: 3,
       }}
     >
-      {/* Photo placeholder: initials until student photos exist */}
+      {/* Foto provisoria: iniciales hasta que existan fotos de los alumnos */}
       <Avatar
         sx={{
           width: 72,
           height: 72,
-          backgroundColor: '#e8eaed',
-          color: '#5f6368',
+          backgroundColor: COLORS.surface,
+          color: COLORS.label,
           fontSize: '1.5rem',
           fontWeight: 700,
         }}
@@ -55,7 +55,7 @@ export const ProfileHeader = ({ student, onEdit, onRegisterAttendance, onChangeS
 
       <Box sx={{ flex: '1 1 260px', minWidth: 0 }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
-          <Typography variant="h5" sx={{ fontWeight: 700 }}>
+          <Typography variant="h6">
             {student.lastName}, {student.firstName}
           </Typography>
           <StudentStatusChip status={student.status} />
@@ -79,7 +79,7 @@ export const ProfileHeader = ({ student, onEdit, onRegisterAttendance, onChangeS
           Registrar asistencia
         </Button>
         <Tooltip title={isInactive ? 'El estudiante ya está dado de baja' : ''}>
-          {/* The span lets the tooltip work even when the button is disabled */}
+          {/* El span permite que el tooltip funcione aunque el botón esté deshabilitado */}
           <span>
             <Button
               variant="contained"
@@ -87,7 +87,6 @@ export const ProfileHeader = ({ student, onEdit, onRegisterAttendance, onChangeS
               startIcon={<SwapHorizIcon />}
               onClick={onChangeStatus}
               disabled={isInactive}
-              sx={darkButtonSx}
             >
               Cambiar estado
             </Button>

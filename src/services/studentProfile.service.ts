@@ -73,8 +73,8 @@ export async function getStudentGrades(studentId: string, signal?: AbortSignal) 
   return response.data;
 }
 
-// The attendance endpoint returns at most 100 records per page,
-// and a school year has more days, so this fetches every page.
+// El endpoint de asistencia devuelve como máximo 100 registros por página
+// y un año escolar tiene más días, así que se piden todas las páginas.
 const ATTENDANCE_PAGE_SIZE = 100;
 
 export async function getStudentAttendance(studentId: string, year: number | undefined, signal?: AbortSignal) {
