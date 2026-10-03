@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Button, Divider, FormControl, InputLabel, MenuItem, Modal, Select, Stack, TextField, Typography } from '@mui/material';
-import type { AttendanceRecord, JustificationRecord } from './attendance.types';
+import type { AttendanceRecord, JustificationRecord } from '@/components/attendance/attendance.types';
 
 type JustificationModalProps = {
   record: AttendanceRecord | null;

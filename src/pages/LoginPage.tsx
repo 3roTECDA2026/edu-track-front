@@ -20,8 +20,8 @@ import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 // Assets institucionales
-import logoEscuela from '../assets/logo-normal.jpg';
-import logoProvincia from '../assets/bsas.png';
+import logoEscuela from '@/assets/logo-normal.jpg';
+import logoProvincia from '@/assets/bsas.png';
 
 // ==========================================
 // 2. COMPONENTE PRINCIPAL

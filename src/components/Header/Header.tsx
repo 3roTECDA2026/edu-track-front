@@ -1,8 +1,8 @@
 import React from 'react';
 import { AppBar, Toolbar } from '@mui/material';
-import { HeaderBrand } from './HeaderBrand';
-import { HeaderUser, UserProfile } from './HeaderUser';
-import { Breadcrumbs, BreadcrumbItem } from './Breadcrumbs';
+import { HeaderBrand } from '@/components/Header/HeaderBrand';
+import { HeaderUser, UserProfile } from '@/components/Header/HeaderUser';
+import { Breadcrumbs, BreadcrumbItem } from '@/components/Header/Breadcrumbs';
 
 export type { UserProfile, BreadcrumbItem };
 

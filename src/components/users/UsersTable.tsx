@@ -15,9 +15,9 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import type { UserListItem } from '@/services/users.service';
-import { ROLE_LABELS, getFullName } from './userLabels';
-import { UserStatusChip } from './UserStatusChip';
-import { UsersEmptyState } from './UsersEmptyState';
+import { ROLE_LABELS, getFullName } from '@/components/users/userLabels';
+import { UserStatusChip } from '@/components/users/UserStatusChip';
+import { UsersEmptyState } from '@/components/users/UsersEmptyState';
 
 interface UsersTableProps {
   users: UserListItem[];

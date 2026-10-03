@@ -8,6 +8,7 @@ import StudentsPage from '@/pages/StudentsPage';
 import CalificationGridPage from '@/pages/CalificationGridPage';
 import CoursesPage from '@/pages/CoursesPage';
 
+
 const AppRouter = () => {
   return (
     <BrowserRouter>
