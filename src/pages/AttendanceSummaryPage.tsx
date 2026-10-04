@@ -1,45 +1,147 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Alert, Box, Button, FormControl, InputLabel, MenuItem, Select, Stack, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  Typography,
+} from '@mui/material';
 import DownloadIcon from '@mui/icons-material/Download';
 import PrintIcon from '@mui/icons-material/Print';
-import MainLayout from '../components/layout/MainLayout';
-import AttendanceFilters from '../components/attendance/AttendanceFilters';
-import AttendanceTable from '../components/attendance/AttendanceTable';
-import JustificationModal from '../components/attendance/JustificationModal';
-import { fetchApi } from '../services/api';
-import type { AttendanceFilters as AttendanceFilterValues, AttendanceRecord, AttendanceSummaryResponse, JustificationRecord } from '../components/attendance/attendance.types';
+import MainLayout from '@/components/layout/MainLayout';
+import PageHeader from '@/components/common/PageHeader';
+import AddButton from '@/components/common/AddButton';
+import AttendanceFilters from '@/components/attendance/AttendanceFilters';
+import AttendanceTable from '@/components/attendance/AttendanceTable';
+import JustificationModal from '@/components/attendance/JustificationModal';
+import { fetchApi } from '@/services/api';
+import type {
+  AttendanceFilters as AttendanceFilterValues,
+  AttendanceRecord,
+  AttendanceSummaryResponse,
+  JustificationRecord,
+} from '@/components/attendance/attendance.types';
 
-const totalAbsence = (record: AttendanceRecord) => record.absences + record.halfAbsences * 0.5 + record.quarterAbsences * 0.25;
-const justificationWeight: Record<JustificationRecord['type'], number> = { ausente: 1, media: 0.5, cuarto: 0.25 };
-const justifiedTotal = (record: AttendanceRecord) => record.justifications.reduce((total, item) => total + justificationWeight[item.type], 0);
-const formatTotal = (total: number) => total.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-const csvValue = (value: string | number) => `"${String(value).replaceAll('"', '""')}"`;
+const totalAbsence = (record: AttendanceRecord) =>
+  record.absences + record.halfAbsences * 0.5 + record.quarterAbsences * 0.25;
 
-const defaultFilters: AttendanceFilterValues = { course: 'Todos', from: '2026-01-01', to: '2026-12-31', search: '' };
+const justificationWeight: Record<JustificationRecord['type'], number> = {
+  ausente: 1,
+  media: 0.5,
+  cuarto: 0.25,
+};
+
+const justifiedTotal = (record: AttendanceRecord) =>
+  record.justifications.reduce(
+    (total, item) => total + justificationWeight[item.type],
+    0
+  );
+
+const formatTotal = (total: number) =>
+  total.toLocaleString('es-AR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+const csvValue = (value: string | number) =>
+  `"${String(value).replace(/-/g, '/')}"`;
+
+const defaultFilters: AttendanceFilterValues = {
+  course: 'Todos',
+  from: '2026-01-01',
+  to: '2026-12-31',
+  search: '',
+};
 
 export const AttendanceSummaryPage: React.FC = () => {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
-  const [courseOptions, setCourseOptions] = useState<Array<{ label: string; sectionId: string }>>([]);
+  const [courseOptions, setCourseOptions] = useState<
+    Array<{ label: string; sectionId: string }>
+  >([]);
   const [filters, setFilters] = useState(defaultFilters);
   const [appliedFilters, setAppliedFilters] = useState(defaultFilters);
-  const [selectedRecord, setSelectedRecord] = useState<AttendanceRecord | null>(null);
+  const [selectedRecord, setSelectedRecord] =
+    useState<AttendanceRecord | null>(null);
   const [reason, setReason] = useState('');
   const [showSuccess, setShowSuccess] = useState(false);
   const [sortDirection, setSortDirection] = useState<'desc' | 'asc'>('desc');
   const [justificationDate, setJustificationDate] = useState('2026-09-17');
-  const [justificationType, setJustificationType] = useState<JustificationRecord['type']>('ausente');
+  const [justificationType, setJustificationType] =
+    useState<JustificationRecord['type']>('ausente');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const loadSummary = async (nextFilters: AttendanceFilterValues = defaultFilters) => {
-      setLoading(true);
-      setError('');
-      try {
-        const query = new URLSearchParams({ from: nextFilters.from, to: nextFilters.to, page: '1', pageSize: '20' });
-        if (nextFilters.search.trim()) query.set('search', nextFilters.search.trim());
-        const selectedCourse = courseOptions.find((course) => course.label === nextFilters.course);
-        if (selectedCourse) query.set('sectionId', selectedCourse.sectionId);
-        const response = await fetchApi<AttendanceSummaryResponse>(`/api/attendance/summary?${query}`);
+  const loadSummary = async (
+    nextFilters: AttendanceFilterValues = defaultFilters
+  ) => {
+    setLoading(true);
+    setError('');
+    try {
+      const query = new URLSearchParams({
+        from: nextFilters.from,
+        to: nextFilters.to,
+        page: '1',
+        pageSize: '20',
+      });
+      if (nextFilters.search.trim()) query.set('search', nextFilters.search.trim());
+      const selectedCourse = courseOptions.find(
+        (course) => course.label === nextFilters.course
+      );
+      if (selectedCourse) query.set('sectionId', selectedCourse.sectionId);
+      const response = await fetchApi<AttendanceSummaryResponse>(
+        `/api/attendance/summary?${query}`
+      );
+      const nextRecords = response.items.map((item) => ({
+  id: String(item.studentId), // <-- Convertir string a number
+  sectionId: item.sectionId,
+  student: item.student,
+  dni: item.dni,
+  course: item.course,
+  date: item.date,
+  absences: item.absences,
+  halfAbsences: item.halfAbsences,
+  quarterAbsences: item.quarterAbsences,
+  justifications: item.justifications,
+}));
+      setRecords(nextRecords);
+      setCourseOptions((current) => {
+        const options = new Map(
+          current.map((course) => [course.sectionId, course])
+        );
+        response.items.forEach((item) =>
+          options.set(item.sectionId, {
+            label: item.course,
+            sectionId: item.sectionId,
+          })
+        );
+        return [...options.values()];
+      });
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'No se pudo cargar el resumen.'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+    const query = new URLSearchParams({
+      from: defaultFilters.from,
+      to: defaultFilters.to,
+      page: '1',
+      pageSize: '20',
+    });
+
+    fetchApi<AttendanceSummaryResponse>(`/api/attendance/summary?${query}`)
+      .then((response) => {
+        if (!isMounted) return;
         const nextRecords = response.items.map((item) => ({
           id: item.studentId,
           sectionId: item.sectionId,
@@ -54,30 +156,67 @@ export const AttendanceSummaryPage: React.FC = () => {
         }));
         setRecords(nextRecords);
         setCourseOptions((current) => {
-          const options = new Map(current.map((course) => [course.sectionId, course]));
-          response.items.forEach((item) => options.set(item.sectionId, { label: item.course, sectionId: item.sectionId }));
+          const options = new Map(
+            current.map((course) => [course.sectionId, course])
+          );
+          response.items.forEach((item) =>
+            options.set(item.sectionId, {
+              label: item.course,
+              sectionId: item.sectionId,
+            })
+          );
           return [...options.values()];
         });
-      } catch (requestError) {
-        setError(requestError instanceof Error ? requestError.message : 'No se pudo cargar el resumen.');
-      } finally {
-        setLoading(false);
-      }
-  };
+      })
+      .catch((requestError) => {
+        if (!isMounted) return;
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : 'No se pudo cargar el resumen.'
+        );
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
 
-  useEffect(() => {
-    void loadSummary();
     return () => {
-      setLoading(false);
+      isMounted = false;
     };
   }, []);
 
-  const courses = useMemo(() => courseOptions.map((course) => course.label), [courseOptions]);
-  const filteredRecords = useMemo(() => records
-    .filter((record) => appliedFilters.course === 'Todos' || record.course === appliedFilters.course)
-    .filter((record) => record.date >= appliedFilters.from && record.date <= appliedFilters.to)
-    .filter((record) => record.student.toLowerCase().includes(appliedFilters.search.toLowerCase()) || record.dni.includes(appliedFilters.search))
-    .sort((left, right) => (sortDirection === 'desc' ? 1 : -1) * (totalAbsence(right) - totalAbsence(left))), [records, appliedFilters, sortDirection]);
+  const courses = useMemo(
+    () => courseOptions.map((course) => course.label),
+    [courseOptions]
+  );
+
+  const filteredRecords = useMemo(
+    () =>
+      records
+        .filter(
+          (record) =>
+            appliedFilters.course === 'Todos' ||
+            record.course === appliedFilters.course
+        )
+        .filter(
+          (record) =>
+            record.date >= appliedFilters.from &&
+            record.date <= appliedFilters.to
+        )
+        .filter(
+          (record) =>
+            record.student
+              .toLowerCase()
+              .includes(appliedFilters.search.toLowerCase()) ||
+            record.dni.includes(appliedFilters.search)
+        )
+        .sort(
+          (left, right) =>
+            (sortDirection === 'desc' ? 1 : -1) *
+            (totalAbsence(right) - totalAbsence(left))
+        ),
+    [records, appliedFilters, sortDirection]
+  );
 
   const openJustification = (record: AttendanceRecord) => {
     setSelectedRecord(record);
@@ -93,17 +232,55 @@ export const AttendanceSummaryPage: React.FC = () => {
 
   const addJustification = () => {
     if (!selectedRecord || !justificationDate || !reason.trim()) return;
-    const newJustification: JustificationRecord = { id: Date.now(), date: justificationDate, type: justificationType, reason: reason.trim() };
-    setRecords((current) => current.map((record) => record.id === selectedRecord.id ? { ...record, justifications: [...record.justifications, newJustification] } : record));
+    const newJustification: JustificationRecord = {
+      id: Date.now(),
+      date: justificationDate,
+      type: justificationType,
+      reason: reason.trim(),
+    };
+    setRecords((current) =>
+      current.map((record) =>
+        record.id === selectedRecord.id
+          ? {
+              ...record,
+              justifications: [...record.justifications, newJustification],
+            }
+          : record
+      )
+    );
     closeJustification();
     setShowSuccess(true);
   };
 
   const exportCsv = () => {
-    const headers = ['Alumno', 'DNI', 'Curso', 'Total inasistencias', 'Ausentes', 'Medias faltas', 'Cuartos', 'Justificadas', 'No justificadas'];
-    const rows = filteredRecords.map((record) => [record.student, record.dni, record.course, formatTotal(totalAbsence(record)), record.absences, record.halfAbsences, record.quarterAbsences, formatTotal(justifiedTotal(record)), formatTotal(Math.max(0, totalAbsence(record) - justifiedTotal(record)))]);
-    const csv = [headers, ...rows].map((row) => row.map(csvValue).join(';')).join('\n');
-    const url = URL.createObjectURL(new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' }));
+    const headers = [
+      'Alumno',
+      'DNI',
+      'Curso',
+      'Total inasistencias',
+      'Ausentes',
+      'Medias faltas',
+      'Cuartos',
+      'Justificadas',
+      'No justificadas',
+    ];
+    const rows = filteredRecords.map((record) => [
+      record.student,
+      record.dni,
+      record.course,
+      formatTotal(totalAbsence(record)),
+      record.absences,
+      record.halfAbsences,
+      record.quarterAbsences,
+      formatTotal(justifiedTotal(record)),
+      formatTotal(Math.max(0, totalAbsence(record) - justifiedTotal(record))),
+    ]);
+    const csv = [headers, ...rows]
+      .map((row) => row.map(csvValue).join(';'))
+      .join('\n');
+    const url = URL.createObjectURL(
+      new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' })
+    );
     const link = document.createElement('a');
     link.href = url;
     link.download = 'resumen-de-inasistencias.csv';
@@ -120,30 +297,130 @@ export const AttendanceSummaryPage: React.FC = () => {
   return (
     <MainLayout>
       <Box className="attendance-page" sx={{ maxWidth: 1280, mx: 'auto' }}>
-        <Box className="print-hidden" sx={{ mb: 3 }}><Typography variant="caption" sx={{ color: '#7b8794' }}>Inicio &nbsp;›&nbsp; Asistencia &nbsp;›&nbsp; <strong>Resumen</strong></Typography></Box>
-        <Stack sx={{ mb: 2 }}>
-          <Box><Typography variant="h4" sx={{ color: '#202124', fontWeight: 800, fontSize: { xs: '1.65rem', md: '2rem' } }}>Resumen de inasistencias</Typography><Typography variant="body2" sx={{ color: '#7b8794' }}>Consultá el detalle de inasistencias por alumno o por curso.</Typography></Box>
-        </Stack>
-        <AttendanceFilters value={filters} courses={courses} onChange={setFilters} onApply={() => { setAppliedFilters(filters); void loadSummary(filters); }} onReset={resetFilters} />
-        {loading && <Typography sx={{ mb: 2 }}>Cargando resumen de inasistencias...</Typography>}
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        {showSuccess && <Alert className="print-hidden" onClose={() => setShowSuccess(false)} severity="success" sx={{ mb: 2 }}>La inasistencia fue justificada correctamente.</Alert>}
-        <Stack className="print-hidden" direction={{ xs: 'column', sm: 'row' }} justifyContent="space-between" alignItems={{ sm: 'center' }} spacing={2} sx={{ mb: 1.5, p: 1.5, backgroundColor: '#fafafa', border: '1px solid #e1e5e8', borderRadius: 1 }}>
+        <PageHeader
+          title="Resumen de inasistencias"
+          subtitle="Consultá el detalle de inasistencias por alumno o por curso."
+          breadcrumbs={[
+            { label: 'Inicio', href: '/' },
+            { label: 'Asistencia' },
+            { label: 'Resumen' },
+          ]}
+        />
+
+        <AttendanceFilters
+          value={filters}
+          courses={courses}
+          onChange={setFilters}
+          onApply={() => {
+            setAppliedFilters(filters);
+            void loadSummary(filters);
+          }}
+          onReset={resetFilters}
+        />
+
+        {loading && (
+          <Typography variant="body2" sx={{ mb: 2, color: '#6b7280' }}>
+            Cargando resumen de inasistencias...
+          </Typography>
+        )}
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
+        {showSuccess && (
+          <Alert
+            className="print-hidden"
+            onClose={() => setShowSuccess(false)}
+            severity="success"
+            sx={{ mb: 2 }}
+          >
+            La inasistencia fue justificada correctamente.
+          </Alert>
+        )}
+
+       
+<Stack
+  direction={{ xs: 'column', sm: 'row' }}
+  spacing={2}
+  className="print-hidden"
+  sx={{
+    mb: 2,
+    p: 2,
+    backgroundColor: '#fafafa',
+    border: '1px solid #e5e7eb',
+    borderRadius: 1,
+    justifyContent: 'space-between',
+    alignItems: { sm: 'center' },
+  }}
+>
           <FormControl size="small" sx={{ minWidth: { xs: '100%', sm: 220 } }}>
             <InputLabel>Ordenar por</InputLabel>
-            <Select label="Ordenar por" value={sortDirection} onChange={(event) => setSortDirection(event.target.value as 'desc' | 'asc')}>
+            <Select
+              label="Ordenar por"
+              value={sortDirection}
+              onChange={(event) =>
+                setSortDirection(event.target.value as 'desc' | 'asc')
+              }
+            >
               <MenuItem value="desc">Más inasistencias primero</MenuItem>
               <MenuItem value="asc">Menos inasistencias primero</MenuItem>
             </Select>
           </FormControl>
-          <Stack direction="row" spacing={1} sx={{ width: { xs: '100%', sm: 'auto' }, whiteSpace: 'nowrap' }}>
-            <Button variant="outlined" startIcon={<DownloadIcon />} onClick={exportCsv} sx={{ textTransform: 'none', borderColor: '#555', color: '#333' }}>Descargar CSV</Button>
-            <Button variant="outlined" startIcon={<PrintIcon />} onClick={() => window.print()} sx={{ textTransform: 'none', borderColor: '#555', color: '#333' }}>PDF / Imprimir</Button>
+
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{ width: { xs: '100%', sm: 'auto' }, whiteSpace: 'nowrap' }}
+          >
+            <AddButton
+              label="Descargar CSV"
+              icon={<DownloadIcon />}
+              onClick={exportCsv}
+              sx={{
+                backgroundColor: 'transparent',
+                color: '#111827',
+                border: '1px solid #d1d5db',
+                '&:hover': { backgroundColor: '#f3f4f6' },
+              }}
+            />
+            <AddButton
+              label="PDF / Imprimir"
+              icon={<PrintIcon />}
+              onClick={() => window.print()}
+              sx={{
+                backgroundColor: 'transparent',
+                color: '#111827',
+                border: '1px solid #d1d5db',
+                '&:hover': { backgroundColor: '#f3f4f6' },
+              }}
+            />
           </Stack>
         </Stack>
-        <AttendanceTable records={filteredRecords} course={appliedFilters.course} totalAbsence={totalAbsence} justifiedTotal={justifiedTotal} formatTotal={formatTotal} onJustify={openJustification} />
+
+        <AttendanceTable
+          records={filteredRecords}
+          course={appliedFilters.course}
+          totalAbsence={totalAbsence}
+          justifiedTotal={justifiedTotal}
+          formatTotal={formatTotal}
+          onJustify={openJustification}
+        />
       </Box>
-      <JustificationModal record={selectedRecord} reason={reason} date={justificationDate} type={justificationType} onDateChange={setJustificationDate} onTypeChange={setJustificationType} onReasonChange={setReason} onAdd={addJustification} onClose={closeJustification} />
+
+      <JustificationModal
+        record={selectedRecord}
+        reason={reason}
+        date={justificationDate}
+        type={justificationType}
+        onDateChange={setJustificationDate}
+        onTypeChange={setJustificationType}
+        onReasonChange={setReason}
+        onAdd={addJustification}
+        onClose={closeJustification}
+      />
     </MainLayout>
   );
 };
