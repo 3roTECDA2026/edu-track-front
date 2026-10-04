@@ -127,3 +127,30 @@ export function createStudent(data: CreateStudentInput) {
 export function getClassSections() {
   return fetchApi<ClassSectionOption[]>('/api/class-sections');
 }
+// Datos que se pueden editar (PATCH /students/:id).
+export interface UpdateStudentInput {
+  firstName?: string;
+  lastName?: string;
+  dni?: string;
+  dateOfBirth?: string; // "YYYY-MM-DD"
+  placeOfBirth?: string;
+  address?: string;
+  city?: string;
+  phone?: string;
+  guardianName?: string;
+  guardianPhone?: string;
+  guardianEmail?: string;
+  guardianDni?: string;
+  guardianRelationship?: string;
+}
+
+export function getStudent(id: string, signal?: AbortSignal) {
+  return fetchApi<StudentDetail>(`/api/students/${id}`, { signal });
+}
+
+export function updateStudent(id: string, data: UpdateStudentInput) {
+  return fetchApi<StudentDetail>(`/api/students/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data),
+  });
+}
