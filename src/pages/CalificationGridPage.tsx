@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import type { KeyboardEvent } from 'react'
+
 import {
   Alert,
   Box,
@@ -25,6 +26,7 @@ import { ContentCard } from '@/components/common/ContentCard'
 import { CustomTabs } from '@/components/common/CustomTabs'
 import { AddButton } from '@/components/common/AddButton'
 import { StandardTablePagination } from '@/components/common/StandardTablePagination'
+import PorAlumnoTab from '@/pages/PorAlumnoTab'
 import { useClassSections } from '@/hooks/useClassSections'
 import { useSubjects } from '@/hooks/useSubjects'
 import { useGradeRoster } from '@/hooks/useGradeRoster'
@@ -668,14 +670,10 @@ export const CalificationGridPage: React.FC = () => {
             </Box>
           )}
 
-          {/* PESTAÑA 1: POR ALUMNO (en desarrollo) */}
-          {tab === 1 && (
-            <Box sx={{ p: 2 }}>
-              <Alert severity="info">
-                La vista por alumno (promedio general de todas sus materias) está en desarrollo.
-              </Alert>
-            </Box>
-          )}
+         
+          {/* PESTAÑA 1: POR ALUMNO */}
+          {tab === 1 && <PorAlumnoTab />}
+  
         </ContentCard>
 
         {/* Acciones: debajo de la tabla y el paginado */}

@@ -58,3 +58,16 @@ export function saveGrade(input: SaveGradeInput) {
     body: JSON.stringify({ enrollmentId, ...scores }),
   });
 }
+
+
+export interface StudentSubjectRow {
+  id: string; // enrollmentId
+  subject: { id: string; name: string };
+  grade: RosterGrade | null;
+}
+
+// GET /api/grades/by-student?studentId=&year=
+export function getGradesByStudent(studentId: string, year: number, signal?: AbortSignal) {
+  const query = new URLSearchParams({ studentId, year: String(year) });
+  return fetchApi<StudentSubjectRow[]>(`/api/grades/by-student?${query.toString()}`, { signal });
+}
