@@ -7,13 +7,13 @@ import {
   TableCell,
   TableContainer,
   TableHead,
-  TablePagination,
   TableRow,
   Tooltip,
 } from '@mui/material';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import BlockIcon from '@mui/icons-material/Block';
 import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
+import { EditButton } from '@/components/common/EditButton';
+import { StandardTablePagination } from '@/components/common/StandardTablePagination';
 import type { UserListItem } from '@/services/users.service';
 import { ROLE_LABELS, getFullName } from './userLabels';
 import { UserStatusChip } from './UserStatusChip';
@@ -80,11 +80,7 @@ export const UsersTable = ({
                   <UserStatusChip active={u.active} />
                 </TableCell>
                 <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                  <Tooltip title="Editar">
-                    <IconButton size="small" onClick={() => onEdit(u)} aria-label={`Editar ${getFullName(u)}`}>
-                      <EditOutlinedIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                  <EditButton onClick={() => onEdit(u)} aria-label={`Editar ${getFullName(u)}`} />
                   <Tooltip title={u.active ? 'Suspender' : 'Reactivar'}>
                     <IconButton
                       size="small"
@@ -105,16 +101,13 @@ export const UsersTable = ({
           </TableBody>
         </Table>
       </TableContainer>
-      <TablePagination
-        component="div"
+      <StandardTablePagination
         count={total}
         page={page}
         rowsPerPage={rowsPerPage}
-        rowsPerPageOptions={[5, 10, 25]}
-        onPageChange={(_, p) => onPageChange(p)}
-        onRowsPerPageChange={(e) => onRowsPerPageChange(parseInt(e.target.value, 10))}
-        labelRowsPerPage="Filas por página"
-        labelDisplayedRows={({ from, to, count }) => `Mostrando ${from}–${to} de ${count} usuarios`}
+        onPageChange={onPageChange}
+        onRowsPerPageChange={onRowsPerPageChange}
+        itemLabel="usuarios"
       />
     </>
   );
