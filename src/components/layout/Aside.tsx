@@ -18,6 +18,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GradingIcon from '@mui/icons-material/Grading';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import DateRangeIcon from '@mui/icons-material/DateRange';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 // Importación de asset local
@@ -38,6 +39,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Usuarios', icon: <UserIcon />, path: '/users' },
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
   { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
+  { label: 'Asistencia diaria', icon: <DateRangeIcon />, path: '/daily-attendance' },
   { label: 'Inasistencias', icon: <EventNoteIcon />, path: '/attendance' },
   { label: 'Calificaciones', icon: <GradingIcon />, path: '/calification-grid' },
 ];

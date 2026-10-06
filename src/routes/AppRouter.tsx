@@ -7,6 +7,7 @@ import AttendanceSummaryPage from '@/pages/AttendanceSummaryPage';
 import StudentsPage from '@/pages/StudentsPage';
 import CalificationGridPage from '@/pages/CalificationGridPage';
 import CoursesPage from '@/pages/CoursesPage';
+import DailyAttendancePage from '@/pages/DailyAttendancePage';
 
 const AppRouter = () => {
   return (
@@ -25,6 +26,8 @@ const AppRouter = () => {
         <Route path="/users" element={<UsersPage />} />
         {/* Redirección por defecto al Login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
+        {/* Carga diaria de asistencia */}
+        <Route path="/daily-attendance" element={<DailyAttendancePage />} />
       </Routes>
     </BrowserRouter>
   );
