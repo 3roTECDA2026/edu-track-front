@@ -8,10 +8,13 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
+
 import ContentCard from '@/components/common/ContentCard';
 import AddButton from '@/components/common/AddButton';
+
 import type { AttendanceFilters as AttendanceFilterValues } from '@/components/attendance/attendance.types';
 
 type AttendanceFiltersProps = {
@@ -29,8 +32,14 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
   onApply,
   onReset,
 }) => {
-  const update = (field: keyof AttendanceFilterValues, fieldValue: string) => {
-    onChange({ ...value, [field]: fieldValue });
+  const update = (
+    field: keyof AttendanceFilterValues,
+    fieldValue: string,
+  ) => {
+    onChange({
+      ...value,
+      [field]: fieldValue,
+    });
   };
 
   return (
@@ -47,31 +56,37 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
       >
         Filtros de búsqueda
       </Typography>
-      
+
       <Stack
         direction={{ xs: 'column', md: 'row' }}
         spacing={2}
         sx={{
           p: 2,
-          alignItems: 'center', // ✅ Se mueve dentro de sx para alineación limpia
+          alignItems: 'center',
         }}
       >
         <TextField
           label="Alumno o DNI"
           value={value.search}
-          onChange={(event) => update('search', event.target.value)}
+          onChange={(event) =>
+            update('search', event.target.value)
+          }
           size="small"
           fullWidth
         />
 
         <FormControl size="small" fullWidth>
           <InputLabel>Sección / curso</InputLabel>
+
           <Select
             label="Sección / curso"
             value={value.course}
-            onChange={(event) => update('course', event.target.value)}
+            onChange={(event) =>
+              update('course', event.target.value)
+            }
           >
             <MenuItem value="Todos">Todos</MenuItem>
+
             {courses.map((course) => (
               <MenuItem key={course} value={course}>
                 {course}
@@ -84,7 +99,9 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
           label="Fecha desde"
           type="date"
           value={value.from ?? ''}
-          onChange={(event) => update('from', event.target.value)}
+          onChange={(event) =>
+            update('from', event.target.value)
+          }
           size="small"
           fullWidth
           slotProps={{
@@ -98,7 +115,9 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
           label="Fecha hasta"
           type="date"
           value={value.to ?? ''}
-          onChange={(event) => update('to', event.target.value)}
+          onChange={(event) =>
+            update('to', event.target.value)
+          }
           size="small"
           fullWidth
           slotProps={{
@@ -111,14 +130,23 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
         <Stack
           direction="row"
           spacing={1}
-          sx={{ width: { xs: '100%', md: 'auto' }, whiteSpace: 'nowrap' }}
+          sx={{
+            width: {
+              xs: '100%',
+              md: 'auto',
+            },
+            whiteSpace: 'nowrap',
+          }}
         >
           <AddButton
             label="Filtrar"
             icon={<FilterAltIcon />}
             onClick={onApply}
-            sx={{ minWidth: 110 }}
+            sx={{
+              minWidth: 110,
+            }}
           />
+
           <AddButton
             label="Limpiar"
             icon={<RestartAltIcon />}
@@ -128,7 +156,9 @@ export const AttendanceFilters: React.FC<AttendanceFiltersProps> = ({
               backgroundColor: 'transparent',
               color: '#111827',
               border: '1px solid #d1d5db',
-              '&:hover': { backgroundColor: '#f3f4f6' },
+              '&:hover': {
+                backgroundColor: '#f3f4f6',
+              },
             }}
           />
         </Stack>
