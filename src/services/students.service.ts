@@ -1,7 +1,18 @@
 import { fetchApi } from '@/services/api';
 
-export type StudentStatus = 'ACTIVE' | 'INACTIVE' | 'GRADUATED' | 'TRANSFER_OUT' | 'CONDITIONAL';
-export type Shift = 'MORNING' | 'AFTERNOON' | 'EVENING' | 'EXTRA_TIME';
+export type StudentStatus =
+  | 'ACTIVE'
+  | 'INACTIVE'
+  | 'GRADUATED'
+  | 'TRANSFER_OUT'
+  | 'CONDITIONAL';
+
+export type Shift =
+  | 'MORNING'
+  | 'AFTERNOON'
+  | 'EVENING'
+  | 'EXTRA_TIME';
+
 export type StatusFilter = 'active' | 'inactive' | 'all';
 
 export interface CurrentSection {
@@ -71,7 +82,7 @@ export interface CreateStudentInput {
   firstName: string;
   lastName: string;
   dni: string;
-  dateOfBirth: string; // "YYYY-MM-DD"
+  dateOfBirth: string;
   placeOfBirth: string;
   address: string;
   city: string;
@@ -92,47 +103,12 @@ export interface ClassSectionOption {
   shift: Shift;
 }
 
-export function getStudents(params: StudentListParams, signal?: AbortSignal) {
-  const query = new URLSearchParams({
-    page: String(params.page),
-    limit: String(params.limit),
-  });
-
-  if (params.search) query.set('search', params.search);
-  if (params.grade) query.set('grade', params.grade);
-  if (params.division) query.set('division', params.division);
-  if (params.shift) query.set('shift', params.shift);
-
-  // "active" is the backend default (ACTIVE + CONDITIONAL), so it sends nothing.
-  if (params.status === 'inactive') query.set('status', 'INACTIVE');
-  if (params.status === 'all') query.set('status', 'all');
-
-  return fetchApi<PaginatedResponse<StudentListItem>>(`/api/students?${query.toString()}`, { signal });
-}
-
-export function deactivateStudent(id: string) {
-  return fetchApi<Pick<StudentListItem, 'id' | 'status'>>(`/api/students/${id}/deactivate`, {
-    method: 'PATCH',
-  });
-}
-
-
-export function createStudent(data: CreateStudentInput) {
-  return fetchApi<StudentDetail>('/api/students', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
-}
-
-export function getClassSections() {
-  return fetchApi<ClassSectionOption[]>('/api/class-sections');
-}
 // Datos que se pueden editar (PATCH /students/:id).
 export interface UpdateStudentInput {
   firstName?: string;
   lastName?: string;
   dni?: string;
-  dateOfBirth?: string; // "YYYY-MM-DD"
+  dateOfBirth?: string;
   placeOfBirth?: string;
   address?: string;
   city?: string;
@@ -144,13 +120,109 @@ export interface UpdateStudentInput {
   guardianRelationship?: string;
 }
 
-export function getStudent(id: string, signal?: AbortSignal) {
-  return fetchApi<StudentDetail>(`/api/students/${id}`, { signal });
+// Registro que devuelve GET /api/students/:id/history
+export interface StudentTrajectoryRecord {
+  id: string;
+  year: number;
+  grade: number;
+  division: string;
+  section: string;
+  shift: Shift;
+  startDate: string;
+  endDate: string | null;
+  leaveReason: string | null;
 }
 
-export function updateStudent(id: string, data: UpdateStudentInput) {
-  return fetchApi<StudentDetail>(`/api/students/${id}`, {
-    method: 'PATCH',
+export function getStudents(
+  params: StudentListParams,
+  signal?: AbortSignal,
+) {
+  const query = new URLSearchParams({
+    page: String(params.page),
+    limit: String(params.limit),
+  });
+
+  if (params.search) {
+    query.set('search', params.search);
+  }
+
+  if (params.grade) {
+    query.set('grade', params.grade);
+  }
+
+  if (params.division) {
+    query.set('division', params.division);
+  }
+
+  if (params.shift) {
+    query.set('shift', params.shift);
+  }
+
+  // "active" es el valor por defecto del backend
+  // (ACTIVE + CONDITIONAL).
+  if (params.status === 'inactive') {
+    query.set('status', 'INACTIVE');
+  }
+
+  if (params.status === 'all') {
+    query.set('status', 'all');
+  }
+
+  return fetchApi<PaginatedResponse<StudentListItem>>(
+    `/api/students?${query.toString()}`,
+    { signal },
+  );
+}
+
+export function deactivateStudent(id: string) {
+  return fetchApi<Pick<StudentListItem, 'id' | 'status'>>(
+    `/api/students/${id}/deactivate`,
+    {
+      method: 'PATCH',
+    },
+  );
+}
+
+export function createStudent(data: CreateStudentInput) {
+  return fetchApi<StudentDetail>('/api/students', {
+    method: 'POST',
     body: JSON.stringify(data),
   });
+}
+
+export function getClassSections() {
+  return fetchApi<ClassSectionOption[]>('/api/class-sections');
+}
+
+export function getStudent(
+  id: string,
+  signal?: AbortSignal,
+) {
+  return fetchApi<StudentDetail>(
+    `/api/students/${id}`,
+    { signal },
+  );
+}
+
+export function updateStudent(
+  id: string,
+  data: UpdateStudentInput,
+) {
+  return fetchApi<StudentDetail>(
+    `/api/students/${id}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    },
+  );
+}
+
+export function getStudentTrajectory(
+  id: string,
+  signal?: AbortSignal,
+) {
+  return fetchApi<StudentTrajectoryRecord[]>(
+    `/api/students/${id}/history`,
+    { signal },
+  );
 }
