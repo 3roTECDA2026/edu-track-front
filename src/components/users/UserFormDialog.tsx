@@ -28,8 +28,8 @@ import {
   type UserListItem,
   type UserPayload,
 } from '@/services/users.service';
-import { ROLE_LABELS } from './userLabels';
-import { PASSWORD_MIN, buildUserSchema, type UserFormValues } from './userSchemas';
+import { ROLE_LABELS } from '@/components/users/userLabels';
+import { PASSWORD_MIN, buildUserSchema, type UserFormValues } from '@/components/users/userSchemas';
 
 interface UserFormDialogProps {
   open: boolean;

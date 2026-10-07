@@ -15,9 +15,9 @@ import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import { EditButton } from '@/components/common/EditButton';
 import { StandardTablePagination } from '@/components/common/StandardTablePagination';
 import type { UserListItem } from '@/services/users.service';
-import { ROLE_LABELS, getFullName } from './userLabels';
-import { UserStatusChip } from './UserStatusChip';
-import { UsersEmptyState } from './UsersEmptyState';
+import { ROLE_LABELS, getFullName } from '@/components/users/userLabels';
+import { UserStatusChip } from '@/components/users/UserStatusChip';
+import { UsersEmptyState } from '@/components/users/UsersEmptyState';
 
 interface UsersTableProps {
   users: UserListItem[];

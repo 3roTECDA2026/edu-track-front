@@ -1,6 +1,30 @@
 import React from 'react';
-import { Box, Button, Divider, FormControl, InputLabel, MenuItem, Modal, Select, Stack, TextField, Typography } from '@mui/material';
-import type { AttendanceRecord, JustificationRecord } from './attendance.types';
+import {
+  Box,
+  Button,
+  Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Divider,
+  FormControl,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
+
+import SaveIcon from '@mui/icons-material/Save';
+
+import AddButton from '@/components/common/AddButton';
+
+import type {
+  AttendanceRecord,
+  JustificationRecord,
+} from '@/components/attendance/attendance.types';
 
 type JustificationModalProps = {
   record: AttendanceRecord | null;
@@ -14,31 +38,255 @@ type JustificationModalProps = {
   onClose: () => void;
 };
 
-const typeLabel: Record<JustificationRecord['type'], string> = { ausente: 'Ausente', media: 'Media falta', cuarto: 'Cuarto' };
+const labelMap: Record<JustificationRecord['type'], string> = {
+  ausente: 'Día completo (1.0)',
+  media: 'Media falta (0.5)',
+  cuarto: 'Cuarto de falta (0.25)',
+};
 
-const JustificationModal: React.FC<JustificationModalProps> = ({ record, reason, date, type, onDateChange, onTypeChange, onReasonChange, onAdd, onClose }) => (
-  <Modal open={Boolean(record)} onClose={onClose} aria-labelledby="justification-title">
-    <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: { xs: 'calc(100% - 32px)', sm: 560 }, maxHeight: '90vh', overflowY: 'auto', bgcolor: 'background.paper', boxShadow: 24, p: 3, borderRadius: 1 }}>
-      <Typography id="justification-title" variant="h6" sx={{ fontWeight: 800, mb: 1 }}>Justificar inasistencia</Typography>
-      <Typography variant="body2" sx={{ color: '#68737d', mb: 2 }}>{record?.student}</Typography>
-      <Typography variant="subtitle2" sx={{ mb: 1 }}>Justificaciones registradas ({record?.justifications.length ?? 0})</Typography>
-      <Stack spacing={1.25} sx={{ mb: 3 }}>
-        {record?.justifications.map((justification) => <Box key={justification.id} sx={{ p: 1.5, border: '1px solid #e1e5e8', borderRadius: 1, backgroundColor: '#fafafa' }}><Stack direction="row" justifyContent="space-between" spacing={2}><Typography variant="body2" sx={{ fontWeight: 700 }}>{justification.date} · {typeLabel[justification.type]}</Typography><Typography variant="caption" color="success.main">Justificado</Typography></Stack><Typography variant="body2" sx={{ mt: 0.5, color: '#59636e' }}>{justification.reason}</Typography></Box>)}
-        {!record?.justifications.length && <Typography variant="body2" color="text.secondary">Todavía no hay justificaciones registradas.</Typography>}
-      </Stack>
-      <Divider sx={{ mb: 2 }} />
-      <Typography variant="subtitle2" sx={{ mb: 1 }}>Agregar justificación</Typography>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mb: 2 }}>
-        <TextField label="Fecha" type="date" value={date} onChange={(event) => onDateChange(event.target.value)} size="small" fullWidth InputLabelProps={{ shrink: true }} />
-        <FormControl size="small" fullWidth><InputLabel>Tipo</InputLabel><Select label="Tipo" value={type} onChange={(event) => onTypeChange(event.target.value as JustificationRecord['type'])}><MenuItem value="ausente">Ausente</MenuItem><MenuItem value="media">Media falta</MenuItem><MenuItem value="cuarto">Cuarto</MenuItem></Select></FormControl>
-      </Stack>
-      <TextField label="Motivo de la justificación" value={reason} onChange={(event) => onReasonChange(event.target.value)} multiline minRows={3} fullWidth autoFocus />
-      <Stack direction="row" justifyContent="flex-end" spacing={1} sx={{ mt: 3 }}>
-        <Button onClick={onClose} sx={{ textTransform: 'none' }}>Cancelar</Button>
-        <Button variant="contained" onClick={onAdd} disabled={!date || !reason.trim()} sx={{ textTransform: 'none', backgroundColor: '#a70012' }}>Guardar justificación</Button>
-      </Stack>
-    </Box>
-  </Modal>
-);
+export const JustificationModal: React.FC<
+  JustificationModalProps
+> = ({
+  record,
+  reason,
+  date,
+  type,
+  onDateChange,
+  onTypeChange,
+  onReasonChange,
+  onAdd,
+  onClose,
+}) => {
+  if (!record) return null;
+
+  return (
+    <Dialog
+      open={Boolean(record)}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+    >
+      <DialogTitle
+        sx={{
+          pb: 1.5,
+          borderBottom: '1px solid #e5e7eb',
+        }}
+      >
+        <Typography
+          variant="h6"
+          component="span"
+          sx={{
+            fontWeight: 600,
+            color: '#111827',
+          }}
+        >
+          Justificaciones de inasistencia
+        </Typography>
+
+        <Typography
+          variant="body2"
+          sx={{
+            color: '#6b7280',
+            mt: 0.5,
+          }}
+        >
+          {record.student} — DNI: {record.dni} ({record.course})
+        </Typography>
+      </DialogTitle>
+
+      <DialogContent sx={{ pt: 2.5 }}>
+        {record.justifications.length > 0 && (
+          <Box
+            sx={{
+              mb: 3,
+              mt: 1,
+            }}
+          >
+            <Typography
+              variant="subtitle2"
+              sx={{
+                fontWeight: 600,
+                color: '#111827',
+                mb: 1.5,
+              }}
+            >
+              Justificaciones registradas (
+              {record.justifications.length})
+            </Typography>
+
+            <Stack spacing={1}>
+              {record.justifications.map((item) => (
+                <Box
+                  key={item.id}
+                  sx={{
+                    p: 1.5,
+                    borderRadius: 1,
+                    backgroundColor: '#fafafa',
+                    border: '1px solid #e5e7eb',
+                  }}
+                >
+                  <Stack
+                    direction="row"
+                    sx={{
+                      mb: 0.5,
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: '#6b7280',
+                        fontWeight: 500,
+                      }}
+                    >
+                      Fecha: {item.date}
+                    </Typography>
+
+                    <Chip
+                      label={labelMap[item.type]}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        borderColor: '#d1d5db',
+                        color: '#111827',
+                      }}
+                    />
+                  </Stack>
+
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: '#111827',
+                    }}
+                  >
+                    {item.reason}
+                  </Typography>
+                </Box>
+              ))}
+            </Stack>
+
+            <Divider
+              sx={{
+                my: 2.5,
+                borderColor: '#e5e7eb',
+              }}
+            />
+          </Box>
+        )}
+
+        <Typography
+          variant="subtitle2"
+          sx={{
+            fontWeight: 600,
+            color: '#111827',
+            mb: 1.5,
+            mt:
+              record.justifications.length === 0
+                ? 1
+                : 0,
+          }}
+        >
+          Registrar nueva justificación
+        </Typography>
+
+        <Stack spacing={2}>
+          <Stack
+            direction={{
+              xs: 'column',
+              sm: 'row',
+            }}
+            spacing={2}
+          >
+            <TextField
+              label="Fecha"
+              type="date"
+              value={date}
+              onChange={(event) =>
+                onDateChange(event.target.value)
+              }
+              size="small"
+              fullWidth
+              slotProps={{
+                inputLabel: {
+                  shrink: true,
+                },
+              }}
+            />
+
+            <FormControl size="small" fullWidth>
+              <InputLabel>Tipo de falta</InputLabel>
+
+              <Select
+                label="Tipo de falta"
+                value={type}
+                onChange={(event) =>
+                  onTypeChange(
+                    event.target
+                      .value as JustificationRecord['type'],
+                  )
+                }
+              >
+                <MenuItem value="ausente">
+                  Día completo (1.0)
+                </MenuItem>
+
+                <MenuItem value="media">
+                  Media falta (0.5)
+                </MenuItem>
+
+                <MenuItem value="cuarto">
+                  Cuarto de falta (0.25)
+                </MenuItem>
+              </Select>
+            </FormControl>
+          </Stack>
+
+          <TextField
+            label="Motivo / Observación"
+            value={reason}
+            onChange={(event) =>
+              onReasonChange(event.target.value)
+            }
+            multiline
+            rows={3}
+            size="small"
+            fullWidth
+            placeholder="Ej: Certificado médico presentado..."
+          />
+        </Stack>
+      </DialogContent>
+
+      <DialogActions
+        sx={{
+          px: 3,
+          py: 2,
+          borderTop: '1px solid #e5e7eb',
+        }}
+      >
+        <Button
+          onClick={onClose}
+          sx={{
+            color: '#374151',
+            textTransform: 'none',
+            fontWeight: 500,
+            '&:hover': {
+              backgroundColor: '#f3f4f6',
+            },
+          }}
+        >
+          Cerrar
+        </Button>
+
+        <AddButton
+          label="Guardar"
+          icon={<SaveIcon />}
+          onClick={onAdd}
+          disabled={!reason.trim() || !date}
+        />
+      </DialogActions>
+    </Dialog>
+  );
+};
 
 export default JustificationModal;
