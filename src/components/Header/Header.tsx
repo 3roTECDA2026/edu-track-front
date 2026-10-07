@@ -27,7 +27,7 @@ export interface HeaderProps {
  * - Breadcrumbs: hierarchical breadcrumbs navigation sub-strip
  */
 export const Header: React.FC<HeaderProps> = ({
-  brandName = 'EduTrack',
+  brandName = 'Notar',
   institutionName = 'Secundaria N° 10',
   role,
   user = null,

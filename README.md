@@ -1,4 +1,4 @@
-# EduTrack / Aura - Frontend
+# Notar - Frontend
 
 Frontend del Sistema de Gestión de Trayectorias Escolares — Instituto Superior de Formación Docente y Técnica Nº 166 (ISFDyT Nº 166, Tandil).
 

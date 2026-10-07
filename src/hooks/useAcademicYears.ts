@@ -18,7 +18,7 @@ export interface AcademicYearOption {
   term2EndDate?: string | null;
 }
 
-const STORAGE_KEY = "edu-track-selected-academic-year";
+const STORAGE_KEY = "notar-selected-academic-year";
 
 interface AcademicYearsContextValue {
   academicYears: AcademicYearOption[];

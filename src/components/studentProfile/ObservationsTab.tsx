@@ -21,7 +21,7 @@ function readSaved(storageKey: string): string {
 // Todavía no hay un campo en el back para las observaciones, así que se guardan en este navegador.
 // Cuando exista el endpoint, solo hay que cambiar handleSave y readSaved.
 export const ObservationsTab = ({ studentId, onSaved }: ObservationsTabProps) => {
-  const storageKey = `edutrack:student-observations:${studentId}`;
+  const storageKey = `notar:student-observations:${studentId}`;
   const [savedText, setSavedText] = useState(() => readSaved(storageKey));
   const [text, setText] = useState(savedText);
   const hasChanges = text !== savedText;

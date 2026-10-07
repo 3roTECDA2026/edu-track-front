@@ -15,7 +15,7 @@ export interface HeaderBrandProps {
  * Pure presentational component for Header brand identity, logo, and navigation.
  */
 export const HeaderBrand: React.FC<HeaderBrandProps> = ({
-  brandName = 'EduTrack',
+  brandName = 'Notar',
   institutionName = 'Secundaria N° 10',
   role,
   showBackButton = false,

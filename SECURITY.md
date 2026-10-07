@@ -1,10 +1,10 @@
 # Guía de Seguridad para Desarrolladores Frontend (edu-track-front)
 
-Este documento describe el estado actual de la seguridad en el proyecto frontend de Edu-Track.
+Este documento describe el estado actual de la seguridad en el proyecto frontend de Notar.
 
 ## 1. Postura de Seguridad Actual: Implementación de Prototipo
 
-La aplicación frontend de Edu-Track opera actualmente con una implementación de seguridad a nivel de prototipo. No se ha implementado autenticación real en el frontend.
+La aplicación frontend de Notar opera actualmente con una implementación de seguridad a nivel de prototipo. No se ha implementado autenticación real en el frontend.
 
 *   **Estado de Autenticación:** El acceso a la mayoría de las rutas y funcionalidades de la aplicación es directo y no requiere autenticación o permisos específicos a nivel de frontend.
 *   **Archivos de Referencia:**
