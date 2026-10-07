@@ -6,7 +6,7 @@ export type JustificationRecord = {
 };
 
 export type AttendanceRecord = {
-  id: number;
+  id: string;
   sectionId?: string;
   student: string;
   dni: string;
