@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { Alert, Box, Button, Paper, Stack, Typography } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
+import { Alert, Box } from '@mui/material';
+import { AddButton } from '@/components/common/AddButton';
+import { ContentCard } from '@/components/common/ContentCard';
+import { PageHeader } from '@/components/common/PageHeader';
 import MainLayout from '@/components/layout/MainLayout';
 import { useNotify } from '@/components/layout/NotificationProvider';
 import { SuspendUserDialog } from '@/components/users/SuspendUserDialog';
@@ -54,29 +56,14 @@ const UsersPage = () => {
   return (
     <MainLayout>
       <Box sx={{ p: { xs: 2, md: 4 }, bgcolor: '#f4f4f4', minHeight: '100%' }}>
-      <Stack
-        direction="row"
-        sx={{ mb: 3, justifyContent: 'space-between', alignItems: 'flex-start' }}
-      >
-        <Box>
-          <Typography variant="h5" sx={{ fontWeight: 800 }}>
-            Usuarios del sistema
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Administrá los accesos y roles de los usuarios
-          </Typography>
-        </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={openCreate}
-          sx={{ bgcolor: '#1a1a1a', '&:hover': { bgcolor: '#000' }, textTransform: 'none' }}
-        >
-          Nuevo usuario
-        </Button>
-      </Stack>
+      <PageHeader
+        title="Usuarios del sistema"
+        subtitle="Administrá los accesos y roles de los usuarios"
+        breadcrumbs={[{ label: 'Inicio', href: '/' }, { label: 'Usuarios' }]}
+        action={<AddButton label="Nuevo usuario" onClick={openCreate} />}
+      />
 
-      <Paper variant="outlined" sx={{ borderRadius: 2, overflow: 'hidden' }}>
+      <ContentCard>
         <UserFilters
           search={q.search}
           role={q.role}
@@ -103,7 +90,7 @@ const UsersPage = () => {
           onEdit={openEdit}
           onToggleActive={setToToggle}
         />
-      </Paper>
+      </ContentCard>
 
       <UserFormDialog
         open={formOpen}
