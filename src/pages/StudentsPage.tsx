@@ -38,6 +38,7 @@ export const StudentsPage = () => {
   const [deactivating, setDeactivating] = useState(false);
   const [snackbar, setSnackbar] = useState<SnackbarState | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const [editStudentId, setEditStudentId] = useState<string | null>(null);
 
   const debouncedSearch = useDebounce(filters.search.trim(), 400);
 
@@ -162,7 +163,7 @@ export const StudentsPage = () => {
                 students={result?.data ?? []}
                 loading={loading}
                 onView={(student) => navigate(`/students/${student.id}`)}
-                onEdit={(student) => navigate(`/students/${student.id}/edit`)}
+                onEdit={(student) => setEditStudentId(student.id)}
                 onDeactivate={handleOpenDeactivate}
               />
 
@@ -210,6 +211,14 @@ export const StudentsPage = () => {
       <StudentFormDialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}
+        onSaved={reload}
+      />
+      
+       <StudentFormDialog
+        mode="edit"
+        studentId={editStudentId}
+        open={editStudentId !== null}
+        onClose={() => setEditStudentId(null)}
         onSaved={reload}
       />
 
