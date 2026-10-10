@@ -1,4 +1,6 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const API_URL = (
+  import.meta.env.VITE_API_URL || 'http://localhost:3000'
+).replace(/\/+$/, '');
 
 export interface HealthResponse {
   status: string;
@@ -6,7 +8,8 @@ export interface HealthResponse {
 }
 
 export interface ApiErrorBody {
-  error: string;
+  error?: string;
+  message?: string;
   details?: unknown;
 }
 
@@ -15,29 +18,54 @@ export class ApiError extends Error {
   readonly details?: unknown;
 
   constructor(status: number, body: ApiErrorBody) {
-    super(body.error || `Error ${status}`);
+    super(body.error || body.message || `Error ${status}`);
     this.name = 'ApiError';
     this.status = status;
     this.details = body.details;
   }
 }
 
-export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
-  const config: RequestInit = {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    ...options,
-  };
+export async function fetchApi<T>(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<T> {
+  const token =
+    sessionStorage.getItem('token') ||
+    localStorage.getItem('token');
 
-  const baseUrl = API_URL.replace(/\/+$/, '');
-  const path = endpoint.replace(/^\/+/, '');
-  const response = await fetch(`${baseUrl}/${path}`, config);
+  const headers = new Headers(options.headers);
+
+  if (options.body && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
+
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  const apiBase = API_URL.endsWith('/api')
+    ? API_URL
+    : `${API_URL}/api`;
+
+  const path = endpoint
+    .replace(/^\/+/, '')
+    .replace(/^api\//, '');
+
+  const response = await fetch(`${apiBase}/${path}`, {
+    ...options,
+    headers,
+  });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ error: response.statusText }));
+    const errorData = await response.json().catch(() => ({
+      error: response.statusText,
+    }));
+
     throw new ApiError(response.status, errorData);
+  }
+
+  if (response.status === 204) {
+    return undefined as T;
   }
 
   return response.json() as Promise<T>;
