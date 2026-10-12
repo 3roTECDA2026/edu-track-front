@@ -1,5 +1,6 @@
 // src/routes/AppRouter.tsx
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+
 import UsersPage from '@/pages/UsersPage';
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
@@ -7,23 +8,47 @@ import AttendanceSummaryPage from '@/pages/AttendanceSummaryPage';
 import StudentsPage from '@/pages/StudentsPage';
 import CalificationGridPage from '@/pages/CalificationGridPage';
 import CoursesPage from '@/pages/CoursesPage';
+import StudentProfilePage from '@/pages/StudentProfilePage';
+import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage';
 
 const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Ruta pública de Login */}
+        {/* Login */}
         <Route path="/login" element={<LoginPage />} />
+
+        {/* Inicio */}
         <Route path="/home" element={<HomePage />} />
+
+        {/* Cursos */}
         <Route path="/courses" element={<CoursesPage />} />
-        {/* Resumen de inasistencias */}
+
+        {/* Asistencia */}
         <Route path="/attendance" element={<AttendanceSummaryPage />} />
+
+        {/* Alumnos */}
         <Route path="/students" element={<StudentsPage />} />
-        {/* Carga de calificaciones */}
-        <Route path="/calification-grid" element={<CalificationGridPage />} />
-        {/* Administración de usuarios */}
+
+        {/* Ficha del alumno */}
+        <Route path="/students/:id" element={<StudentProfilePage />} />
+
+        {/* Trayectoria académica del alumno */}
+        <Route
+          path="/students/:id/trajectory"
+          element={<StudentTrajectoryPage />}
+        />
+
+        {/* Calificaciones */}
+        <Route
+          path="/calification-grid"
+          element={<CalificationGridPage />}
+        />
+
+        {/* Usuarios */}
         <Route path="/users" element={<UsersPage />} />
-        {/* Redirección por defecto al Login */}
+
+        {/* Ruta por defecto */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>

@@ -17,8 +17,9 @@ import {
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
-import logoEscuela from '../assets/logo-normal.jpg';
-import logoProvincia from '../assets/bsas.png';
+// Assets institucionales
+import logoEscuela from '@/assets/logo-normal.jpg';
+import logoProvincia from '@/assets/bsas.png';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();

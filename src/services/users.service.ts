@@ -1,6 +1,6 @@
-import { fetchApi } from './api';
+import { fetchApi } from '@/services/api';
 
-export { ApiError } from './api';
+export { ApiError } from '@/services/api';
 
 export const ROLES = ['admin', 'docente', 'preceptor'] as const;
 export type Role = (typeof ROLES)[number];

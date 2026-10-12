@@ -278,7 +278,7 @@ export const CoursesPage: React.FC = () => {
                           )}
                         </TableCell>
                         <TableCell align="right">
-                          <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                          <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
                             <IconButton size="small" onClick={() => handleOpenCourseEdit(row)} sx={{ color: '#374151' }}>
                               <EditIcon fontSize="small" />
                             </IconButton>
@@ -347,7 +347,7 @@ export const CoursesPage: React.FC = () => {
                         <TableCell sx={{ color: '#374151' }}>{row.weeklyHours} hs</TableCell>
                         <TableCell sx={{ color: '#374151' }}>{row.years}</TableCell>
                         <TableCell align="right">
-                          <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                          <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
                             <IconButton size="small" onClick={() => handleOpenSubjectEdit(row)} sx={{ color: '#374151' }}>
                               <EditIcon fontSize="small" />
                             </IconButton>

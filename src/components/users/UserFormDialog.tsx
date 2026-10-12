@@ -28,8 +28,8 @@ import {
   type UserListItem,
   type UserPayload,
 } from '@/services/users.service';
-import { ROLE_LABELS } from './userLabels';
-import { PASSWORD_MIN, buildUserSchema, type UserFormValues } from './userSchemas';
+import { ROLE_LABELS } from '@/components/users/userLabels';
+import { PASSWORD_MIN, buildUserSchema, type UserFormValues } from '@/components/users/userSchemas';
 
 interface UserFormDialogProps {
   open: boolean;
@@ -329,7 +329,7 @@ export const UserFormDialog = ({ open, user, onClose, onSaved }: UserFormDialogP
             variant="contained"
             disabled={submitting}
             startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : undefined}
-            sx={{ bgcolor: '#1a1a1a', '&:hover': { bgcolor: '#000' } }}
+            sx={{ bgcolor: '#111827', '&:hover': { bgcolor: '#1f2937' } }}
           >
             {isEdit ? 'Guardar cambios' : 'Guardar usuario'}
           </Button>

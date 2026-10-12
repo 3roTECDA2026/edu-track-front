@@ -22,6 +22,13 @@ export const studentSchema = z.object({
   shift: z.string().min(1, 'Seleccioná un turno'),
 });
 
+// En edición la inscripción no se modifica, así que esos campos no se validan.
+export const studentEditSchema = studentSchema.extend({
+  grade: z.string(),
+  division: z.string(),
+  shift: z.string(),
+});
+
 export type StudentFormValues = z.infer<typeof studentSchema>;
 
 export const EMPTY_STUDENT_FORM: StudentFormValues = {

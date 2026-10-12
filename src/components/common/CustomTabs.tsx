@@ -40,6 +40,10 @@ export const CustomTabs: React.FC<CustomTabsProps> = ({
       color: '#6b7280',
       '&.Mui-selected': { color: '#111827' },
     },
+    '& .MuiTabs-indicator': {
+      backgroundColor: '#111827',
+      height: 2,
+    },
   };
 
   return (
@@ -49,7 +53,6 @@ export const CustomTabs: React.FC<CustomTabsProps> = ({
         onChange={onChange}
         textColor="inherit"
         variant={variant}
-        TabIndicatorProps={{ style: { backgroundColor: '#111827', height: 2 } }}
         sx={{ ...defaultTabsSx, ...tabsSx }}
       >
         {tabs.map((label, index) => (

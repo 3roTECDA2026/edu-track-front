@@ -1,7 +1,7 @@
 import { InputAdornment, MenuItem, Stack, TextField } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import { ROLES, type Role } from '@/services/users.service';
-import { ROLE_LABELS } from './userLabels';
+import { ROLE_LABELS } from '@/components/users/userLabels';
 
 interface UserFiltersProps {
   search: string;

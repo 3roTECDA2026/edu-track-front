@@ -10,9 +10,9 @@ import {
   Tooltip,
 } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
+import BlockIcon from '@mui/icons-material/Block';
 import type { StudentListItem } from '@/services/students.service';
+import { EditButton } from '@/components/common/EditButton';
 import { SHIFT_LABELS } from '@/components/students/studentLabels';
 import { StudentStatusChip } from '@/components/students/StudentStatusChip';
 
@@ -20,20 +20,13 @@ const COLUMNS = ['Legajo', 'Apellido', 'Nombre', 'DNI', 'Año', 'Sección', 'Tur
 const SKELETON_ROWS = 8;
 const EMPTY = '—';
 
+// Los encabezados de tabla toman su estilo del theme (estándar MUI del equipo).
 const headerCellSx = {
-  fontSize: '0.7rem',
-  fontWeight: 600,
-  letterSpacing: '0.05em',
-  textTransform: 'uppercase',
-  color: '#5f6368',
   whiteSpace: 'nowrap',
-  borderBottom: '1px solid #e0e0e0',
 };
 
 const bodyCellSx = {
-  fontSize: '0.85rem',
-  py: 2,
-  borderBottom: '1px solid #eeeeee',
+  color: '#374151',
 };
 
 interface StudentsTableProps {
@@ -46,7 +39,7 @@ interface StudentsTableProps {
 
 export const StudentsTable = ({ students, loading, onView, onEdit, onDeactivate }: StudentsTableProps) => {
   return (
-    // Horizontal scroll on small screens keeps every column readable.
+    // En pantallas chicas la tabla se desplaza horizontalmente para que se lean todas las columnas.
     <TableContainer sx={{ overflowX: 'auto' }}>
       <Table sx={{ minWidth: 900 }}>
         <TableHead>
@@ -64,7 +57,7 @@ export const StudentsTable = ({ students, loading, onView, onEdit, onDeactivate 
             ? Array.from({ length: SKELETON_ROWS }).map((_, rowIndex) => (
                 <TableRow key={rowIndex}>
                   {COLUMNS.map((column) => (
-                    <TableCell key={column} sx={bodyCellSx}>
+                    <TableCell key={column}>
                       <Skeleton variant="text" />
                     </TableCell>
                   ))}
@@ -76,7 +69,9 @@ export const StudentsTable = ({ students, loading, onView, onEdit, onDeactivate 
 
                 return (
                   <TableRow key={student.id} hover>
-                    <TableCell sx={bodyCellSx}>{student.recordNumber}</TableCell>
+                    <TableCell sx={{ ...bodyCellSx, fontWeight: 700, color: '#111827' }}>
+                      {student.recordNumber}
+                    </TableCell>
                     <TableCell sx={bodyCellSx}>{student.lastName}</TableCell>
                     <TableCell sx={bodyCellSx}>{student.firstName}</TableCell>
                     <TableCell sx={bodyCellSx}>{student.dni}</TableCell>
@@ -86,19 +81,24 @@ export const StudentsTable = ({ students, loading, onView, onEdit, onDeactivate 
                     <TableCell sx={bodyCellSx}>
                       <StudentStatusChip status={student.status} />
                     </TableCell>
-                    <TableCell align="center" sx={{ ...bodyCellSx, whiteSpace: 'nowrap', py: 1 }}>
+                    <TableCell align="center" sx={{ whiteSpace: 'nowrap', py: 1 }}>
                       <Tooltip title="Ver ficha">
-                        <IconButton size="small" aria-label="Ver ficha" onClick={() => onView(student)}>
-                          <VisibilityIcon fontSize="small" sx={{ color: '#202124' }} />
+                        <IconButton
+                          size="small"
+                          aria-label="Ver ficha"
+                          onClick={() => onView(student)}
+                          sx={{ color: '#374151' }}
+                        >
+                          <VisibilityIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="Editar">
-                        <IconButton size="small" aria-label="Editar" onClick={() => onEdit(student)}>
-                          <EditIcon fontSize="small" sx={{ color: '#202124' }} />
-                        </IconButton>
-                      </Tooltip>
+
+                      {/* Lápiz estándar del equipo para editar */}
+                      <EditButton onClick={() => onEdit(student)} />
+
+                      {/* La baja es lógica: el alumno pasa a inactivo, no se elimina */}
                       <Tooltip title={isInactive ? 'Ya está dado de baja' : 'Dar de baja'}>
-                        {/* The span lets the tooltip work even when the button is disabled */}
+                        {/* El span permite que el tooltip funcione aunque el botón esté deshabilitado */}
                         <span>
                           <IconButton
                             size="small"
@@ -106,7 +106,7 @@ export const StudentsTable = ({ students, loading, onView, onEdit, onDeactivate 
                             disabled={isInactive}
                             onClick={() => onDeactivate(student)}
                           >
-                            <DeleteIcon fontSize="small" sx={{ color: isInactive ? '#bdbdbd' : '#c5221f' }} />
+                            <BlockIcon fontSize="small" sx={{ color: isInactive ? '#9ca3af' : '#dc2626' }} />
                           </IconButton>
                         </span>
                       </Tooltip>

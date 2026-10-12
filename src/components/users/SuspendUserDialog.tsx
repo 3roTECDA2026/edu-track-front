@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from '@mui/material';
 import type { UserListItem } from '@/services/users.service';
-import { getFullName } from './userLabels';
+import { getFullName } from '@/components/users/userLabels';
 
 interface SuspendUserDialogProps {
   open: boolean;
