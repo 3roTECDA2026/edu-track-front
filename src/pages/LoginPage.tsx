@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Box,
@@ -15,13 +14,17 @@ import {
   Link,
   CircularProgress,
 } from '@mui/material';
+
 import { Visibility, VisibilityOff } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
 import logoEscuela from '@/assets/logo-normal.jpg';
 import logoProvincia from '@/assets/bsas.png';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// URL configurable para desarrollo local y Vercel.
+const API_URL = (
+  import.meta.env.VITE_API_URL || 'http://localhost:3000'
+).replace(/\/+$/, '');
 
 interface LoginResponse {
   token: string;
@@ -44,7 +47,13 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleClickShowPassword = () => {
+    setShowPassword((prev) => !prev);
+  };
+
+  const handleSubmit = async (
+    e: React.FormEvent<HTMLFormElement>
+  ) => {
     e.preventDefault();
 
     if (!usuario.trim() || !password) {
@@ -52,8 +61,8 @@ export const LoginPage: React.FC = () => {
       return;
     }
 
-    setLoading(true);
     setError(null);
+    setLoading(true);
 
     try {
       const response = await fetch(`${API_URL}/api/auth/login`, {
@@ -62,6 +71,7 @@ export const LoginPage: React.FC = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          // Compatible con el backend actual de NOTAR.
           user: usuario.trim(),
           password,
         }),
@@ -85,11 +95,13 @@ export const LoginPage: React.FC = () => {
         throw new Error('El servidor devolvió una respuesta inválida.');
       }
 
+      // Eliminar sesiones anteriores.
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('user');
 
+      // Guardar la sesión según la opción Recordarme.
       const storage = rememberMe ? localStorage : sessionStorage;
 
       storage.setItem('token', data.token);
@@ -98,7 +110,9 @@ export const LoginPage: React.FC = () => {
       navigate('/home', { replace: true });
     } catch (err) {
       if (err instanceof TypeError) {
-        setError('No se pudo conectar con el backend. Verificá que esté funcionando.');
+        setError(
+          'No se pudo conectar con el backend. Verificá que esté funcionando.'
+        );
       } else {
         setError(
           err instanceof Error
@@ -135,7 +149,10 @@ export const LoginPage: React.FC = () => {
           component="img"
           src={logoProvincia}
           alt="Gobierno de la Provincia de Buenos Aires"
-          sx={{ height: 65, objectFit: 'contain' }}
+          sx={{
+            height: 65,
+            objectFit: 'contain',
+          }}
         />
       </Box>
 
@@ -168,6 +185,7 @@ export const LoginPage: React.FC = () => {
                 width: 64,
                 height: 64,
                 mb: 2.5,
+                borderRadius: 0,
                 border: '1px solid #d1d5db',
                 display: 'flex',
                 alignItems: 'center',
@@ -179,13 +197,21 @@ export const LoginPage: React.FC = () => {
                 component="img"
                 src={logoEscuela}
                 alt="Logo Escuela"
-                sx={{ width: 64, height: 64, objectFit: 'contain' }}
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: 'contain',
+                }}
               />
             </Box>
 
             <Typography
               variant="h6"
-              sx={{ fontWeight: 700, color: '#111827', mb: 0.5 }}
+              sx={{
+                fontWeight: 700,
+                color: '#111827',
+                mb: 0.5,
+              }}
             >
               Gestión Escolar
             </Typography>
@@ -202,19 +228,26 @@ export const LoginPage: React.FC = () => {
               Ingresá tu usuario y contraseña para acceder al sistema
             </Typography>
 
+            {/* Mensajes de error */}
             {error && (
-              <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
+              <Alert
+                severity="error"
+                sx={{
+                  width: '100%',
+                  mb: 2,
+                }}
+              >
                 {error}
               </Alert>
             )}
 
+            {/* Formulario */}
             <Box
               component="form"
               onSubmit={handleSubmit}
               noValidate
               sx={{ width: '100%' }}
             >
-              {/* Usuario */}
               <Typography
                 variant="caption"
                 sx={{
@@ -248,7 +281,6 @@ export const LoginPage: React.FC = () => {
                 }}
               />
 
-              {/* Contraseña */}
               <Typography
                 variant="caption"
                 sx={{
@@ -287,7 +319,7 @@ export const LoginPage: React.FC = () => {
                       <InputAdornment position="end">
                         <IconButton
                           aria-label="mostrar u ocultar contraseña"
-                          onClick={() => setShowPassword((prev) => !prev)}
+                          onClick={handleClickShowPassword}
                           edge="end"
                           size="small"
                           disabled={loading}
@@ -304,7 +336,7 @@ export const LoginPage: React.FC = () => {
                 }}
               />
 
-              {/* Opciones adicionales */}
+              {/* Recordarme y recuperación */}
               <Box
                 sx={{
                   display: 'flex',
@@ -318,17 +350,26 @@ export const LoginPage: React.FC = () => {
                   control={
                     <Checkbox
                       checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
+                      onChange={(e) =>
+                        setRememberMe(e.target.checked)
+                      }
                       size="small"
                       disabled={loading}
                       sx={{
                         color: '#4b5563',
-                        '&.Mui-checked': { color: '#111827' },
+                        '&.Mui-checked': {
+                          color: '#111827',
+                        },
                       }}
                     />
                   }
                   label={
-                    <Typography sx={{ fontSize: '0.85rem', color: '#4b5563' }}>
+                    <Typography
+                      sx={{
+                        fontSize: '0.85rem',
+                        color: '#4b5563',
+                      }}
+                    >
                       Recordarme
                     </Typography>
                   }
@@ -342,14 +383,16 @@ export const LoginPage: React.FC = () => {
                     fontSize: '0.85rem',
                     color: '#4b5563',
                     textDecoration: 'none',
-                    '&:hover': { textDecoration: 'underline' },
+                    '&:hover': {
+                      textDecoration: 'underline',
+                    },
                   }}
                 >
                   Olvidé mi contraseña
                 </Link>
               </Box>
 
-              {/* Botón de login */}
+              {/* Botón de inicio de sesión */}
               <Button
                 type="submit"
                 fullWidth
@@ -372,7 +415,11 @@ export const LoginPage: React.FC = () => {
               >
                 {loading ? (
                   <>
-                    <CircularProgress size={18} color="inherit" sx={{ mr: 1 }} />
+                    <CircularProgress
+                      size={18}
+                      color="inherit"
+                      sx={{ mr: 1 }}
+                    />
                     Ingresando...
                   </>
                 ) : (
@@ -383,7 +430,12 @@ export const LoginPage: React.FC = () => {
           </Paper>
 
           {/* Footer */}
-          <Box sx={{ mt: 3, textAlign: 'center' }}>
+          <Box
+            sx={{
+              mt: 3,
+              textAlign: 'center',
+            }}
+          >
             <Typography
               variant="caption"
               sx={{
