@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import {
   Box,
@@ -16,7 +17,7 @@ import {
 } from '@mui/material';
 
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 
 import logoEscuela from '@/assets/logo-normal.jpg';
 import logoProvincia from '@/assets/bsas.png';
@@ -71,7 +72,6 @@ export const LoginPage: React.FC = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          // Compatible con el backend actual de NOTAR.
           user: usuario.trim(),
           password,
         }),
@@ -375,9 +375,10 @@ export const LoginPage: React.FC = () => {
                   }
                 />
 
+                {/* Enlace funcional a recuperación */}
                 <Link
-                  href="#"
-                  onClick={(e) => e.preventDefault()}
+                  component={RouterLink}
+                  to="/forgot-password"
                   variant="body2"
                   sx={{
                     fontSize: '0.85rem',
