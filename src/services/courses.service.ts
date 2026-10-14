@@ -1,12 +1,17 @@
 import { fetchApi } from '@/services/api';
 
 export interface CourseOption {
-  id: number;
-  label: string; // ej: "1º Año — Sección A — Matemática"
+  id: string;
+  year: number;
+  grade: number;
+  division: string;
+  shift: string;
 }
 
-// Respuesta esperada: { success, data: CourseOption[] }
-export async function listCourses(signal?: AbortSignal): Promise<CourseOption[]> {
-  const body = await fetchApi<{ data: CourseOption[] }>('/courses', { signal });
-  return body.data;
+export async function listCourses(
+  signal?: AbortSignal
+): Promise<CourseOption[]> {
+  return fetchApi<CourseOption[]>('/api/class-sections', {
+    signal,
+  });
 }
