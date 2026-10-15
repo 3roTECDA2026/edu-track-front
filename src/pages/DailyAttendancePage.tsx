@@ -74,7 +74,7 @@ export const DailyAttendancePage: React.FC = () => {
       .sort((a, b) => a.lastName.localeCompare(b.lastName, 'es'))
   }, [courseId, sectionId])
 
-  const totalPages = Math.max(1, Math.ceil(courseStudents.length / PAGE_SIZE))
+  
   const pageStudents = courseStudents.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
   function handleAttendanceChange(studentId: string, state: AttendanceState) {

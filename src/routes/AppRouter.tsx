@@ -10,14 +10,19 @@ import CalificationGridPage from '@/pages/CalificationGridPage';
 import CoursesPage from '@/pages/CoursesPage';
 import StudentProfilePage from '@/pages/StudentProfilePage';
 import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage';
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
+import ResetPasswordPage from '@/pages/ResetPasswordPage';
 
 const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Login */}
+       {/* Login */}
         <Route path="/login" element={<LoginPage />} />
 
+{/* Recuperación de contraseña */}
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         {/* Inicio */}
         <Route path="/home" element={<HomePage />} />
 

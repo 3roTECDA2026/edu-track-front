@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -36,6 +37,7 @@ export const HomePage: React.FC = () => {
     const fetchDashboardStats = async () => {
       try {
         setLoading(true);
+
         const studentsRes = await fetchApi<StudentsResponse>(
           "/api/students?page=1&pageSize=1",
         ).catch(() => null);
@@ -47,6 +49,7 @@ export const HomePage: React.FC = () => {
             typeof studentsRes.total === "number"
               ? studentsRes.total
               : (studentsRes.items?.length ?? 0);
+
           setTotalStudents(count);
         } else {
           setTotalStudents(0);
@@ -54,7 +57,11 @@ export const HomePage: React.FC = () => {
 
         setActiveCourses(DEFAULT_ACTIVE_COURSES);
       } catch (error) {
-        console.error("Error al cargar métricas del dashboard:", error);
+        console.error(
+          "Error al cargar métricas del dashboard:",
+          error,
+        );
+
         if (isMounted) {
           setTotalStudents(0);
           setActiveCourses(DEFAULT_ACTIVE_COURSES);
@@ -79,8 +86,9 @@ export const HomePage: React.FC = () => {
     <MainLayout>
       <Box sx={{ maxWidth: 1200, mx: "auto", p: 1 }}>
         <PageHeader
-          title="Bienvenido a NOTAR"
+          title="Bienvenido a NotAr"
           subtitle="Gestión educativa simplificada para la Escuela Normal."
+          breadcrumbs={[]}
         />
 
         <ActiveScheduleCards />
@@ -102,23 +110,36 @@ export const HomePage: React.FC = () => {
                 <Typography variant="h6" sx={{ mb: 1 }}>
                   Estudiantes
                 </Typography>
+
                 <Typography
                   variant="h3"
-                  sx={{ color: "#111827", fontWeight: 800, my: 1 }}
+                  sx={{
+                    color: "#111827",
+                    fontWeight: 800,
+                    my: 1,
+                  }}
                 >
                   {loading ? (
-                    <CircularProgress size={30} sx={{ color: "#111827" }} />
+                    <CircularProgress
+                      size={30}
+                      sx={{ color: "#111827" }}
+                    />
                   ) : (
                     (totalStudents ?? 0)
                   )}
                 </Typography>
+
                 <Typography
                   variant="caption"
-                  sx={{ color: "#6b7280", fontWeight: 500 }}
+                  sx={{
+                    color: "#6b7280",
+                    fontWeight: 500,
+                  }}
                 >
                   Total matriculados
                 </Typography>
               </CardContent>
+
               <Box sx={{ p: 2, pt: 0 }}>
                 <AddButton
                   label="Ver listado"
@@ -145,23 +166,36 @@ export const HomePage: React.FC = () => {
                 <Typography variant="h6" sx={{ mb: 1 }}>
                   Cursos registrados
                 </Typography>
+
                 <Typography
                   variant="h3"
-                  sx={{ color: "#111827", fontWeight: 800, my: 1 }}
+                  sx={{
+                    color: "#111827",
+                    fontWeight: 800,
+                    my: 1,
+                  }}
                 >
                   {loading ? (
-                    <CircularProgress size={30} sx={{ color: "#111827" }} />
+                    <CircularProgress
+                      size={30}
+                      sx={{ color: "#111827" }}
+                    />
                   ) : (
                     (activeCourses ?? 0)
                   )}
                 </Typography>
+
                 <Typography
                   variant="caption"
-                  sx={{ color: "#6b7280", fontWeight: 500 }}
+                  sx={{
+                    color: "#6b7280",
+                    fontWeight: 500,
+                  }}
                 >
                   Secciones y cursos institucionales
                 </Typography>
               </CardContent>
+
               <Box sx={{ p: 2, pt: 0 }}>
                 <AddButton
                   label="Gestionar cursos"
@@ -175,12 +209,17 @@ export const HomePage: React.FC = () => {
           <Grid size={{ xs: 12, md: 4 }}>
             <Card
               variant="outlined"
-              sx={{ height: "100%", borderRadius: 2, borderColor: "#e5e7eb" }}
+              sx={{
+                height: "100%",
+                borderRadius: 2,
+                borderColor: "#e5e7eb",
+              }}
             >
               <CardContent>
                 <Typography variant="h6" sx={{ mb: 2 }}>
                   Acciones rápidas
                 </Typography>
+
                 <Stack spacing={1.5}>
                   <AddButton
                     label="Registrar estudiante"
@@ -188,6 +227,7 @@ export const HomePage: React.FC = () => {
                     fullWidth
                     sx={{ justifyContent: "center" }}
                   />
+
                   <AddButton
                     label="Reporte de asistencias"
                     onClick={() => goTo("/attendance")}
