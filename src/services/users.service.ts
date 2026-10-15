@@ -31,6 +31,25 @@ export interface UsersPageResult {
   total: number;
 }
 
+interface BackendUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: 'ADMINISTRATOR' | 'SCHOOL_MANAGEMENT' | 'EOE_DIRECTIVE' | 'TEACHER' | 'STUDENT' | 'FAMILY';
+  status: 'ACTIVE' | 'SUSPENDED' | 'INACTIVE';
+}
+
+interface BackendUsersEnvelope {
+  success: boolean;
+  data: {
+    items: BackendUser[];
+    pagination: {
+      total: number;
+    };
+  };
+}
+
 export interface UserPayload {
   firstName: string;
   lastName: string;
@@ -46,19 +65,53 @@ export interface UserPayload {
 export type CreateUserPayload = UserPayload & { password: string };
 export type UpdateUserPayload = UserPayload & { password?: string }; // password solo si se completó
 
+function mapBackendRole(role: BackendUser['role']): Role {
+  if (role === 'ADMINISTRATOR') return 'admin';
+  if (role === 'TEACHER') return 'docente';
+  return 'preceptor';
+}
+
+function mapBackendUser(user: BackendUser): UserListItem {
+  return {
+    id: user.id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    dni: '',
+    email: user.email,
+    phone: null,
+    username: user.email.split('@')[0] ?? user.email,
+    role: mapBackendRole(user.role),
+    active: user.status === 'ACTIVE',
+    courseIds: [],
+  };
+}
+
 // Respuesta esperada: { success, data: UserListItem[], pagination: { total } }
 // Si tu backend devuelve otra forma, se adapta solo acá.
 export async function listUsers(q: UsersQuery, signal?: AbortSignal): Promise<UsersPageResult> {
   const params = new URLSearchParams({ page: String(q.page), limit: String(q.limit) });
   if (q.search) params.set('search', q.search);
-  if (q.role) params.set('role', q.role);
+
+  if (q.role) {
+    const roleMap: Record<Role, BackendUser['role']> = {
+      admin: 'ADMINISTRATOR',
+      docente: 'TEACHER',
+      preceptor: 'SCHOOL_MANAGEMENT',
+    };
+    params.set('role', roleMap[q.role]);
+  }
+
   if (q.active) params.set('active', q.active);
 
-  const body = await fetchApi<{ data: UserListItem[]; pagination: { total: number } }>(
+  const body = await fetchApi<BackendUsersEnvelope>(
     `/api/users?${params.toString()}`,
     { signal },
   );
-  return { items: body.data, total: body.pagination.total };
+
+  return {
+    items: body.data.items.map(mapBackendUser),
+    total: body.data.pagination.total,
+  };
 }
 
 export const createUser = (payload: CreateUserPayload) =>
