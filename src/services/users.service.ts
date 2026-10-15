@@ -55,26 +55,26 @@ export async function listUsers(q: UsersQuery, signal?: AbortSignal): Promise<Us
   if (q.active) params.set('active', q.active);
 
   const body = await fetchApi<{ data: UserListItem[]; pagination: { total: number } }>(
-    `/users?${params.toString()}`,
+    `/api/users?${params.toString()}`,
     { signal },
   );
   return { items: body.data, total: body.pagination.total };
 }
 
 export const createUser = (payload: CreateUserPayload) =>
-  fetchApi<{ data: UserListItem }>('/users', {
+  fetchApi<{ data: UserListItem }>('/api/users', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
 
 export const updateUser = (id: UserListItem['id'], payload: UpdateUserPayload) =>
-  fetchApi<{ data: UserListItem }>(`/users/${id}`, {
+  fetchApi<{ data: UserListItem }>(`/api/users/${id}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
   });
 
 export const suspendUser = (id: UserListItem['id']) =>
-  fetchApi<{ data: UserListItem }>(`/users/${id}/suspend`, { method: 'PATCH' });
+  fetchApi<{ data: UserListItem }>(`/api/users/${id}/suspend`, { method: 'PATCH' });
 
 export const activateUser = (id: UserListItem['id']) =>
-  fetchApi<{ data: UserListItem }>(`/users/${id}/activate`, { method: 'PATCH' });
+  fetchApi<{ data: UserListItem }>(`/api/users/${id}/activate`, { method: 'PATCH' });
