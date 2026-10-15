@@ -24,8 +24,8 @@ import logoProvincia from '@/assets/bsas.png';
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
 
-  const [user, setUser] = useState('');
-  const [password, setPassword] = useState('');
+  const [user, setUser] = useState('admin@notar.local');
+  const [password, setPassword] = useState('Admin1234!');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
