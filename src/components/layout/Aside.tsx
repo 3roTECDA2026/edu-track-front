@@ -19,6 +19,8 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GradingIcon from '@mui/icons-material/Grading';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import { useLocation, useNavigate } from 'react-router-dom';
+import EditCalendarIcon from '@mui/icons-material/EditCalendar';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 
 // Importación de asset local
 import logoEscuela from '@/assets/logo.png';
@@ -38,7 +40,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Usuarios', icon: <UserIcon />, path: '/users' },
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
   { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
-  { label: 'Inasistencias', icon: <EventNoteIcon />, path: '/attendance' },
+  { label: 'Carga de asistencia', path: '/attendance/daily', icon: <EditCalendarIcon /> },
+  { label: 'Resumen de inasistencias', path: '/attendance', icon: <AssessmentIcon /> },
   { label: 'Calificaciones', icon: <GradingIcon />, path: '/calification-grid' },
 ];
 
