@@ -41,6 +41,7 @@ const OBSERVATION_X = 201.5
 
 const BLACK = rgb(0, 0, 0)
 const RED = rgb(0.77, 0.13, 0.12)
+const BLUE = rgb(0, 0.68, 0.94)
 
 const SHIFT_NAMES: Record<string, string> = {
   MORNING: 'Mañana',
@@ -148,9 +149,20 @@ export async function downloadRitePdf(doc: RiteDocument, status: RiteStatus) {
     header
   )
 
+  // Marcas arriba del encabezado: la versión post-intensificación y, si no está firmado, el borrador.
+  let markX = 9.2
+  if (doc.isPostIntensification) {
+    const postLabel = 'VERSIÓN POST-INTENSIFICACIÓN'
+    drawText(firstPage, fonts, postLabel, markX, 18.3, { size: 7, bold: true, color: BLUE })
+    markX += fonts.bold.widthOfTextAtSize(postLabel, 7) / MM_TO_PT + 4
+  }
   // Un RITE sin firmar no es un documento oficial: se aclara arriba.
   if (status !== 'SIGNED') {
-    drawText(firstPage, fonts, 'BORRADOR - SIN FIRMAR', 9.2, 18.3, { size: 7, bold: true, color: RED })
+    drawText(firstPage, fonts, 'BORRADOR - SIN FIRMAR', markX, 18.3, {
+      size: 7,
+      bold: true,
+      color: RED,
+    })
   }
 
   // ---------- Página 1: tabla de materias ----------
@@ -180,7 +192,7 @@ export async function downloadRitePdf(doc: RiteDocument, status: RiteStatus) {
   })
 
   // ---------- Página 2: días hábiles e inasistencias ----------
-  // La tabla de materias pendientes (MPAA) queda en blanco: es de la parte 2 de la tarea.
+  // La tabla de materias pendientes (MPAA) queda en blanco: es de la etapa 3.
   const attendance = doc.attendance
   const centered = { align: 'center' as const, size: 8 }
   drawText(secondPage, fonts, String(attendance.term1.schoolDays), 49.6, 149, centered)
@@ -199,22 +211,27 @@ export async function downloadRitePdf(doc: RiteDocument, status: RiteStatus) {
 
   // ---------- Página 2: notificaciones ----------
   // Cada RITE firmado completa su columna con la fecha y la autoridad que firmó.
+  // El post-intensificación se firma en la columna "Calificación final" del formulario.
   const notifications = [
-    { term: 'FIRST', x: 204.5 },
-    { term: 'SECOND', x: 258.2 },
+    { term: 'FIRST', post: false, x: 204.5 },
+    { term: 'SECOND', post: false, x: 258.2 },
+    { term: 'SECOND', post: true, x: 280 },
   ] as const
-  for (const { term, x } of notifications) {
-    const signed = doc.notifications.find((item) => item.term === term && item.status === 'SIGNED')
+  for (const { term, post, x } of notifications) {
+    const signed = doc.notifications.find(
+      (item) =>
+        item.term === term && Boolean(item.isPostIntensification) === post && item.status === 'SIGNED'
+    )
     if (!signed) continue
     drawText(secondPage, fonts, formatDate(signed.signedAt), x, 147.8, { align: 'center', size: 7 })
     drawText(secondPage, fonts, signed.signedBy ?? '', x, 156.4, {
       align: 'center',
       size: 6.5,
-      maxWidth: 25,
+      maxWidth: post ? 15 : 25,
     })
   }
 
-  const termCode = doc.term === 'FIRST' ? '1C' : '2C'
+  const termCode = doc.isPostIntensification ? 'POST' : doc.term === 'FIRST' ? '1C' : '2C'
   downloadBytes(
     await pdf.save(),
     `RITE_${doc.student.lastName}_${doc.student.firstName}_${doc.academicYear}_${termCode}.pdf`

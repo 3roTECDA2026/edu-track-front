@@ -11,6 +11,7 @@ export interface RiteSummary {
   academicYearId: string
   academicYear: number
   term: RiteTerm
+  isPostIntensification: boolean
   status: RiteStatus
   generalNotes: string | null
   signedAt: string | null
@@ -41,8 +42,10 @@ export interface RiteAttendanceTerm {
   absences: number
 }
 
+// isPostIntensification es opcional: los RITE firmados antes guardaron la copia fija sin ese dato.
 export interface RiteNotification {
   term: RiteTerm
+  isPostIntensification?: boolean
   status: RiteStatus
   signedAt: string | null
   signedBy: string | null
@@ -52,6 +55,7 @@ export interface RiteDocument {
   institution: { name: string; number: string; district: string }
   academicYear: number
   term: RiteTerm
+  isPostIntensification?: boolean
   student: { id: string; firstName: string; lastName: string; dni: string; recordNumber: string }
   section: { grade: number; division: string; shift: Shift } | null
   subjects: RiteSubject[]
@@ -71,7 +75,7 @@ export interface RiteDetail {
 }
 
 // Token del usuario logueado, para las acciones que lo exigen (firmar).
-// IMPORTANTE: si el login lo guarda con otro nombre, cambiar 'token' por esa clave.
+// Se busca en localStorage y en sessionStorage, según dónde lo haya guardado el login.
 function authHeaders(): Record<string, string> {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token')
   return token ? { Authorization: `Bearer ${token}` } : {}
@@ -85,7 +89,13 @@ export function getRite(id: string, signal?: AbortSignal) {
   return fetchApi<RiteDetail>(`/api/rites/${id}`, { signal })
 }
 
-export function createRite(data: { studentId: string; year: number; term: RiteTerm }) {
+// El RITE post-intensificación (E2-RF-12) se crea con term SECOND e isPostIntensification true.
+export function createRite(data: {
+  studentId: string
+  year: number
+  term: RiteTerm
+  isPostIntensification?: boolean
+}) {
   return fetchApi<RiteDetail>('/api/rites', { method: 'POST', body: JSON.stringify(data) })
 }
 

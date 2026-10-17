@@ -57,15 +57,25 @@ import {
 } from '@/services/rite.service'
 import { downloadRitePdf } from '@/utils/ritePdf'
 
+// Los tres RITE de un ciclo lectivo: 1° y 2° cuatrimestre, y el posterior a la intensificación (E2-RF-12).
+type RitePeriod = 'FIRST' | 'SECOND' | 'POST'
+
+const PERIODS: RitePeriod[] = ['FIRST', 'SECOND', 'POST']
+
+const PERIOD_LABELS: Record<RitePeriod, string> = {
+  FIRST: '1° cuatrimestre',
+  SECOND: '2° cuatrimestre',
+  POST: 'Post-intensificación',
+}
+
+// El RITE post-intensificación se guarda como del 2° cuatrimestre, con una marca aparte.
+const periodOf = (item: { term: RiteTerm; isPostIntensification?: boolean }): RitePeriod =>
+  item.isPostIntensification ? 'POST' : item.term
+
 const STATUS_CONFIG: Record<RiteStatus, { label: string; color: string; background: string }> = {
   DRAFT: { label: 'Borrador', color: '#b06000', background: '#fef7e0' },
   CLOSED: { label: 'Cerrado', color: '#1e40af', background: '#dbeafe' },
   SIGNED: { label: 'Firmado', color: '#15803d', background: '#dcfce7' },
-}
-
-const TERM_LABELS: Record<RiteTerm, string> = {
-  FIRST: '1° cuatrimestre',
-  SECOND: '2° cuatrimestre',
 }
 
 const SUBJECT_COLUMNS = [
@@ -76,6 +86,8 @@ const SUBJECT_COLUMNS = [
   'Calif. 1° C',
   '2° Val.',
   'Calif. 2° C',
+  'Dic.',
+  'Feb.',
   'Final',
   'Observaciones',
 ]
@@ -191,7 +203,7 @@ const RiteDocumentView = ({
           </Typography>
         ) : (
           <TableContainer sx={{ overflowX: 'auto' }}>
-            <Table sx={{ minWidth: 900 }}>
+            <Table sx={{ minWidth: 1000 }}>
               <TableHead>
                 <TableRow>
                   {SUBJECT_COLUMNS.map((column) => (
@@ -228,6 +240,12 @@ const RiteDocumentView = ({
                     </TableCell>
                     <TableCell align="center" sx={bodyCellSx}>
                       <Score value={subject.term2?.score ?? null} />
+                    </TableCell>
+                    <TableCell align="center" sx={bodyCellSx}>
+                      <Score value={subject.intensification?.december ?? null} />
+                    </TableCell>
+                    <TableCell align="center" sx={bodyCellSx}>
+                      <Score value={subject.intensification?.february ?? null} />
                     </TableCell>
                     <TableCell align="center" sx={bodyCellSx}>
                       <Score value={subject.finalScore} />
@@ -279,15 +297,15 @@ const RiteDocumentView = ({
           <Typography variant="h6" sx={{ mb: 2 }}>
             Notificaciones
           </Typography>
-          {(['FIRST', 'SECOND'] as RiteTerm[]).map((termKey) => {
-            const notification = doc.notifications.find((item) => item.term === termKey)
+          {PERIODS.map((periodKey) => {
+            const notification = doc.notifications.find((item) => periodOf(item) === periodKey)
             return (
               <Box
-                key={termKey}
+                key={periodKey}
                 sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', mb: 1 }}
               >
-                <Typography variant="body2" sx={{ fontWeight: 600, minWidth: 120 }}>
-                  {TERM_LABELS[termKey]}
+                <Typography variant="body2" sx={{ fontWeight: 600, minWidth: 150 }}>
+                  {PERIOD_LABELS[periodKey]}
                 </Typography>
                 {notification ? (
                   <>
@@ -351,7 +369,7 @@ interface RiteTabProps {
 
 export const RiteTab = ({ studentId }: RiteTabProps) => {
   const [year, setYear] = useState<number | null>(null)
-  const [term, setTerm] = useState<RiteTerm>('FIRST')
+  const [period, setPeriod] = useState<RitePeriod>('FIRST')
   const [working, setWorking] = useState(false)
   const [notesDraft, setNotesDraft] = useState<{ riteId: string; text: string } | null>(null)
   const [message, setMessage] = useState<MessageState | null>(null)
@@ -364,13 +382,18 @@ export const RiteTab = ({ studentId }: RiteTabProps) => {
   )
 
   // Años en los que el alumno estuvo inscripto, del más reciente al más viejo.
-  const years = useMemo(
-    () => [...new Set((history.data ?? []).map((item) => item.year))].sort((a, b) => b - a),
-    [history.data]
-  )
+  // Si no tiene historial de cursos, se ofrece el año actual para poder generar el RITE igual.
+  const years = useMemo(() => {
+    const fromHistory = [...new Set((history.data ?? []).map((item) => item.year))].sort(
+      (a, b) => b - a
+    )
+    return fromHistory.length > 0 ? fromHistory : [new Date().getFullYear()]
+  }, [history.data])
+
   const selectedYear = year ?? years[0] ?? null
   const selectedRite =
-    rites.data?.find((item) => item.academicYear === selectedYear && item.term === term) ?? null
+    rites.data?.find((item) => item.academicYear === selectedYear && periodOf(item) === period) ??
+    null
 
   // La clave incluye la fecha de actualización: cuando el RITE cambia, se vuelve a pedir el detalle.
   const detail = useLazyResource(
@@ -440,19 +463,22 @@ export const RiteTab = ({ studentId }: RiteTabProps) => {
         <TextField
           select
           size="small"
-          label="Cuatrimestre"
-          value={term}
-          onChange={(event) => setTerm(event.target.value as RiteTerm)}
-          sx={{ minWidth: 170 }}
+          label="Período"
+          value={period}
+          onChange={(event) => setPeriod(event.target.value as RitePeriod)}
+          sx={{ minWidth: 200 }}
         >
-          <MenuItem value="FIRST">{TERM_LABELS.FIRST}</MenuItem>
-          <MenuItem value="SECOND">{TERM_LABELS.SECOND}</MenuItem>
+          {PERIODS.map((item) => (
+            <MenuItem key={item} value={item}>
+              {PERIOD_LABELS[item]}
+            </MenuItem>
+          ))}
         </TextField>
         {selectedRite && <StatusBadge status={selectedRite.status} />}
 
         <Box sx={{ flexGrow: 1 }} />
+
         {selectedRite && data && (
-          
           <Button
             variant="outlined"
             color="inherit"
@@ -466,7 +492,6 @@ export const RiteTab = ({ studentId }: RiteTabProps) => {
             Descargar PDF
           </Button>
         )}
-
         {selectedRite && selectedRite.status === 'DRAFT' && (
           <Button
             variant="outlined"
@@ -516,7 +541,9 @@ export const RiteTab = ({ studentId }: RiteTabProps) => {
             Todavía no hay RITE para este período
           </Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
-            Se completa automáticamente con las notas y la asistencia cargadas en el sistema.
+            {period === 'POST'
+              ? 'Se genera después de firmar el RITE del 2° cuatrimestre, con los resultados de la intensificación.'
+              : 'Se completa automáticamente con las notas y la asistencia cargadas en el sistema.'}
           </Typography>
           <AddButton
             label="Crear RITE"
@@ -524,7 +551,13 @@ export const RiteTab = ({ studentId }: RiteTabProps) => {
             onClick={() => {
               if (selectedYear === null) return
               void runAction(
-                () => createRite({ studentId, year: selectedYear, term }),
+                () =>
+                  createRite({
+                    studentId,
+                    year: selectedYear,
+                    term: period === 'POST' ? 'SECOND' : period,
+                    isPostIntensification: period === 'POST',
+                  }),
                 'RITE creado en borrador.'
               )
             }}
@@ -559,7 +592,7 @@ export const RiteTab = ({ studentId }: RiteTabProps) => {
             <Table sx={{ minWidth: 600 }}>
               <TableHead>
                 <TableRow>
-                  {['Ciclo lectivo', 'Cuatrimestre', 'Estado', 'Firmado', ''].map((column) => (
+                  {['Ciclo lectivo', 'Período', 'Estado', 'Firmado', ''].map((column) => (
                     <TableCell key={column} sx={headerCellSx}>
                       {column}
                     </TableCell>
@@ -572,7 +605,7 @@ export const RiteTab = ({ studentId }: RiteTabProps) => {
                     <TableCell sx={{ ...bodyCellSx, fontWeight: 700, color: COLORS.ink }}>
                       {item.academicYear}
                     </TableCell>
-                    <TableCell sx={bodyCellSx}>{TERM_LABELS[item.term]}</TableCell>
+                    <TableCell sx={bodyCellSx}>{PERIOD_LABELS[periodOf(item)]}</TableCell>
                     <TableCell sx={bodyCellSx}>
                       <StatusBadge status={item.status} />
                     </TableCell>
@@ -585,7 +618,7 @@ export const RiteTab = ({ studentId }: RiteTabProps) => {
                         color="inherit"
                         onClick={() => {
                           setYear(item.academicYear)
-                          setTerm(item.term)
+                          setPeriod(periodOf(item))
                         }}
                       >
                         Ver
