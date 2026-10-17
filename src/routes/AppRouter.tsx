@@ -10,8 +10,6 @@ import CalificationGridPage from '@/pages/CalificationGridPage';
 import CoursesPage from '@/pages/CoursesPage';
 import StudentProfilePage from '@/pages/StudentProfilePage';
 import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage';
-import TeacherAssignmentsPage from '@/pages/TeacherAssignmentsPage';
-
 const AppRouter = () => {
   return (
     <BrowserRouter>
@@ -48,9 +46,7 @@ const AppRouter = () => {
 
         {/* Usuarios */}
         <Route path="/users" element={<UsersPage />} />
-
-        {/* Asignaciones de los docentes */}
-        <Route path="/teacher-assignments" element={<TeacherAssignmentsPage />} />
+        
 
         {/* Ruta por defecto */}
         <Route path="*" element={<Navigate to="/login" replace />} />

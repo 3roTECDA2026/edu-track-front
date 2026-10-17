@@ -6,22 +6,28 @@ import { GRADES, getTeacherName } from '@/components/teacherAssignments/teacherA
 interface TeacherAssignmentFiltersProps {
   teachers: TeacherSummary[];
   subjects: SubjectOption[];
+  years: number[]; // ciclos lectivos presentes en las asignaciones
   teacherId: string;
   subjectId: string;
+  year: string; // '' = todos
   grade: string; // '' = todos, '1'..'6'
   onTeacherChange: (value: string) => void;
   onSubjectChange: (value: string) => void;
+  onYearChange: (value: string) => void;
   onGradeChange: (value: string) => void;
 }
 
 export const TeacherAssignmentFilters = ({
   teachers,
   subjects,
+  years,
   teacherId,
   subjectId,
+  year,
   grade,
   onTeacherChange,
   onSubjectChange,
+  onYearChange,
   onGradeChange,
 }: TeacherAssignmentFiltersProps) => {
   return (
@@ -59,9 +65,24 @@ export const TeacherAssignmentFilters = ({
       <TextField
         select
         size="small"
+        label="Ciclo lectivo"
+        value={year}
+        sx={{ minWidth: 180 }}
+        onChange={(e) => onYearChange(e.target.value)}
+      >
+        <MenuItem value="">Todos los ciclos</MenuItem>
+        {years.map((y) => (
+          <MenuItem key={y} value={String(y)}>
+            {y}
+          </MenuItem>
+        ))}
+      </TextField>
+      <TextField
+        select
+        size="small"
         label="Año de cursada"
         value={grade}
-        sx={{ minWidth: 200 }}
+        sx={{ minWidth: 180 }}
         onChange={(e) => onGradeChange(e.target.value)}
       >
         <MenuItem value="">Todos los años</MenuItem>

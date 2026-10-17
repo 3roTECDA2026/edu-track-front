@@ -19,8 +19,6 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GradingIcon from '@mui/icons-material/Grading';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import { useLocation, useNavigate } from 'react-router-dom';
-import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
-
 // Importación de asset local
 import logoEscuela from '@/assets/logo.png';
 import { UserIcon } from 'lucide-react';
@@ -39,7 +37,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Usuarios', icon: <UserIcon />, path: '/users' },
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
   { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
-  { label: 'Asignaciones', icon: <AssignmentIndIcon />, path: '/teacher-assignments' },
   { label: 'Inasistencias', icon: <EventNoteIcon />, path: '/attendance' },
   { label: 'Calificaciones', icon: <GradingIcon />, path: '/calification-grid' },
 ];
