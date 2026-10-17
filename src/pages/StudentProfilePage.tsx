@@ -16,6 +16,7 @@ import { ObservationsTab } from '@/components/studentProfile/ObservationsTab'
 import { cardSx } from '@/components/studentProfile/profileStyles'
 import { useLazyResource } from '@/hooks/useLazyResource'
 import { deactivateStudent } from '@/services/students.service'
+import { RiteTab } from '@/components/studentProfile/RiteTab'
 import {
   getStudentAttendance,
   getStudentById,
@@ -23,7 +24,7 @@ import {
   getStudentHistory,
 } from '@/services/studentProfile.service'
 
-type TabKey = 'personal' | 'enrollment' | 'attendance' | 'grades' | 'observations'
+type TabKey = 'personal' | 'enrollment' | 'attendance' | 'grades' | 'observations' | 'rite'
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'personal', label: 'Datos personales' },
@@ -31,6 +32,7 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'attendance', label: 'Asistencia' },
   { key: 'grades', label: 'Calificaciones' },
   { key: 'observations', label: 'Observaciones' },
+  { key: 'rite', label: 'RITE' },
 ]
 
 interface SnackbarState {
@@ -187,6 +189,7 @@ const StudentProfilePage = () => {
                 onRetry={grades.reload}
               />
             )}
+
             {activeTab === 'observations' && (
               <ObservationsTab
                 key={student.id}
@@ -194,6 +197,8 @@ const StudentProfilePage = () => {
                 onSaved={(message, severity) => setSnackbar({ message, severity })}
               />
             )}
+            {activeTab === 'rite' && <RiteTab studentId={student.id} />}
+            
           </Box>
         </Paper>
       </>

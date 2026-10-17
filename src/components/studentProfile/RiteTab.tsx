@@ -451,8 +451,8 @@ export const RiteTab = ({ studentId }: RiteTabProps) => {
         {selectedRite && <StatusBadge status={selectedRite.status} />}
 
         <Box sx={{ flexGrow: 1 }} />
-
         {selectedRite && data && (
+          
           <Button
             variant="outlined"
             color="inherit"
@@ -466,6 +466,7 @@ export const RiteTab = ({ studentId }: RiteTabProps) => {
             Descargar PDF
           </Button>
         )}
+
         {selectedRite && selectedRite.status === 'DRAFT' && (
           <Button
             variant="outlined"
