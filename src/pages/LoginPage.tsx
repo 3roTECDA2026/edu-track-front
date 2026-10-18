@@ -12,8 +12,8 @@ import {
   Alert,
   FormControlLabel,
   Checkbox,
-  Link,
   CircularProgress,
+  Link,
 } from '@mui/material';
 
 import { Visibility, VisibilityOff } from '@mui/icons-material';
@@ -22,7 +22,7 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import logoEscuela from '@/assets/logo-normal.jpg';
 import logoProvincia from '@/assets/bsas.png';
 
-// URL configurable para desarrollo local y Vercel.
+// URL configurable para desarrollo local y Vercel
 const API_URL = (
   import.meta.env.VITE_API_URL || 'http://localhost:3000'
 ).replace(/\/+$/, '');
@@ -95,13 +95,13 @@ export const LoginPage: React.FC = () => {
         throw new Error('El servidor devolvió una respuesta inválida.');
       }
 
-      // Eliminar sesiones anteriores.
+      // Eliminar sesiones anteriores
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('user');
 
-      // Guardar la sesión según la opción Recordarme.
+      // Guardar sesión según Recordarme
       const storage = rememberMe ? localStorage : sessionStorage;
 
       storage.setItem('token', data.token);
@@ -375,7 +375,7 @@ export const LoginPage: React.FC = () => {
                   }
                 />
 
-                {/* Enlace funcional a recuperación */}
+                {/* Recuperación de contraseña */}
                 <Link
                   component={RouterLink}
                   to="/forgot-password"

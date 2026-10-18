@@ -7,32 +7,23 @@ export { ApiError } from '@/services/api';
 // ROLES DEL FRONTEND
 // =====================================================
 
-// La API recibe los roles en minúscula.
-// Prisma realiza su propia conversión internamente.
 export const ROLES = ['admin', 'docente', 'preceptor'] as const;
 
 export type Role = (typeof ROLES)[number];
 
-// Roles definidos en Prisma.
 export type BackendRole =
   | 'ADMINISTRATOR'
+  | 'SCHOOL_MANAGEMENT'
+  | 'EOE_DIRECTIVE'
   | 'TEACHER'
-  | 'PRECEPTOR';
+  | 'PRECEPTOR'
+  | 'STUDENT'
+  | 'FAMILY';
 
-// Estados definidos en Prisma.
 export type BackendUserStatus =
   | 'ACTIVE'
   | 'SUSPENDED'
   | 'INACTIVE';
-
-// Conversión de roles de Prisma al frontend.
-// El backend actual devuelve roles en minúscula,
-// pero conservamos compatibilidad con valores Prisma.
-const ROLE_FROM_BACKEND: Record<BackendRole, Role> = {
-  ADMINISTRATOR: 'admin',
-  TEACHER: 'docente',
-  PRECEPTOR: 'preceptor',
-};
 
 // =====================================================
 // TIPOS DEL FRONTEND
@@ -64,8 +55,6 @@ export interface UsersPageResult {
   total: number;
 }
 
-// Conservamos los campos heredados para mantener
-// compatibilidad con los componentes existentes.
 export interface UserPayload {
   firstName: string;
   lastName: string;
@@ -87,7 +76,7 @@ export type UpdateUserPayload = UserPayload & {
 };
 
 // =====================================================
-// TIPOS DE RESPUESTA DEL BACKEND
+// TIPOS DEL BACKEND
 // =====================================================
 
 interface BackendUser {
@@ -95,17 +84,9 @@ interface BackendUser {
   firstName: string;
   lastName: string;
   email: string;
-
-  // El backend actual devuelve admin o docente.
-  // Preceptor quedará disponible cuando se habilite.
-  role: Role | BackendRole;
-
-  // La API actual devuelve active.
-  // status se mantiene por compatibilidad.
-  active?: boolean;
+  role: BackendRole | Role;
   status?: BackendUserStatus;
-
-  // Campos heredados opcionales.
+  active?: boolean;
   dni?: string | null;
   phone?: string | null;
   username?: string | null;
@@ -118,41 +99,62 @@ interface BackendResponse<T> {
   message?: string;
 }
 
-interface BackendListResponse
-  extends BackendResponse<BackendUser[]> {
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-  };
+interface BackendPagination {
+  page?: number;
+  limit?: number;
+  total: number;
 }
 
+type BackendListResponse =
+  | {
+      success: boolean;
+      data: BackendUser[];
+      pagination: BackendPagination;
+    }
+  | {
+      success: boolean;
+      data: {
+        items: BackendUser[];
+        pagination: BackendPagination;
+      };
+    };
+
 // =====================================================
-// CONVERSIÓN DE DATOS
+// CONVERSIÓN DE ROLES
 // =====================================================
 
-// Convertir rol del backend al frontend.
+const ROLE_TO_BACKEND: Record<Role, BackendRole> = {
+  admin: 'ADMINISTRATOR',
+  docente: 'TEACHER',
+  preceptor: 'SCHOOL_MANAGEMENT',
+};
+
 function fromBackendRole(role: BackendUser['role']): Role {
-  if (
-    role === 'admin' ||
-    role === 'docente' ||
-    role === 'preceptor'
-  ) {
-    return role;
+  switch (role) {
+    case 'admin':
+    case 'ADMINISTRATOR':
+      return 'admin';
+
+    case 'docente':
+    case 'TEACHER':
+      return 'docente';
+
+    case 'preceptor':
+    case 'PRECEPTOR':
+    case 'SCHOOL_MANAGEMENT':
+      return 'preceptor';
+
+    default:
+      throw new Error(
+        `Rol no soportado por el frontend: ${role}`
+      );
   }
-
-  const converted = ROLE_FROM_BACKEND[role as BackendRole];
-
-  if (!converted) {
-    throw new Error(
-      `Rol de usuario no soportado por el frontend: ${role}`,
-    );
-  }
-
-  return converted;
 }
 
-// Convertir usuario recibido de la API.
+// =====================================================
+// CONVERSIÓN DE USUARIOS
+// =====================================================
+
 function fromBackendUser(user: BackendUser): UserListItem {
   return {
     id: user.id,
@@ -167,8 +169,6 @@ function fromBackendUser(user: BackendUser): UserListItem {
         ? user.active
         : user.status === 'ACTIVE',
 
-    // Estos campos todavía no están implementados
-    // en el modelo User de Prisma.
     dni: user.dni ?? '',
     phone: user.phone ?? null,
     username: user.username ?? user.email,
@@ -177,7 +177,7 @@ function fromBackendUser(user: BackendUser): UserListItem {
 }
 
 // =====================================================
-// DATOS PARA CREAR USUARIOS
+// DATOS PARA CREAR USUARIO
 // =====================================================
 
 function toBackendCreatePayload(payload: CreateUserPayload) {
@@ -185,18 +185,14 @@ function toBackendCreatePayload(payload: CreateUserPayload) {
     firstName: payload.firstName.trim(),
     lastName: payload.lastName.trim(),
     email: payload.email.trim().toLowerCase(),
-
-    // La API espera admin, docente o, cuando
-    // se habilite, preceptor.
-    role: payload.role,
-
-    active: payload.active,
+    role: ROLE_TO_BACKEND[payload.role],
+    status: payload.active ? 'ACTIVE' : 'SUSPENDED',
     password: payload.password,
   };
 }
 
 // =====================================================
-// DATOS PARA ACTUALIZAR USUARIOS
+// DATOS PARA ACTUALIZAR USUARIO
 // =====================================================
 
 function toBackendUpdatePayload(payload: UpdateUserPayload) {
@@ -204,11 +200,7 @@ function toBackendUpdatePayload(payload: UpdateUserPayload) {
     firstName: payload.firstName.trim(),
     lastName: payload.lastName.trim(),
     email: payload.email.trim().toLowerCase(),
-
-    role: payload.role,
-    active: payload.active,
-
-    // No enviamos password en edición.
+    role: ROLE_TO_BACKEND[payload.role],
   };
 }
 
@@ -230,9 +222,8 @@ export async function listUsers(
     params.set('search', query.search.trim());
   }
 
-  // El backend espera el rol en minúscula.
   if (query.role) {
-    params.set('role', query.role);
+    params.set('role', ROLE_TO_BACKEND[query.role]);
   }
 
   if (query.active) {
@@ -241,14 +232,21 @@ export async function listUsers(
 
   const response = await fetchApi<BackendListResponse>(
     `/users?${params.toString()}`,
-    {
-      signal,
-    },
+    { signal },
   );
 
+  const data = response.data;
+
+  if (Array.isArray(data)) {
+    return {
+      items: data.map(fromBackendUser),
+      total: response.pagination.total,
+    };
+  }
+
   return {
-    items: response.data.map(fromBackendUser),
-    total: response.pagination.total,
+    items: data.items.map(fromBackendUser),
+    total: data.pagination.total,
   };
 }
 
@@ -257,8 +255,6 @@ export async function listUsers(
 // OBTENER USUARIO
 // =====================================================
 
-// Esta función queda preparada, pero la ruta GET /:id
-// todavía no aparece implementada en user.routes.ts.
 export async function getUserById(
   id: UserListItem['id'],
 ): Promise<UserListItem> {
@@ -282,7 +278,7 @@ export async function createUser(
   >('/users', {
     method: 'POST',
     body: JSON.stringify(
-      toBackendCreatePayload(payload),
+      toBackendCreatePayload(payload)
     ),
   });
 
@@ -306,7 +302,7 @@ export async function updateUser(
   >(`/users/${encodeURIComponent(id)}`, {
     method: 'PUT',
     body: JSON.stringify(
-      toBackendUpdatePayload(payload),
+      toBackendUpdatePayload(payload)
     ),
   });
 
