@@ -177,7 +177,7 @@ export const HeaderUser: React.FC<HeaderUserProps> = ({
                   <ListItemIcon sx={{ minWidth: 32 }}>
                     <LogoutIcon sx={{ fontSize: '1rem' }} />
                   </ListItemIcon>
-                  <ListItemText primaryTypographyProps={{ fontSize: '0.82rem', fontWeight: 600 }}>
+                  <ListItemText slotProps={{ primary: { sx: { fontSize: '0.82rem', fontWeight: 600 } } }}>
                     Sign out
                   </ListItemText>
                 </MenuItem>
