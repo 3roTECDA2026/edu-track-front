@@ -178,7 +178,7 @@ export const HeaderUser: React.FC<HeaderUserProps> = ({
                     <LogoutIcon sx={{ fontSize: '1rem' }} />
                   </ListItemIcon>
                   <ListItemText slotProps={{ primary: { sx: { fontSize: '0.82rem', fontWeight: 600 } } }}>
-                    Sign out
+                    Cerrar sesión
                   </ListItemText>
                 </MenuItem>
               </>

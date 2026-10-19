@@ -78,7 +78,6 @@ export const HomePage: React.FC = () => {
   return (
     <MainLayout>
       <Box sx={{ maxWidth: 1200, mx: "auto", p: 1 }}>
-
         <PageHeader
           title="Bienvenido a NOTAR"
           subtitle="Gestión educativa simplificada para la Escuela Normal."
