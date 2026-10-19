@@ -7,6 +7,7 @@ export interface HealthResponse {
 
 export interface ApiErrorBody {
   error: string;
+  message?: string;
   details?: unknown;
 }
 
@@ -15,17 +16,25 @@ export class ApiError extends Error {
   readonly details?: unknown;
 
   constructor(status: number, body: ApiErrorBody) {
-    super(body.error || `Error ${status}`);
+    super(body.error || body.message || `Error ${status}`);
     this.name = 'ApiError';
     this.status = status;
     this.details = body.details;
   }
 }
 
+function getAuthToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return sessionStorage.getItem('token') || localStorage.getItem('token');
+}
+
 export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const token = getAuthToken();
+
   const config: RequestInit = {
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
     ...options,
