@@ -186,10 +186,24 @@ export async function downloadRitePdf(doc: RiteDocument, status: RiteStatus) {
     drawText(firstPage, fonts, show(subject.finalScore), COLUMN_X.finalScore, valueY, centered)
 
     // Observaciones: al lado de "1º C:" y "2º C:", que ya están impresos en el formulario.
+    // Si son muy largas, se recortan con "…" para que no se salgan del casillero.
     const observation = { size: 4.5, maxWidth: 85 }
     drawText(firstPage, fonts, subject.term1.observations ?? '', OBSERVATION_X, firstRowY + 1.5, observation)
     drawText(firstPage, fonts, subject.term2?.observations ?? '', OBSERVATION_X, secondRowY + 1.5, observation)
   })
+
+  // El formulario oficial tiene 17 renglones: si el alumno tiene más materias, se avisa en el documento.
+  const omittedSubjects = doc.subjects.length - SUBJECT_ROWS
+  if (omittedSubjects > 0) {
+    drawText(
+      firstPage,
+      fonts,
+      `ATENCIÓN: ${omittedSubjects} materia(s) no entran en los 17 renglones del formulario oficial.`,
+      9.2,
+      186.8,
+      { size: 6, bold: true, color: RED }
+    )
+  }
 
   // ---------- Página 2: días hábiles e inasistencias ----------
   // La tabla de materias pendientes (MPAA) queda en blanco: es de la etapa 3.

@@ -74,12 +74,7 @@ export interface RiteDetail {
   document: RiteDocument
 }
 
-// Token del usuario logueado, para las acciones que lo exigen (firmar).
-// Se busca en localStorage y en sessionStorage, según dónde lo haya guardado el login.
-function authHeaders(): Record<string, string> {
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token')
-  return token ? { Authorization: `Bearer ${token}` } : {}
-}
+// Todas las funciones usan fetchApi, que agrega el token del usuario logueado.
 
 export function getStudentRites(studentId: string, signal?: AbortSignal) {
   return fetchApi<RiteSummary[]>(`/api/rites?studentId=${studentId}`, { signal })
@@ -114,9 +109,7 @@ export function reopenRite(id: string) {
   return fetchApi<RiteDetail>(`/api/rites/${id}/reopen`, { method: 'PATCH' })
 }
 
+// El back usa el token del usuario logueado para registrar quién firma.
 export function signRite(id: string) {
-  return fetchApi<RiteDetail>(`/api/rites/${id}/sign`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json', ...authHeaders() },
-  })
+  return fetchApi<RiteDetail>(`/api/rites/${id}/sign`, { method: 'PATCH' })
 }

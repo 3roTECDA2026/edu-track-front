@@ -11,7 +11,6 @@ import {
   Alert,
   FormControlLabel,
   Checkbox,
-  Link,
   CircularProgress,
 } from '@mui/material';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
@@ -24,8 +23,8 @@ import logoProvincia from '@/assets/bsas.png';
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
 
-  const [user, setUser] = useState('');
-  const [password, setPassword] = useState('');
+  const [user, setUser] = useState('admin@notar.local');
+  const [password, setPassword] = useState('Admin1234!');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -48,7 +47,7 @@ export const LoginPage: React.FC = () => {
 
     try {
 
-      const response = await fetch('http://localhost:3000/api/auth/login', {
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -71,8 +70,9 @@ export const LoginPage: React.FC = () => {
 
       navigate('/home');
 
-    } catch (err: any) {
-      setError(err.message || 'No se pudo conectar con el servidor.');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'No se pudo conectar con el servidor.';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -225,9 +225,9 @@ export const LoginPage: React.FC = () => {
                   }
                   label={<Typography sx={{ fontSize: '0.85rem', color: '#4b5563' }}>Recordarme</Typography>}
                 />
-                <Link href="#" variant="body2" sx={{ fontSize: '0.85rem', color: '#4b5563', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
+                {/* <Link href="#" variant="body2" sx={{ fontSize: '0.85rem', color: '#4b5563', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
                   Olvidé mi contraseña
-                </Link>
+                </Link> */}
               </Box>
 
               <Button
@@ -256,9 +256,9 @@ export const LoginPage: React.FC = () => {
             <Typography variant="caption" sx={{ color: '#9ca3af', fontSize: '0.75rem', display: 'block', mb: 0.5 }}>
               Sistema de Gestión Escolar v1.0
             </Typography>
-            <Link href="#" variant="caption" sx={{ color: '#6b7280', fontSize: '0.75rem', textDecoration: 'underline' }}>
+            {/* <Link href="#" variant="caption" sx={{ color: '#6b7280', fontSize: '0.75rem', textDecoration: 'underline' }}>
               Soporte técnico
-            </Link>
+            </Link> */}
           </Box>
 
         </Container>
