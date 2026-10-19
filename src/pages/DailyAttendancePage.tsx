@@ -53,7 +53,6 @@ const ATTENDANCE_OPTIONS: { value: AttendanceState; label: string }[] = [
   { value: 'justified', label: 'J' },
 ];
 
-// Textos descriptivos para los tooltips (lo que pediste que aparezca al posarse)
 const ATTENDANCE_LABELS: Record<AttendanceState, string> = {
   present: 'Presente',
   absent: 'Ausente (Falta)',
@@ -62,7 +61,6 @@ const ATTENDANCE_LABELS: Record<AttendanceState, string> = {
   empty: 'Sin registrar',
 };
 
-// Estilos limpios basados exclusivamente en sx para evitar conflictos de variantes
 const getButtonStyle = (selected: boolean, value: AttendanceState) => {
   if (!selected) {
     return {
@@ -72,7 +70,6 @@ const getButtonStyle = (selected: boolean, value: AttendanceState) => {
       '&:hover': { backgroundColor: '#f3f4f6', borderColor: '#9ca3af' },
     };
   }
-  // Colores específicos según el estado seleccionado
   switch (value) {
     case 'present':
       return { backgroundColor: '#111827', color: '#ffffff', borderColor: '#111827', '&:hover': { backgroundColor: '#1f2937' } };
@@ -142,7 +139,6 @@ export const DailyAttendancePage: React.FC = () => {
           ]}
         />
 
-        {/* Filtros */}
         <Paper variant="outlined" sx={{ p: 2, mb: 3, backgroundColor: '#fafafa', borderColor: '#e1e5e8' }}>
           <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 600, color: '#374151' }}>
             Seleccionar curso y fecha
@@ -208,7 +204,7 @@ export const DailyAttendancePage: React.FC = () => {
             <Button
               variant="contained"
               startIcon={<SearchIcon />}
-              onClick={() => setNotice({ type: 'info', text: `Mostrando datos para ${currentCourse?.name} - Sección ${sectionId}` })}
+              onClick={() => setNotice({ type: 'info', text: `Mostrando datos para ${currentCourse?.name} Sección ${sectionId}` })}
               sx={{
                 backgroundColor: '#111827',
                 textTransform: 'none',
@@ -248,7 +244,6 @@ export const DailyAttendancePage: React.FC = () => {
           </Typography>
         </Box>
 
-        {/* Tabla */}
         <TableContainer component={Paper} variant="outlined" sx={{ borderColor: '#e1e5e8' }}>
           <Table size="small">
             <TableHead sx={{ backgroundColor: '#f9fafb' }}>
@@ -303,7 +298,6 @@ export const DailyAttendancePage: React.FC = () => {
           </Table>
         </TableContainer>
 
-        {/* Acciones inferiores */}
         <Box 
           sx={{ 
             display: 'flex', 

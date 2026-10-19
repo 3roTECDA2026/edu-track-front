@@ -25,7 +25,6 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 // Importación de asset local
 import logoEscuela from '@/assets/logo.png';
 import { UserIcon } from 'lucide-react';
-import { GroupAdd } from '@mui/icons-material';
 
 const drawerWidth = 250;
 
