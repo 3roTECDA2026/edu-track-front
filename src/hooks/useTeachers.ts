@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { listTeachers } from '@/services/teachers.service';
 import type { TeacherSummary } from '@/services/teacherAssignments.service';
+import { getLoadErrorMessage } from '@/components/teacherAssignments/teacherAssignmentLabels';
 
 interface UseTeachersResult {
   teachers: TeacherSummary[];
@@ -24,7 +25,7 @@ export function useTeachers(): UseTeachersResult {
       })
       .catch((err: unknown) => {
         if (controller.signal.aborted) return;
-        setError(err instanceof Error ? err.message : 'Error inesperado');
+        setError(getLoadErrorMessage(err, 'los docentes'));
         setLoading(false);
       });
 

@@ -61,10 +61,12 @@ export const TeacherAssignmentsTab = () => {
 
   const errors = [
     q.error,
-    teachersError && `No se pudieron cargar los docentes: ${teachersError}`,
-    subjectsError && `No se pudieron cargar las materias: ${subjectsError}`,
-    sectionsError && `No se pudieron cargar los cursos: ${sectionsError}`,
+    teachersError,
+    subjectsError && `No se pudieron cargar las materias:`,
+    sectionsError && `No se pudieron cargar los cursos:`,
   ].filter((message): message is string => !!message);
+
+  const optionsFailed = !!(teachersError || subjectsError || sectionsError);
 
   const confirmDelete = async () => {
     if (!toDelete) return;
@@ -84,7 +86,7 @@ export const TeacherAssignmentsTab = () => {
   return (
     <Box>
       <Box sx={{ display: 'flex', justifyContent: 'flex-end', p: 2, borderBottom: '1px solid #f3f4f6' }}>
-        <AddButton label="Asignar docente" onClick={() => setFormOpen(true)} />
+        <AddButton label="Asignar docente" onClick={() => setFormOpen(true)} disabled={optionsFailed} />
       </Box>
 
       <TeacherAssignmentFilters
