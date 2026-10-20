@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Alert, Box, Button, Pagination, Paper, Snackbar, Stack, Typography } from '@mui/material';
+import { Alert, Box, Button, Pagination, Paper, Snackbar, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { StudentFilters, type StudentFiltersState } from '@/components/students/StudentFilters';
@@ -12,6 +12,7 @@ import { useStudents } from '@/hooks/useStudents';
 import { deactivateStudent, type StudentListItem } from '@/services/students.service';
 import { AddButton } from '@/components/common/AddButton';
 import { StudentFormDialog } from '@/components/students/StudentFormDialog';
+import { PageHeader } from '@/components/common/PageHeader';
 const PAGE_SIZE = 20;
 
 const INITIAL_FILTERS: StudentFiltersState = {
@@ -112,25 +113,16 @@ export const StudentsPage = () => {
   return (
     <MainLayout>
       <Box className="students-page" sx={{ maxWidth: 1280, mx: 'auto' }}>
-        {/* Breadcrumbs con el estilo de Attendance */}
-        <Box className="print-hidden" sx={{ mb: 3 }}>
-          <Typography variant="caption" sx={{ color: '#7b8794' }}>
-            Inicio &nbsp;›&nbsp; Estudiantes &nbsp;›&nbsp; <strong>Listado</strong>
-          </Typography>
-        </Box>
-
-        {/* Encabezado correcto del módulo */}
-        <Stack sx={{ mb: 2 }}>
-          <Box>
-            <Typography variant="h4" sx={{ color: '#202124', fontWeight: 800, fontSize: { xs: '1.65rem', md: '2rem' } }}>
-              Listado de estudiantes
-            </Typography>
-            <Typography variant="body2" sx={{ color: '#7b8794' }}>
-              Buscá, filtrá y gestioná los estudiantes de la institución.
-            </Typography>
-          </Box>
-          <AddButton label="Alta estudiante" onClick={() => setCreateOpen(true)} />
-        </Stack>
+        <PageHeader
+      title="Listado de estudiantes"
+      subtitle="Buscá, filtrá y gestioná los estudiantes de la institución."
+      breadcrumbs={[
+    { label: 'Inicio', href: '/home' },
+    { label: 'Estudiantes', href: '/students' },
+    { label: 'Listado' },
+     ]}
+     action={<AddButton label="Alta estudiante" onClick={() => setCreateOpen(true)} />}
+    />
 
         {/* Contenedor principal con estilo Attendance */}
         <Paper variant="outlined" sx={{ borderRadius: 1, borderColor: '#e1e5e8', overflow: 'hidden' }}>
