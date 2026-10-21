@@ -1,39 +1,81 @@
+
 import {
+  Box,
   Chip,
+  CircularProgress,
   IconButton,
-  LinearProgress,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
+  TablePagination,
   TableRow,
   Tooltip,
+  Typography,
 } from '@mui/material';
+
+import EditIcon from '@mui/icons-material/Edit';
 import BlockIcon from '@mui/icons-material/Block';
-import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
-import { EditButton } from '@/components/common/EditButton';
-import { StandardTablePagination } from '@/components/common/StandardTablePagination';
-import type { UserListItem } from '@/services/users.service';
-import { ROLE_LABELS, getFullName } from '@/components/users/userLabels';
-import { UserStatusChip } from '@/components/users/UserStatusChip';
-import { UsersEmptyState } from '@/components/users/UsersEmptyState';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+
+import type {
+  Role,
+  UserDisplayRole,
+  UserListItem,
+} from '@/services/users.service';
+
+// =====================================================
+// ETIQUETAS DE ROLES
+// =====================================================
+
+const ROLE_LABELS: Record<UserDisplayRole, string> = {
+  admin: 'Administrador',
+  docente: 'Docente',
+  preceptor: 'Preceptor',
+  ADMINISTRATOR: 'Administrador',
+  SCHOOL_MANAGEMENT: 'Equipo directivo',
+  EOE_DIRECTIVE: 'Equipo de orientación escolar',
+  TEACHER: 'Docente',
+  PRECEPTOR: 'Preceptor',
+  STUDENT: 'Estudiante',
+  FAMILY: 'Familia',
+};
+
+const EDITABLE_ROLES: readonly Role[] = [
+  'admin',
+  'docente',
+  'preceptor',
+];
+
+function isEditableRole(
+  role: UserDisplayRole,
+): role is Role {
+  return EDITABLE_ROLES.some((item) => item === role);
+}
+
+// =====================================================
+// PROPIEDADES DE LA TABLA
+// =====================================================
 
 interface UsersTableProps {
   users: UserListItem[];
   total: number;
   loading: boolean;
-  page: number; // base 0 (MUI)
+  page: number;
   rowsPerPage: number;
   onPageChange: (page: number) => void;
-  onRowsPerPageChange: (rows: number) => void;
+  onRowsPerPageChange: (rowsPerPage: number) => void;
   onEdit: (user: UserListItem) => void;
   onToggleActive: (user: UserListItem) => void;
 }
 
-const headSx = { fontWeight: 700, fontSize: 12, color: 'text.secondary', whiteSpace: 'nowrap' } as const;
+// =====================================================
+// COMPONENTE
+// =====================================================
 
-export const UsersTable = ({
+export function UsersTable({
   users,
   total,
   loading,
@@ -43,72 +85,188 @@ export const UsersTable = ({
   onRowsPerPageChange,
   onEdit,
   onToggleActive,
-}: UsersTableProps) => {
+}: UsersTableProps) {
   return (
-    <>
-      <TableContainer>
-        {loading && <LinearProgress sx={{ height: 2 }} />}
-        <Table>
+    <Box sx={{ width: '100%' }}>
+      <TableContainer component={Paper} elevation={0}>
+        <Table sx={{ minWidth: 750 }}>
           <TableHead>
-            <TableRow>
-              <TableCell sx={headSx}>Nombre</TableCell>
-              <TableCell sx={headSx}>Usuario</TableCell>
-              <TableCell sx={headSx}>Email</TableCell>
-              <TableCell sx={headSx}>Rol</TableCell>
-              <TableCell sx={headSx}>Estado</TableCell>
-              <TableCell sx={headSx} align="right">
-                Acciones
+            <TableRow sx={{ backgroundColor: '#f5f7fa' }}>
+              <TableCell>
+                <strong>Nombre y apellido</strong>
+              </TableCell>
+
+              <TableCell>
+                <strong>Correo electrónico</strong>
+              </TableCell>
+
+              <TableCell>
+                <strong>Rol</strong>
+              </TableCell>
+
+              <TableCell>
+                <strong>Estado</strong>
+              </TableCell>
+
+              <TableCell align="center">
+                <strong>Acciones</strong>
               </TableCell>
             </TableRow>
           </TableHead>
+
           <TableBody>
-            {!loading && users.length === 0 && <UsersEmptyState colSpan={6} />}
-            {users.map((u) => (
-              <TableRow key={u.id} hover sx={{ opacity: u.active ? 1 : 0.7 }}>
-                <TableCell sx={{ fontWeight: 600 }}>{getFullName(u)}</TableCell>
-                <TableCell sx={{ color: 'text.secondary' }}>{u.username}</TableCell>
-                <TableCell sx={{ color: 'text.secondary' }}>{u.email}</TableCell>
-                <TableCell>
-                  <Chip
-                    size="small"
-                    variant="outlined"
-                    label={ROLE_LABELS[u.role] ?? u.role}
-                    sx={{ borderRadius: 1 }}
-                  />
-                </TableCell>
-                <TableCell>
-                  <UserStatusChip active={u.active} />
-                </TableCell>
-                <TableCell align="right" sx={{ whiteSpace: 'nowrap' }}>
-                  <EditButton onClick={() => onEdit(u)} aria-label={`Editar ${getFullName(u)}`} />
-                  <Tooltip title={u.active ? 'Suspender' : 'Reactivar'}>
-                    <IconButton
-                      size="small"
-                      color={u.active ? 'error' : 'success'}
-                      onClick={() => onToggleActive(u)}
-                      aria-label={`${u.active ? 'Suspender' : 'Reactivar'} ${getFullName(u)}`}
-                    >
-                      {u.active ? (
-                        <BlockIcon fontSize="small" />
-                      ) : (
-                        <CheckCircleOutlinedIcon fontSize="small" />
-                      )}
-                    </IconButton>
-                  </Tooltip>
+            {loading ? (
+              <TableRow>
+                <TableCell colSpan={5} align="center">
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'center',
+                      padding: 4,
+                    }}
+                  >
+                    <CircularProgress size={30} />
+                  </Box>
                 </TableCell>
               </TableRow>
-            ))}
+            ) : users.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} align="center">
+                  <Typography
+                    sx={{
+                      padding: 4,
+                      color: 'text.secondary',
+                    }}
+                  >
+                    No se encontraron usuarios.
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              users.map((user: UserListItem) => {
+                const fullName = [
+                  user.firstName,
+                  user.lastName,
+                ].join(' ');
+
+                const canEdit = isEditableRole(user.role);
+
+                return (
+                  <TableRow key={String(user.id)} hover>
+                    <TableCell>
+                      <Typography
+                        component="span"
+                        sx={{ fontWeight: 600 }}
+                      >
+                        {fullName}
+                      </Typography>
+                    </TableCell>
+
+                    <TableCell>
+                      {user.email}
+                    </TableCell>
+
+                    <TableCell>
+                      <Chip
+                        label={ROLE_LABELS[user.role]}
+                        size="small"
+                        variant="outlined"
+                        color={
+                          user.role === 'preceptor' ||
+                          user.role === 'PRECEPTOR'
+                            ? 'primary'
+                            : 'default'
+                        }
+                      />
+                    </TableCell>
+
+                    <TableCell>
+                      <Chip
+                        label={
+                          user.active ? 'Activo' : 'Inactivo'
+                        }
+                        color={
+                          user.active ? 'success' : 'default'
+                        }
+                        size="small"
+                      />
+                    </TableCell>
+
+                    <TableCell align="center">
+                      <Tooltip
+                        title={
+                          canEdit
+                            ? 'Editar usuario'
+                            : 'Este rol no está disponible para edición'
+                        }
+                      >
+                        <span>
+                          <IconButton
+                            aria-label={`Editar ${fullName}`}
+                            color="primary"
+                            disabled={!canEdit}
+                            onClick={() => onEdit(user)}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+
+                      <Tooltip
+                        title={
+                          user.active
+                            ? 'Suspender usuario'
+                            : 'Reactivar usuario'
+                        }
+                      >
+                        <IconButton
+                          aria-label={
+                            user.active
+                              ? `Suspender ${fullName}`
+                              : `Reactivar ${fullName}`
+                          }
+                          color={
+                            user.active ? 'error' : 'success'
+                          }
+                          onClick={() =>
+                            onToggleActive(user)
+                          }
+                        >
+                          {user.active ? (
+                            <BlockIcon />
+                          ) : (
+                            <CheckCircleIcon />
+                          )}
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
           </TableBody>
         </Table>
       </TableContainer>
-      <StandardTablePagination
+
+      <TablePagination
+        component="div"
         count={total}
         page={page}
         rowsPerPage={rowsPerPage}
-        onPageChange={onPageChange}
-        onRowsPerPageChange={onRowsPerPageChange}
-        itemLabel="usuarios"
+        rowsPerPageOptions={[5, 10, 25, 50]}
+        onPageChange={(_, newPage) => {
+          onPageChange(newPage);
+        }}
+        onRowsPerPageChange={(event) => {
+          onRowsPerPageChange(
+            Number(event.target.value),
+          );
+        }}
+        labelRowsPerPage="Filas por página:"
+        labelDisplayedRows={({ from, to, count }) =>
+          `${from}-${to} de ${count}`
+        }
       />
-    </>
+    </Box>
   );
-};
+}
