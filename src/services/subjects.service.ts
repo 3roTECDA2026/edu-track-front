@@ -8,5 +8,6 @@ export interface SubjectOption {
 
 
 export function getSubjects(signal?: AbortSignal) {
-  return fetchApi<SubjectOption[]>('/api/subjects', { signal });
+    // Las materias están montadas dentro del router de cursos en el back (/api/courses/subjects)
+  return fetchApi<SubjectOption[]>('/api/courses/subjects', { signal });
 }
