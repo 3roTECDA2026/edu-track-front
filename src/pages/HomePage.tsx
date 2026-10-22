@@ -81,6 +81,7 @@ export const HomePage: React.FC = () => {
         <PageHeader
           title="Bienvenido a NOTAR"
           subtitle="Gestión educativa simplificada para la Escuela Normal."
+          breadcrumbs={[{ label: 'Inicio' }]}
         />
 
         <ActiveScheduleCards />
