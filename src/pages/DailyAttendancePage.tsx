@@ -67,7 +67,7 @@ export const DailyAttendancePage: React.FC = () => {
   const [page, setPage] = useState<number>(1)
 
   const [attendance, setAttendance] = useState<Record<string, AttendanceState>>({})
-  const [notice, setNotice] = useState<{ type: 'success' | 'info'; text: string } | null>(null)
+  const [notice, setNotice] = useState<{ type: 'success' | 'info' | 'error'; text: string } | null>(null)
 
   const courseStudents = useMemo(() => {
     return STUDENTS.filter((s) => s.courseId === courseId && s.sectionId === sectionId)
@@ -98,6 +98,20 @@ export const DailyAttendancePage: React.FC = () => {
   }
 
   function saveAttendance() {
+    // Verificamos si al menos un alumno del curso actual tiene asistencia marcada para esta fecha
+    const allMarked = courseStudents.every((student) => {
+      const state = attendance[`${student.id}-${date}`]
+      return state && state !== 'empty'
+    })
+
+    if (!allMarked) {
+      setNotice({ 
+        type: 'error', 
+        text: 'Por favor, selecciona un estado de asistencia para cada un alumno antes de guardar.' 
+      })
+      return
+    }
+
     setNotice({ type: 'success', text: '¡Asistencia guardada con éxito en el sistema!' })
   }
 
