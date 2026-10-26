@@ -2,6 +2,9 @@ import { fetchApi } from '@/services/api';
 
 export type ScoreSlot = number | null;
 
+// Valoración parcial de cada cuatrimestre (pedido del equipo directivo, CRM-066)
+export type PreliminaryAssessment = 'TEA' | 'TEP' | 'TED';
+
 export interface RosterStudent {
   id: string;
   dni: string;
@@ -13,6 +16,8 @@ export interface RosterGrade {
   id: string;
   term1Scores: ScoreSlot[] | null;
   term2Scores: ScoreSlot[] | null;
+  preliminaryAssessment1: PreliminaryAssessment | null;
+  preliminaryAssessment2: PreliminaryAssessment | null;
   term1Score: number | null;
   term2Score: number | null;
   finalScore: number | null;
@@ -43,11 +48,15 @@ export function getGradeRoster(params: RosterParams, signal?: AbortSignal) {
   return fetchApi<RosterRow[]>(`/api/grades/roster?${query.toString()}`, { signal });
 }
 
-
+// Solo se mandan los campos con valor: el back no acepta vacíos (null) en estos campos
 export interface SaveGradeInput {
   enrollmentId: string;
   term1Scores?: ScoreSlot[];
   term2Scores?: ScoreSlot[];
+  preliminaryAssessment1?: PreliminaryAssessment;
+  term1Score?: number;
+  preliminaryAssessment2?: PreliminaryAssessment;
+  term2Score?: number;
 }
 
 // POST /api/grades
@@ -58,7 +67,6 @@ export function saveGrade(input: SaveGradeInput) {
     body: JSON.stringify({ enrollmentId, ...scores }),
   });
 }
-
 
 export interface StudentSubjectRow {
   id: string; // enrollmentId

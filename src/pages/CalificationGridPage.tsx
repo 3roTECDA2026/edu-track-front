@@ -31,22 +31,23 @@ import { useClassSections } from '@/hooks/useClassSections'
 import { useSubjects } from '@/hooks/useSubjects'
 import { useGradeRoster } from '@/hooks/useGradeRoster'
 import { useSaveGrades } from '@/hooks/useSaveGrades'
-import type { RosterRow, SaveGradeInput } from '@/services/grades.service'
+import type { PreliminaryAssessment, RosterRow, SaveGradeInput } from '@/services/grades.service'
 
 type Mode = 'edit' | 'view'
 type Level = 'low' | 'mid' | 'high' | 'empty'
 type Term = 1 | 2
-type NoteSlot = 1 | 2 | 3 | 4
 
-const NOTE_SLOTS: NoteSlot[] = [1, 2, 3, 4]
+const TERMS: Term[] = [1, 2]
+const ASSESSMENTS: PreliminaryAssessment[] = ['TEA', 'TEP', 'TED']
+// Nota mínima para aprobar el cuatrimestre: con 7 o más en los dos, la final es el promedio (E2-RF-05)
+const PASSING_SCORE = 7
 const DEFAULT_ROWS_PER_PAGE = 10
 const COL_BORDER = '2px solid #d1d5db'
 const HEAD_ROW1_H = 33
 const TABLE_MAX_HEIGHT = 520
 
-
-const gradeKey = (enrollmentId: string, term: Term, slot: NoteSlot) =>
-  `${enrollmentId}|${term}|${slot}`
+// Clave de un dato de un alumno en un cuatrimestre
+const termKey = (enrollmentId: string, term: Term) => `${enrollmentId}|${term}`
 
 function gradeLevel(value: number | undefined): Level {
   if (value === undefined) return 'empty'
@@ -55,13 +56,19 @@ function gradeLevel(value: number | undefined): Level {
   return 'high'
 }
 
+// TEA = trayectoria avanzada, TEP = en proceso, TED = discontinua
+const ASSESSMENT_LEVEL: Record<PreliminaryAssessment, Level> = {
+  TEA: 'high',
+  TEP: 'mid',
+  TED: 'low',
+}
+
 const COLORS: Record<Level, { bg: string; fg: string; bd: string }> = {
   low: { bg: '#fdecec', fg: '#b42318', bd: '#f0b4b4' },
   mid: { bg: '#fdf6e3', fg: '#8a6a00', bd: '#eddca0' },
   high: { bg: '#e9f7ee', fg: '#1a7f37', bd: '#a9e0bd' },
   empty: { bg: 'transparent', fg: 'text.disabled', bd: 'divider' },
 }
-
 
 const headSx = {
   fontWeight: 700,
@@ -77,7 +84,6 @@ export const CalificationGridPage: React.FC = () => {
   const { sections } = useClassSections()
   const { subjects } = useSubjects()
 
-  
   const [year, setYear] = useState<number | ''>('')
   const [grade, setGrade] = useState<number | ''>('')
   const [division, setDivision] = useState<string>('')
@@ -87,15 +93,19 @@ export const CalificationGridPage: React.FC = () => {
   const [page, setPage] = useState<number>(0) // base 0 (MUI)
   const [rowsPerPage, setRowsPerPage] = useState<number>(DEFAULT_ROWS_PER_PAGE)
 
-  
-  const [grades, setGrades] = useState<Record<string, number>>({})
-  const [loadedGrades, setLoadedGrades] = useState<Record<string, number>>({})
+  // Calificación final y valoración parcial de cada cuatrimestre, por alumno
+  const [scores, setScores] = useState<Record<string, number>>({})
+  const [assessments, setAssessments] = useState<Record<string, PreliminaryAssessment>>({})
+  const [loadedScores, setLoadedScores] = useState<Record<string, number>>({})
+  const [loadedAssessments, setLoadedAssessments] = useState<
+    Record<string, PreliminaryAssessment>
+  >({})
   const [modified, setModified] = useState<Set<string>>(new Set())
   const [notice, setNotice] = useState<{ type: 'success' | 'info' | 'error'; text: string } | null>(
     null,
   )
 
-  
+  // Inputs de calificación por cuatrimestre, para bajar con Enter
   const inputsRef = useRef<Record<string, Array<HTMLInputElement | null>>>({})
 
   const readOnly = mode === 'view'
@@ -136,7 +146,6 @@ export const CalificationGridPage: React.FC = () => {
     )
   }, [sections, year, grade, division])
 
-  
   const { roster, loading, error, refetch } = useGradeRoster(
     classSectionId,
     subjectId,
@@ -145,7 +154,6 @@ export const CalificationGridPage: React.FC = () => {
 
   const { save, saving } = useSaveGrades()
 
- 
   useEffect(() => {
     if (yearOptions.length === 0) return
     if (year === '' || !yearOptions.includes(year)) setYear(yearOptions[0])
@@ -175,59 +183,54 @@ export const CalificationGridPage: React.FC = () => {
     if (!subjectOptions.some((s) => s.id === subjectId)) setSubjectId(subjectOptions[0].id)
   }, [subjectOptions, subjectId])
 
-  
+  // Carga lo guardado en el back: valoración y calificación de cada cuatrimestre
   useEffect(() => {
-    const next: Record<string, number> = {}
+    const nextScores: Record<string, number> = {}
+    const nextAssessments: Record<string, PreliminaryAssessment> = {}
     for (const row of roster) {
       const g = row.grade
       if (!g) continue
-      NOTE_SLOTS.forEach((slot, i) => {
-        const v1 = g.term1Scores?.[i]
-        if (typeof v1 === 'number') next[gradeKey(row.id, 1, slot)] = v1
-        const v2 = g.term2Scores?.[i]
-        if (typeof v2 === 'number') next[gradeKey(row.id, 2, slot)] = v2
-      })
+      if (typeof g.term1Score === 'number') nextScores[termKey(row.id, 1)] = g.term1Score
+      if (typeof g.term2Score === 'number') nextScores[termKey(row.id, 2)] = g.term2Score
+      if (g.preliminaryAssessment1) nextAssessments[termKey(row.id, 1)] = g.preliminaryAssessment1
+      if (g.preliminaryAssessment2) nextAssessments[termKey(row.id, 2)] = g.preliminaryAssessment2
     }
-    setGrades(next)
-    setLoadedGrades(next)
+    setScores(nextScores)
+    setAssessments(nextAssessments)
+    setLoadedScores(nextScores)
+    setLoadedAssessments(nextAssessments)
     setModified(new Set())
   }, [roster])
 
   const pageRows = roster.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
 
-  const readGrade = (enrollmentId: string, term: Term, slot: NoteSlot): number | undefined =>
-    grades[gradeKey(enrollmentId, term, slot)]
-
-  
-  function termAverage(enrollmentId: string, term: Term): number | undefined {
-    const values = NOTE_SLOTS.map((slot) => readGrade(enrollmentId, term, slot)).filter(
-      (v): v is number => typeof v === 'number',
-    )
-    if (values.length === 0) return undefined
-    const sum = values.reduce((acc, v) => acc + v, 0)
-    return Math.round((sum / values.length) * 10) / 10
+  // Nota final: promedio de los dos cuatrimestres, solo si aprobó los dos con 7 o más (E2-RF-05).
+  // Si no, queda vacía hasta la intensificación.
+  function finalScore(enrollmentId: string): number | undefined {
+    const first = scores[termKey(enrollmentId, 1)]
+    const second = scores[termKey(enrollmentId, 2)]
+    if (first === undefined || second === undefined) return undefined
+    if (first < PASSING_SCORE || second < PASSING_SCORE) return undefined
+    return Math.round(((first + second) / 2) * 10) / 10
   }
 
-  
-  function finalAverage(enrollmentId: string): number | undefined {
-    const parts = [termAverage(enrollmentId, 1), termAverage(enrollmentId, 2)].filter(
-      (v): v is number => typeof v === 'number',
-    )
-    if (parts.length === 0) return undefined
-    const sum = parts.reduce((acc, v) => acc + v, 0)
-    return Math.round((sum / parts.length) * 10) / 10
-  }
-
-  function editGrade(enrollmentId: string, term: Term, slot: NoteSlot, raw: string) {
-    const key = gradeKey(enrollmentId, term, slot)
+  function editScore(enrollmentId: string, term: Term, raw: string) {
+    const key = termKey(enrollmentId, term)
 
     if (raw.trim() === '') {
-      setGrades((prev) => {
+      // El back no permite dejar vacía una calificación ya guardada
+      if (loadedScores[key] !== undefined) {
+        setNotice({
+          type: 'info',
+          text: 'Una calificación ya guardada no se puede dejar vacía: reemplazala por otra.',
+        })
+        return
+      }
+      setScores((prev) => {
         const copy = { ...prev }
         delete copy[key]
         return copy
       })
-      setModified((prev) => new Set(prev).add(enrollmentId))
       return
     }
 
@@ -235,21 +238,21 @@ export const CalificationGridPage: React.FC = () => {
     const value = Number(raw)
     if (value < 1 || value > 10) return
 
-    setGrades((prev) => ({ ...prev, [key]: value }))
+    setScores((prev) => ({ ...prev, [key]: value }))
     setModified((prev) => new Set(prev).add(enrollmentId))
     setNotice(null)
   }
 
-  function handleKeyDown(
-    e: KeyboardEvent<HTMLDivElement>,
-    term: Term,
-    slot: NoteSlot,
-    rowIndex: number,
-  ) {
+  function editAssessment(enrollmentId: string, term: Term, value: PreliminaryAssessment) {
+    setAssessments((prev) => ({ ...prev, [termKey(enrollmentId, term)]: value }))
+    setModified((prev) => new Set(prev).add(enrollmentId))
+    setNotice(null)
+  }
+
+  function handleKeyDown(e: KeyboardEvent<HTMLDivElement>, term: Term, rowIndex: number) {
     if (e.key === 'Enter') {
       e.preventDefault()
-      const colKey = `${term}-${slot}`
-      inputsRef.current[colKey]?.[rowIndex + 1]?.focus()
+      inputsRef.current[`score-${term}`]?.[rowIndex + 1]?.focus()
     }
   }
 
@@ -258,12 +261,20 @@ export const CalificationGridPage: React.FC = () => {
       setNotice({ type: 'info', text: 'No hay cambios para guardar.' })
       return
     }
-    
-    const inputs: SaveGradeInput[] = Array.from(modified).map((enrollmentId) => ({
-      enrollmentId,
-      term1Scores: NOTE_SLOTS.map((slot) => readGrade(enrollmentId, 1, slot) ?? null),
-      term2Scores: NOTE_SLOTS.map((slot) => readGrade(enrollmentId, 2, slot) ?? null),
-    }))
+
+    // Solo se mandan los campos con valor
+    const inputs: SaveGradeInput[] = Array.from(modified).map((enrollmentId) => {
+      const input: SaveGradeInput = { enrollmentId }
+      const assessment1 = assessments[termKey(enrollmentId, 1)]
+      const assessment2 = assessments[termKey(enrollmentId, 2)]
+      const score1 = scores[termKey(enrollmentId, 1)]
+      const score2 = scores[termKey(enrollmentId, 2)]
+      if (assessment1) input.preliminaryAssessment1 = assessment1
+      if (score1 !== undefined) input.term1Score = score1
+      if (assessment2) input.preliminaryAssessment2 = assessment2
+      if (score2 !== undefined) input.term2Score = score2
+      return input
+    })
 
     const ok = await save(inputs)
     if (ok) {
@@ -275,18 +286,17 @@ export const CalificationGridPage: React.FC = () => {
     }
   }
 
-      
   function clearGrades() {
     if (modified.size === 0) {
       setNotice({ type: 'info', text: 'No hay cambios sin guardar.' })
       return
     }
-    setGrades(loadedGrades)
+    setScores(loadedScores)
+    setAssessments(loadedAssessments)
     setModified(new Set())
     setNotice({ type: 'info', text: 'Se descartaron los cambios sin guardar.' })
   }
 
-  
   function gradeInput(
     value: number | undefined,
     onChange: (raw: string) => void,
@@ -320,9 +330,8 @@ export const CalificationGridPage: React.FC = () => {
     )
   }
 
-  
-  function gradeReadonly(value: number | undefined, ariaLabel: string) {
-    const color = COLORS[gradeLevel(value)]
+  function gradeReadonly(value: number | string | undefined, level: Level, ariaLabel: string) {
+    const color = COLORS[level]
     return (
       <TextField
         size="small"
@@ -331,7 +340,7 @@ export const CalificationGridPage: React.FC = () => {
         slotProps={{
           htmlInput: {
             'aria-label': ariaLabel,
-            style: { textAlign: 'center', width: 26, fontWeight: 700 },
+            style: { textAlign: 'center', width: 34, fontWeight: 700 },
           },
         }}
         sx={{
@@ -346,37 +355,81 @@ export const CalificationGridPage: React.FC = () => {
     )
   }
 
-  
-  function noteCells(row: RosterRow, term: Term, rowIndex: number) {
-    return NOTE_SLOTS.map((slot) => {
-      const value = readGrade(row.id, term, slot)
-      const colKey = `${term}-${slot}`
-      if (!inputsRef.current[colKey]) inputsRef.current[colKey] = []
-      return (
-        <TableCell
-          key={colKey}
-          align="center"
-          sx={{ borderLeft: slot === 1 ? COL_BORDER : undefined }}
-        >
-          {readOnly
-            ? gradeReadonly(value, `Nota ${slot} (${term}° cuatri) de ${row.student.lastName}`)
-            : gradeInput(
-                value,
-                (raw) => editGrade(row.id, term, slot, raw),
-                `Nota ${slot} (${term}° cuatri) de ${row.student.lastName}`,
-                (el) => {
-                  inputsRef.current[colKey][rowIndex] = el
-                },
-                (e) => handleKeyDown(e, term, slot, rowIndex),
-              )}
-        </TableCell>
-      )
-    })
+  // Selector de valoración parcial: TEA, TEP o TED
+  function assessmentSelect(row: RosterRow, term: Term) {
+    const key = termKey(row.id, term)
+    const value = assessments[key]
+    const color = COLORS[value ? ASSESSMENT_LEVEL[value] : 'empty']
+    return (
+      <Select
+        size="small"
+        value={value ?? ''}
+        displayEmpty
+        onChange={(e) => editAssessment(row.id, term, e.target.value as PreliminaryAssessment)}
+        inputProps={{ 'aria-label': `Valoración parcial (${term}° cuatri) de ${row.student.lastName}` }}
+        sx={{
+          minWidth: 82,
+          bgcolor: color.bg,
+          fontWeight: 700,
+          color: color.fg,
+          '& .MuiSelect-select': { py: 0.5, textAlign: 'center' },
+        }}
+      >
+        {/* Una valoración ya guardada se puede cambiar, pero no dejar vacía */}
+        <MenuItem value="" disabled={loadedAssessments[key] !== undefined}>
+          —
+        </MenuItem>
+        {ASSESSMENTS.map((option) => (
+          <MenuItem key={option} value={option}>
+            {option}
+          </MenuItem>
+        ))}
+      </Select>
+    )
   }
 
-  const totalCols = 3 + (NOTE_SLOTS.length + 1) * 2 + 1
+  // Las dos columnas de un cuatrimestre: valoración parcial y calificación final
+  function termCells(row: RosterRow, term: Term, rowIndex: number) {
+    const key = termKey(row.id, term)
+    const assessment = assessments[key]
+    const score = scores[key]
+    const inputKey = `score-${term}`
+    if (!inputsRef.current[inputKey]) inputsRef.current[inputKey] = []
 
-  
+    return (
+      <React.Fragment key={`term-${term}`}>
+        <TableCell align="center" sx={{ borderLeft: COL_BORDER }}>
+          {readOnly
+            ? gradeReadonly(
+                assessment,
+                assessment ? ASSESSMENT_LEVEL[assessment] : 'empty',
+                `Valoración parcial (${term}° cuatri) de ${row.student.lastName}`,
+              )
+            : assessmentSelect(row, term)}
+        </TableCell>
+        <TableCell align="center">
+          {readOnly
+            ? gradeReadonly(
+                score,
+                gradeLevel(score),
+                `Calificación final (${term}° cuatri) de ${row.student.lastName}`,
+              )
+            : gradeInput(
+                score,
+                (raw) => editScore(row.id, term, raw),
+                `Calificación final (${term}° cuatri) de ${row.student.lastName}`,
+                (el) => {
+                  inputsRef.current[inputKey][rowIndex] = el
+                },
+                (e) => handleKeyDown(e, term, rowIndex),
+              )}
+        </TableCell>
+      </React.Fragment>
+    )
+  }
+
+  const totalCols = 3 + TERMS.length * 2 + 1
+
   const emptyMessage = !classSectionId || !subjectId
     ? 'Elegí curso, sección, materia y año para ver la planilla.'
     : loading
@@ -391,7 +444,7 @@ export const CalificationGridPage: React.FC = () => {
         {/* Encabezado estándar: breadcrumb + título + subtítulo */}
         <PageHeader
           title="Carga de calificaciones"
-          subtitle="Ingresá las 4 notas de cada cuatrimestre. El promedio y la nota final se calculan solos."
+          subtitle="Cargá la valoración parcial (TEA, TEP o TED) y la calificación final de cada cuatrimestre. La nota final se calcula sola."
           breadcrumbs={[
             { label: 'Inicio', href: '/' },
             { label: 'Calificaciones' },
@@ -411,7 +464,7 @@ export const CalificationGridPage: React.FC = () => {
           {/* PESTAÑA 0: POR MATERIA */}
           {tab === 0 && (
             <Box>
-              {/* Filtros + modo (sin selector de cuatrimestre) */}
+              {/* Filtros + modo */}
               <Box
                 sx={{
                   display: 'flex',
@@ -536,12 +589,12 @@ export const CalificationGridPage: React.FC = () => {
                 </Alert>
               )}
 
-              {/* Grilla (scroll horizontal: no entra todo en pantalla) */}
+              {/* Grilla */}
               <TableContainer sx={{ overflowX: 'auto', maxHeight: TABLE_MAX_HEIGHT }}>
                 <Table
                   stickyHeader
                   size="small"
-                  sx={{ minWidth: 1060, '& .MuiTableCell-root': { px: 1.25 } }}
+                  sx={{ minWidth: 860, '& .MuiTableCell-root': { px: 1.25 } }}
                 >
                   <TableHead sx={{ backgroundColor: '#fafafa' }}>
                     {/* Fila 1: agrupadores */}
@@ -549,71 +602,57 @@ export const CalificationGridPage: React.FC = () => {
                       <TableCell width={44} align="right" rowSpan={2} sx={headSx}>
                         #
                       </TableCell>
-                      <TableCell width={170} rowSpan={2} sx={headSx}>
+                      <TableCell width={190} rowSpan={2} sx={headSx}>
                         APELLIDO Y NOMBRE
                       </TableCell>
                       <TableCell width={92} rowSpan={2} sx={headSx}>
                         DNI
                       </TableCell>
+                      {TERMS.map((term) => (
+                        <TableCell
+                          key={`group-${term}`}
+                          colSpan={2}
+                          align="center"
+                          sx={{ ...headSx, borderLeft: COL_BORDER }}
+                        >
+                          {term}° CUATRIMESTRE
+                        </TableCell>
+                      ))}
                       <TableCell
-                        colSpan={NOTE_SLOTS.length + 1}
-                        align="center"
-                        sx={{ ...headSx, borderLeft: COL_BORDER }}
-                      >
-                        1° CUATRIMESTRE
-                      </TableCell>
-                      <TableCell
-                        colSpan={NOTE_SLOTS.length + 1}
-                        align="center"
-                        sx={{ ...headSx, borderLeft: COL_BORDER }}
-                      >
-                        2° CUATRIMESTRE
-                      </TableCell>
-                      <TableCell
-                        width={86}
+                        width={96}
                         rowSpan={2}
                         align="center"
                         sx={{ ...headSx, borderLeft: COL_BORDER }}
                       >
-                        FINAL
+                        NOTA FINAL
                       </TableCell>
                     </TableRow>
-                    {/* Fila 2: notas + promedio de cada cuatri */}
+                    {/* Fila 2: valoración parcial y calificación final de cada cuatrimestre */}
                     <TableRow>
-                      {NOTE_SLOTS.map((slot) => (
-                        <TableCell
-                          key={`h1-${slot}`}
-                          width={70}
-                          align="center"
-                          sx={{ ...headSx, top: HEAD_ROW1_H, borderLeft: slot === 1 ? COL_BORDER : undefined }}
-                        >
-                          NOTA {slot}
-                        </TableCell>
+                      {TERMS.map((term) => (
+                        <React.Fragment key={`cols-${term}`}>
+                          <TableCell
+                            width={120}
+                            align="center"
+                            sx={{ ...headSx, top: HEAD_ROW1_H, borderLeft: COL_BORDER }}
+                          >
+                            VALORACIÓN PARCIAL
+                          </TableCell>
+                          <TableCell
+                            width={120}
+                            align="center"
+                            sx={{ ...headSx, top: HEAD_ROW1_H }}
+                          >
+                            CALIFICACIÓN FINAL
+                          </TableCell>
+                        </React.Fragment>
                       ))}
-                      <TableCell width={80} align="center" sx={{ ...headSx, top: HEAD_ROW1_H }}>
-                        PROM.
-                      </TableCell>
-                      {NOTE_SLOTS.map((slot) => (
-                        <TableCell
-                          key={`h2-${slot}`}
-                          width={70}
-                          align="center"
-                          sx={{ ...headSx, top: HEAD_ROW1_H, borderLeft: slot === 1 ? COL_BORDER : undefined }}
-                        >
-                          NOTA {slot}
-                        </TableCell>
-                      ))}
-                      <TableCell width={80} align="center" sx={{ ...headSx, top: HEAD_ROW1_H }}>
-                        PROM.
-                      </TableCell>
                     </TableRow>
                   </TableHead>
 
                   <TableBody>
                     {pageRows.map((row, i) => {
-                      const avg1 = termAverage(row.id, 1)
-                      const avg2 = termAverage(row.id, 2)
-                      const finalValue = finalAverage(row.id)
+                      const finalValue = finalScore(row.id)
                       return (
                         <TableRow key={row.id} hover>
                           <TableCell align="right" sx={{ color: '#9ca3af' }}>
@@ -624,21 +663,15 @@ export const CalificationGridPage: React.FC = () => {
                           </TableCell>
                           <TableCell sx={{ color: '#374151' }}>{row.student.dni}</TableCell>
 
-                          {/* 1° cuatrimestre */}
-                          {noteCells(row, 1, i)}
-                          <TableCell align="center">
-                            {gradeReadonly(avg1, `Promedio 1° cuatri de ${row.student.lastName}`)}
-                          </TableCell>
+                          {TERMS.map((term) => termCells(row, term, i))}
 
-                          {/* 2° cuatrimestre */}
-                          {noteCells(row, 2, i)}
-                          <TableCell align="center">
-                            {gradeReadonly(avg2, `Promedio 2° cuatri de ${row.student.lastName}`)}
-                          </TableCell>
-
-                          {/* Final (calculado) */}
+                          {/* Nota final (calculada) */}
                           <TableCell align="center" sx={{ borderLeft: COL_BORDER }}>
-                            {gradeReadonly(finalValue, `Nota final de ${row.student.lastName}`)}
+                            {gradeReadonly(
+                              finalValue,
+                              gradeLevel(finalValue),
+                              `Nota final de ${row.student.lastName}`,
+                            )}
                           </TableCell>
                         </TableRow>
                       )
@@ -670,10 +703,8 @@ export const CalificationGridPage: React.FC = () => {
             </Box>
           )}
 
-         
           {/* PESTAÑA 1: POR ALUMNO */}
           {tab === 1 && <PorAlumnoTab />}
-  
         </ContentCard>
 
         {/* Acciones: debajo de la tabla y el paginado */}
