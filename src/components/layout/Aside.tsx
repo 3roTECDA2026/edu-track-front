@@ -22,6 +22,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 // Importación de asset local
 import logoEscuela from '@/assets/logo.png';
 import { UserIcon } from 'lucide-react';
+import EventRepeatIcon from '@mui/icons-material/EventRepeat';
 
 const drawerWidth = 250;
 
@@ -38,6 +39,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
   { label: 'Inasistencias', icon: <EventNoteIcon />, path: '/attendance' },
   { label: 'Calificaciones', icon: <GradingIcon />, path: '/calification-grid' },
+  { label: 'Intensificación', icon: <EventRepeatIcon />, path: '/intensification-calendar' },
 ];
 
 export const Aside: React.FC = () => {
