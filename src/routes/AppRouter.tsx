@@ -5,6 +5,7 @@ import UsersPage from '@/pages/UsersPage';
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
 import AttendanceSummaryPage from '@/pages/AttendanceSummaryPage';
+import DailyAttendancePage from '@/pages/DailyAttendancePage';
 import StudentsPage from '@/pages/StudentsPage';
 import CalificationGridPage from '@/pages/CalificationGridPage';
 import CoursesPage from '@/pages/CoursesPage';
@@ -22,9 +23,11 @@ const AppRouter = () => {
 
         {/* Cursos */}
         <Route path="/courses" element={<CoursesPage />} />
-
-        {/* Asistencia */}
+{/* Asistencia - Resumen */}
         <Route path="/attendance" element={<AttendanceSummaryPage />} />
+
+        {/* Asistencia - Carga diaria */}
+        <Route path="/attendance/daily" element={<DailyAttendancePage />} />
 
         {/* Alumnos */}
         <Route path="/students" element={<StudentsPage />} />
