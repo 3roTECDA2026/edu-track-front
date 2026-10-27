@@ -1,9 +1,12 @@
 // src/pages/StudentProfilePage.tsx
 import { useState, type SyntheticEvent } from 'react'
-import { Alert, Box, Button, Paper, Skeleton, Snackbar } from '@mui/material'
+import { Alert, Box, Button, Skeleton, Snackbar } from '@mui/material'
 import { useNavigate, useParams } from 'react-router-dom'
+
 import { MainLayout } from '@/components/layout/MainLayout'
+import { PageContainer } from '@/components/common/PageContainer'
 import { PageHeader } from '@/components/common/PageHeader'
+import { ContentCard } from '@/components/common/ContentCard'
 import { CustomTabs } from '@/components/common/CustomTabs'
 import { DeactivateStudentDialog } from '@/components/students/DeactivateStudentDialog'
 import { StudentFormDialog } from '@/components/students/StudentFormDialog'
@@ -13,10 +16,9 @@ import { EnrollmentTab } from '@/components/studentProfile/EnrollmentTab'
 import { AttendanceTab } from '@/components/studentProfile/AttendanceTab'
 import { GradesTab } from '@/components/studentProfile/GradesTab'
 import { ObservationsTab } from '@/components/studentProfile/ObservationsTab'
-import { cardSx } from '@/components/studentProfile/profileStyles'
+import { RiteTab } from '@/components/studentProfile/RiteTab'
 import { useLazyResource } from '@/hooks/useLazyResource'
 import { deactivateStudent } from '@/services/students.service'
-import { RiteTab } from '@/components/studentProfile/RiteTab'
 import {
   getStudentAttendance,
   getStudentById,
@@ -45,7 +47,7 @@ const StudentProfilePage = () => {
   const navigate = useNavigate()
 
   const [activeTab, setActiveTab] = useState<TabKey>('personal')
-  // Cada tab carga sus datos la primera vez que se abre.
+  // Cada pestaña carga sus datos la primera vez que se abre
   const [visitedTabs, setVisitedTabs] = useState<TabKey[]>(['personal'])
   const [dialogOpen, setDialogOpen] = useState(false)
   const [deactivating, setDeactivating] = useState(false)
@@ -68,14 +70,13 @@ const StudentProfilePage = () => {
       : null,
     (signal) => getStudentAttendance(id, currentYear, signal)
   )
-  const grades = useLazyResource(
-    visitedTabs.includes('grades') ? `grades:${id}` : null,
-    (signal) => getStudentGrades(id, signal)
+  const grades = useLazyResource(visitedTabs.includes('grades') ? `grades:${id}` : null, (signal) =>
+    getStudentGrades(id, signal)
   )
 
   const activeIndex = TABS.findIndex((tab) => tab.key === activeTab)
 
-  // CustomTabs trabaja con el índice de la pestaña, por eso acá se traduce a su clave.
+  // CustomTabs trabaja con el índice de la pestaña, por eso acá se traduce a su clave
   const handleTabChange = (_: SyntheticEvent, index: number) => {
     const key = TABS[index].key
     setActiveTab(key)
@@ -127,18 +128,16 @@ const StudentProfilePage = () => {
         )
       }
 
+      // Esqueleto mientras carga la ficha
       return (
         <>
-          <Paper
-            variant="outlined"
-            sx={{ ...cardSx, p: 3, display: 'flex', gap: 3, alignItems: 'center' }}
-          >
+          <ContentCard sx={{ p: 3, display: 'flex', gap: 3, alignItems: 'center' }}>
             <Skeleton variant="circular" width={72} height={72} />
             <Box sx={{ flex: 1 }}>
               <Skeleton variant="text" width="40%" height={32} />
               <Skeleton variant="text" width="60%" />
             </Box>
-          </Paper>
+          </ContentCard>
           <Skeleton variant="rounded" height={320} sx={{ mt: 3 }} />
         </>
       )
@@ -153,8 +152,8 @@ const StudentProfilePage = () => {
           onChangeStatus={() => setDialogOpen(true)}
         />
 
-        {/* Pestañas dentro de una tarjeta, como en la pantalla tipo del estándar */}
-        <Paper variant="outlined" sx={{ ...cardSx, overflow: 'hidden', mt: 3 }}>
+        {/* Pestañas dentro de la tarjeta estándar */}
+        <ContentCard sx={{ mt: 3 }}>
           <CustomTabs
             tabs={TABS.map((tab) => tab.label)}
             value={activeIndex}
@@ -189,7 +188,6 @@ const StudentProfilePage = () => {
                 onRetry={grades.reload}
               />
             )}
-
             {activeTab === 'observations' && (
               <ObservationsTab
                 key={student.id}
@@ -198,29 +196,27 @@ const StudentProfilePage = () => {
               />
             )}
             {activeTab === 'rite' && <RiteTab studentId={student.id} />}
-            
           </Box>
-        </Paper>
+        </ContentCard>
       </>
     )
   }
 
   return (
     <MainLayout>
-      <PageHeader
-        title="Ficha del alumno"
-        subtitle="Datos personales, inscripción, asistencia y calificaciones del estudiante."
-        breadcrumbs={[
-          { label: 'Alumnos', href: '/students', onClick: () => navigate('/students') },
-          {
-            label: student
-              ? `Ficha de ${student.firstName} ${student.lastName}`
-              : 'Ficha del alumno',
-          },
-        ]}
-      />
+      <PageContainer>
+        <PageHeader
+          title="Ficha del alumno"
+          subtitle="Datos personales, inscripción, asistencia y calificaciones del estudiante."
+          breadcrumbs={[
+            { label: 'Inicio', href: '/home' },
+            { label: 'Estudiantes', href: '/students' },
+            { label: student ? `${student.lastName}, ${student.firstName}` : 'Ficha del alumno' },
+          ]}
+        />
 
-      {renderContent()}
+        {renderContent()}
+      </PageContainer>
 
       <DeactivateStudentDialog
         open={dialogOpen}
@@ -239,6 +235,7 @@ const StudentProfilePage = () => {
         onSaved={studentResource.reload}
       />
 
+      {/* Mensajes de las acciones, con el Snackbar acordado en el proyecto */}
       <Snackbar
         open={snackbar !== null}
         autoHideDuration={4000}
