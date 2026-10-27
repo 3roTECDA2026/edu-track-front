@@ -26,6 +26,7 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import MainLayout from '@/components/layout/MainLayout';
 import CustomTabs from '@/components/common/CustomTabs';
 import AddButton from '@/components/common/AddButton';
+import { TeacherAssignmentsTab } from '@/components/teacherAssignments/TeacherAssignmentsTab';
 
 // Interfaces de Cursos
 interface CourseSection {
@@ -378,13 +379,7 @@ export const CoursesPage: React.FC = () => {
           )}
 
           {/* SOLAPA 2: ASIGNACIÓN DOCENTE */}
-          {currentTab === 2 && (
-            <Box sx={{ p: 4, textAlign: 'center' }}>
-              <Typography variant="h6" color="text.secondary">
-                Módulo de Asignación Docente
-              </Typography>
-            </Box>
-          )}
+          {currentTab === 2 && <TeacherAssignmentsTab />}
         </Paper>
 
         {/* MODAL CURSOS (Crear/Editar) */}

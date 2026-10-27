@@ -20,8 +20,6 @@ import DashboardIcon from '@mui/icons-material/Dashboard';
 import { useLocation, useNavigate } from 'react-router-dom';
 import EditCalendarIcon from '@mui/icons-material/EditCalendar';
 import AssessmentIcon from '@mui/icons-material/Assessment';
-
-// Importación de asset local
 import logoEscuela from '@/assets/logo.png';
 import { UserIcon } from 'lucide-react';
 

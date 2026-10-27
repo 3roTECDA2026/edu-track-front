@@ -11,7 +11,6 @@ import CalificationGridPage from '@/pages/CalificationGridPage';
 import CoursesPage from '@/pages/CoursesPage';
 import StudentProfilePage from '@/pages/StudentProfilePage';
 import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage';
-
 const AppRouter = () => {
   return (
     <BrowserRouter>
@@ -50,6 +49,7 @@ const AppRouter = () => {
 
         {/* Usuarios */}
         <Route path="/users" element={<UsersPage />} />
+        
 
         {/* Ruta por defecto */}
         <Route path="*" element={<Navigate to="/login" replace />} />
