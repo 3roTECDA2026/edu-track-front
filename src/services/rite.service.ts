@@ -37,9 +37,24 @@ export interface RiteSubject {
   finalScore: number | null
 }
 
+// Asistencia de un cuatrimestre. Los campos opcionales no existen en los RITE firmados
+// antes de que se agregaran (su copia fija quedó con el formato anterior).
 export interface RiteAttendanceTerm {
-  schoolDays: number
-  absences: number
+  schoolDays: number // Días hábiles (los del modal, o los días con asistencia si no se cargaron)
+  absences: number // Inasistencias en peso (1, ½ y ¼), justificadas y sin justificar
+  attendances?: number // Días en que el alumno vino (presente o con retardo)
+  justifiedAbsences?: number
+  unjustifiedAbsences?: number
+}
+
+export interface RiteAttendance {
+  term1: RiteAttendanceTerm
+  term2: RiteAttendanceTerm | null
+  totalSchoolDays: number
+  totalAbsences: number
+  totalAttendances?: number
+  totalJustifiedAbsences?: number
+  totalUnjustifiedAbsences?: number
 }
 
 // isPostIntensification es opcional: los RITE firmados antes guardaron la copia fija sin ese dato.
@@ -59,12 +74,7 @@ export interface RiteDocument {
   student: { id: string; firstName: string; lastName: string; dni: string; recordNumber: string }
   section: { grade: number; division: string; shift: Shift } | null
   subjects: RiteSubject[]
-  attendance: {
-    term1: RiteAttendanceTerm
-    term2: RiteAttendanceTerm | null
-    totalSchoolDays: number
-    totalAbsences: number
-  }
+  attendance: RiteAttendance
   generalNotes: string | null
   notifications: RiteNotification[]
 }
