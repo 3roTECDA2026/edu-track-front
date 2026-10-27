@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Alert,
   Box,
@@ -27,16 +27,15 @@ import SearchIcon from '@mui/icons-material/Search'
 import FilterAltIcon from '@mui/icons-material/FilterAlt'
 import DownloadIcon from '@mui/icons-material/Download'
 import VisibilityIcon from '@mui/icons-material/Visibility'
+import EventAvailableIcon from '@mui/icons-material/EventAvailable'
 
 import MainLayout from '../components/layout/MainLayout'
 import PageHeader from '../components/common/PageHeader'
 import { ContentCard } from '@/components/common/ContentCard'
 import { StandardTablePagination } from '@/components/common/StandardTablePagination'
 import JustificationModal from '@/components/attendance/JustificationModal'
-import type {
-  AttendanceRecord,
-  JustificationRecord,
-} from '@/components/attendance/attendance.types'
+import SchoolDaysDialog from '@/components/attendance/SchoolDaysDialog'
+import type { AttendanceRecord, JustificationRecord } from '@/components/attendance/attendance.types'
 import {
   attendanceService,
   type AttendanceSection,
@@ -56,18 +55,49 @@ const HIGH_ABSENCES = 10
 const WARNING_PERCENTAGE = 93
 const DANGER_PERCENTAGE = 90
 
-// Tipo de falta del modal → valor que guarda el back
+// Peso de cada valor en faltas: la falta completa vale 1 y los retardos, ½ o ¼
+const ABSENCE_WEIGHT = { ABSENT: 1, HALF: 0.5, QUARTER: 0.25 } as const
+
+// % de asistencia sobre las clases dictadas (los días en que realmente se tomó asistencia):
+// (clases dictadas − inasistencias) / clases dictadas. Las inasistencias van en peso
+// (1, ½ y ¼) y cuentan también las justificadas, porque el alumno no estuvo en clase.
+const attendancePercentage = (item: AttendanceSummaryItem) => {
+  if (item.totalClasses === 0) return 0
+  const absences = item.attendanceRecords.reduce(
+    (sum, record) => sum + ABSENCE_WEIGHT[record.value],
+    0
+  )
+  const value = ((item.totalClasses - absences) / item.totalClasses) * 100
+  return Math.round(Math.max(0, value) * 10) / 10
+}
+
+// Quiénes pueden cargar los días hábiles (también lo controla el back)
+const SCHOOL_DAYS_ROLES = ['SCHOOL_MANAGEMENT', 'ADMINISTRATOR']
+
+// Tipo de falta del modal → valor que guarda el back (media y cuarto son los retardos)
 const TYPE_TO_VALUE: Record<JustificationRecord['type'], 'ABSENT' | 'HALF' | 'QUARTER'> = {
   ausente: 'ABSENT',
   media: 'HALF',
   cuarto: 'QUARTER',
 }
 
+// Rol del usuario logueado, leído del token. Solo sirve para mostrar u ocultar opciones:
+// el back valida igual los permisos en cada pedido.
+function currentRole(): string | null {
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token')
+  if (!token) return null
+  try {
+    const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    return (JSON.parse(atob(payload)) as { role?: string }).role ?? null
+  } catch {
+    return null
+  }
+}
+
 const percentageColor = (value: number) =>
   value < DANGER_PERCENTAGE ? '#dc2626' : value < WARNING_PERCENTAGE ? '#b45309' : '#111827'
 
-const sectionLabel = (section: AttendanceSection) =>
-  `${section.grade}° Año Sección ${section.division}`
+const sectionLabel = (section: AttendanceSection) => `${section.grade}° Año Sección ${section.division}`
 
 type AppliedFilters = { search: string; sectionId: string; period: Period }
 
@@ -85,7 +115,8 @@ const buildQuery = (filters: AppliedFilters, page: number, pageSize: number) => 
 const columns = [
   'Alumno',
   'DNI',
-  'Total clases',
+  'Días hábiles',
+  'Clases dictadas',
   'Presentes',
   'Ausentes',
   'Justif.',
@@ -95,6 +126,7 @@ const columns = [
 ]
 
 export const AttendanceSummaryPage = () => {
+  const canEditSchoolDays = SCHOOL_DAYS_ROLES.includes(currentRole() ?? '')
   const [sections, setSections] = useState<AttendanceSection[]>([])
 
   // Filtros que se están editando y filtros aplicados con "Filtrar"
@@ -108,12 +140,14 @@ export const AttendanceSummaryPage = () => {
   })
 
   const [items, setItems] = useState<AttendanceSummaryItem[]>([])
+  const [schoolDays, setSchoolDays] = useState<number | null>(null)
   const [total, setTotal] = useState(0)
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
+  const [schoolDaysOpen, setSchoolDaysOpen] = useState(false)
   const [toast, setToast] = useState<{ severity: 'success' | 'error'; text: string } | null>(null)
 
   // Modal de justificación (el del proyecto)
@@ -121,6 +155,9 @@ export const AttendanceSummaryPage = () => {
   const [justDate, setJustDate] = useState('')
   const [justType, setJustType] = useState<JustificationRecord['type']>('ausente')
   const [justReason, setJustReason] = useState('')
+
+  // Número de la última consulta: si llega la respuesta de una consulta vieja, se descarta
+  const lastRequest = useRef(0)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -131,19 +168,26 @@ export const AttendanceSummaryPage = () => {
     return () => controller.abort()
   }, [])
 
+  // Ciclo lectivo de las secciones (es el activo); si todavía no cargaron, el año actual
+  const cycleYear = sections[0]?.year ?? new Date().getFullYear()
+
   const loadSummary = useCallback(async () => {
+    const requestId = ++lastRequest.current
     setLoading(true)
     setError(null)
     try {
       const data = await attendanceService.getSummary(buildQuery(applied, page + 1, rowsPerPage))
+      if (requestId !== lastRequest.current) return [] // Llegó tarde: ya hay una consulta más nueva
       setItems(data.items)
+      setSchoolDays(data.schoolDays)
       setTotal(data.pagination.total)
       return data.items
     } catch (err: unknown) {
+      if (requestId !== lastRequest.current) return []
       setError(err instanceof Error ? err.message : 'No se pudo cargar el resumen de asistencia')
       return []
     } finally {
-      setLoading(false)
+      if (requestId === lastRequest.current) setLoading(false)
     }
   }, [applied, page, rowsPerPage])
 
@@ -166,9 +210,11 @@ export const AttendanceSummaryPage = () => {
       const rows: AttendanceSummaryItem[] = []
       let currentPage = 1
       let totalPages = 1
+      let exportSchoolDays: number | null = null
       do {
         const data = await attendanceService.getSummary(buildQuery(applied, currentPage, 100))
         rows.push(...data.items)
+        exportSchoolDays = data.schoolDays
         totalPages = data.pagination.totalPages
         currentPage += 1
       } while (currentPage <= totalPages)
@@ -177,11 +223,13 @@ export const AttendanceSummaryPage = () => {
         'Alumno',
         'DNI',
         'Curso',
-        'Total clases',
+        'Días hábiles',
+        'Clases dictadas',
         'Presentes',
         'Ausentes',
         'Justificadas',
         'Retardos',
+        'Faltas computables',
         '% Asistencia',
       ]
       const lines = rows.map((row) =>
@@ -189,12 +237,14 @@ export const AttendanceSummaryPage = () => {
           row.student,
           row.dni,
           row.course,
+          exportSchoolDays ?? '',
           row.totalClasses,
           row.presents,
           row.absences,
           row.justified,
           row.lateArrivals,
-          row.attendancePercentage.toString().replace('.', ','),
+          row.weightedAbsences.toString().replace('.', ','),
+          attendancePercentage(row).toString().replace('.', ','),
         ]
           .map((value) => `"${String(value).replace(/"/g, '""')}"`)
           .join(';')
@@ -217,7 +267,7 @@ export const AttendanceSummaryPage = () => {
     }
   }
 
-  // Abre el modal con la falta sin justificar más reciente ya elegida
+  // Abre el modal con la falta o el retardo sin justificar más reciente ya elegido
   function openDetail(item: AttendanceSummaryItem) {
     const pending = [...item.attendanceRecords].reverse().find((record) => !record.justified)
     setSelected(item)
@@ -242,14 +292,16 @@ export const AttendanceSummaryPage = () => {
             absences: selected.absences,
             halfAbsences: selected.attendanceRecords.filter((record) => record.value === 'HALF')
               .length,
-            quarterAbsences: selected.lateArrivals,
+            quarterAbsences: selected.attendanceRecords.filter(
+              (record) => record.value === 'QUARTER'
+            ).length,
             justifications: selected.justifications,
           }
         : null,
     [selected, justDate]
   )
 
-  // Busca la falta de esa fecha y tipo, sin justificar, y la justifica en el back
+  // Busca la falta o el retardo de esa fecha y tipo, sin justificar, y lo justifica en el back
   async function handleJustify() {
     if (!selected) return
     const target = selected.attendanceRecords.find(
@@ -259,7 +311,7 @@ export const AttendanceSummaryPage = () => {
     if (!target) {
       setToast({
         severity: 'error',
-        text: 'No hay una inasistencia sin justificar de ese tipo en esa fecha.',
+        text: 'No hay una inasistencia o un retardo sin justificar de ese tipo en esa fecha.',
       })
       return
     }
@@ -283,12 +335,12 @@ export const AttendanceSummaryPage = () => {
 
   return (
     <MainLayout>
-      <Box sx={{ maxWidth: 1280, mx: 'auto', p: { xs: 2, md: 3 } }}>
+      <Box sx={{ maxWidth: 1280, mx: 'auto', p: 1 }}>
         <PageHeader
           title="Resumen de asistencia"
           subtitle="Consultá el detalle de inasistencias por alumno o por curso."
           breadcrumbs={[
-            { label: 'Inicio', href: '/' },
+            { label: 'Inicio', href: '/home' },
             { label: 'Asistencia' },
             { label: 'Resumen' },
           ]}
@@ -323,10 +375,14 @@ export const AttendanceSummaryPage = () => {
               }}
             />
             <FormControl size="small" sx={{ flex: 1, minWidth: 200 }}>
-              <InputLabel id="lbl-summary-course">Curso</InputLabel>
+              {/* shrink + notched: la etiqueta queda arriba aunque el valor sea "Todos" (vacío) */}
+              <InputLabel id="lbl-summary-course" shrink>
+                Curso
+              </InputLabel>
               <Select
                 labelId="lbl-summary-course"
                 label="Curso"
+                notched
                 value={sectionId}
                 onChange={(event) => setSectionId(event.target.value)}
                 displayEmpty
@@ -358,12 +414,7 @@ export const AttendanceSummaryPage = () => {
               variant="contained"
               startIcon={<FilterAltIcon />}
               onClick={handleFilter}
-              sx={{
-                backgroundColor: '#111827',
-                px: 3,
-                height: 40,
-                '&:hover': { backgroundColor: '#1f2937' },
-              }}
+              sx={{ px: 3, height: 40 }}
             >
               Filtrar
             </Button>
@@ -381,44 +432,56 @@ export const AttendanceSummaryPage = () => {
           <Box
             sx={{
               display: 'flex',
+              flexWrap: 'wrap',
               justifyContent: 'space-between',
               alignItems: 'center',
+              gap: 1,
               px: 2,
               py: 1.5,
               borderBottom: '1px solid #e5e7eb',
             }}
           >
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-              Resultados — {resultsTitle} · {PERIOD_LABELS[applied.period]}
-            </Typography>
-            <Button
-              variant="outlined"
-              size="small"
-              startIcon={
-                exporting ? <CircularProgress size={14} color="inherit" /> : <DownloadIcon />
-              }
-              onClick={() => void handleExport()}
-              disabled={exporting || total === 0}
-              sx={{ borderColor: '#111827', color: '#111827' }}
-            >
-              Exportar
-            </Button>
+            <Box>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                Resultados — {resultsTitle} · {PERIOD_LABELS[applied.period]}
+              </Typography>
+              <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                El % de asistencia se calcula sobre las clases dictadas hasta hoy.
+              </Typography>
+            </Box>
+            <Stack direction="row" spacing={1}>
+              {canEditSchoolDays && (
+                <Button
+                  variant="outlined"
+                  size="small"
+                  startIcon={<EventAvailableIcon />}
+                  onClick={() => setSchoolDaysOpen(true)}
+                >
+                  Días hábiles
+                </Button>
+              )}
+              <Button
+                variant="outlined"
+                size="small"
+                startIcon={
+                  exporting ? <CircularProgress size={14} color="inherit" /> : <DownloadIcon />
+                }
+                onClick={() => void handleExport()}
+                disabled={exporting || total === 0}
+              >
+                Exportar
+              </Button>
+            </Stack>
           </Box>
 
           <TableContainer sx={{ overflowX: 'auto' }}>
-            <Table size="small" sx={{ minWidth: 900 }}>
+            <Table size="small" sx={{ minWidth: 980 }}>
               <TableHead>
                 <TableRow>
                   {columns.map((column) => (
                     <TableCell
                       key={column}
                       align={column === 'Alumno' || column === 'DNI' ? 'left' : 'center'}
-                      sx={{
-                        fontWeight: 700,
-                        fontSize: 12,
-                        textTransform: 'uppercase',
-                        color: '#374151',
-                      }}
                     >
                       {column}
                     </TableCell>
@@ -444,13 +507,17 @@ export const AttendanceSummaryPage = () => {
                   </TableRow>
                 ) : (
                   items.map((item) => {
-                    const color = percentageColor(item.attendancePercentage)
+                    const percentage = attendancePercentage(item)
+                    const color = percentageColor(percentage)
                     return (
                       <TableRow key={`${item.studentId}-${item.sectionId}`} hover>
                         <TableCell sx={{ fontWeight: 600, color: '#111827' }}>
                           {item.student}
                         </TableCell>
                         <TableCell sx={{ color: '#6b7280' }}>{item.dni}</TableCell>
+                        <TableCell align="center" sx={{ color: '#6b7280' }}>
+                          {schoolDays ?? '—'}
+                        </TableCell>
                         <TableCell align="center">{item.totalClasses}</TableCell>
                         <TableCell align="center">{item.presents}</TableCell>
                         <TableCell
@@ -465,38 +532,51 @@ export const AttendanceSummaryPage = () => {
                         <TableCell align="center">{item.justified}</TableCell>
                         <TableCell align="center">{item.lateArrivals}</TableCell>
                         <TableCell align="center">
-                          <Box
-                            sx={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: 1,
-                            }}
-                          >
-                            <LinearProgress
-                              variant="determinate"
-                              value={item.attendancePercentage}
-                              sx={{
-                                width: 80,
-                                height: 6,
-                                borderRadius: 3,
-                                backgroundColor: '#e5e7eb',
-                                '& .MuiLinearProgress-bar': { backgroundColor: color },
-                              }}
-                            />
-                            <Typography
-                              variant="body2"
-                              sx={{ fontWeight: 700, color, minWidth: 48 }}
-                            >
-                              {item.attendancePercentage.toFixed(1)}%
+                          {/* Sin asistencia tomada todavía: no se muestra un porcentaje engañoso */}
+                          {item.totalClasses === 0 ? (
+                            <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                              Sin registros
                             </Typography>
-                          </Box>
+                          ) : (
+                            <Box
+                              sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 1,
+                              }}
+                            >
+                              <LinearProgress
+                                variant="determinate"
+                                value={percentage}
+                                sx={{
+                                  width: 80,
+                                  height: 6,
+                                  borderRadius: 3,
+                                  backgroundColor: '#e5e7eb',
+                                  '& .MuiLinearProgress-bar': { backgroundColor: color },
+                                }}
+                              />
+                              <Typography
+                                variant="body2"
+                                sx={{ fontWeight: 700, color, minWidth: 48 }}
+                              >
+                                {percentage.toFixed(1)}%
+                              </Typography>
+                            </Box>
+                          )}
                         </TableCell>
                         <TableCell align="center">
                           <Tooltip title="Ver detalle y justificar" arrow>
-                            <IconButton size="small" onClick={() => openDetail(item)}>
-                              <VisibilityIcon fontSize="small" />
-                            </IconButton>
+                            <span>
+                              <IconButton
+                                size="small"
+                                onClick={() => openDetail(item)}
+                                disabled={item.attendanceRecords.length === 0}
+                              >
+                                <VisibilityIcon fontSize="small" />
+                              </IconButton>
+                            </span>
                           </Tooltip>
                         </TableCell>
                       </TableRow>
@@ -520,7 +600,7 @@ export const AttendanceSummaryPage = () => {
           />
         </ContentCard>
 
-        {/* Modal de justificación del proyecto */}
+        {/* Modal de justificación del proyecto: inasistencias y retardos */}
         <JustificationModal
           record={modalRecord}
           reason={justReason}
@@ -531,6 +611,17 @@ export const AttendanceSummaryPage = () => {
           onReasonChange={setJustReason}
           onAdd={() => void handleJustify()}
           onClose={() => setSelected(null)}
+        />
+
+        {/* Modal de días hábiles del ciclo */}
+        <SchoolDaysDialog
+          open={schoolDaysOpen}
+          year={cycleYear}
+          onClose={() => setSchoolDaysOpen(false)}
+          onSaved={(message) => {
+            setToast({ severity: 'success', text: message })
+            void loadSummary()
+          }}
         />
 
         <Snackbar

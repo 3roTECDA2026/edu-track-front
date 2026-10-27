@@ -1,5 +1,6 @@
 import { fetchApi } from '@/services/api'
 
+// PRESENT = presente · ABSENT = ausente · QUARTER = retardo de ¼ · HALF = retardo de ½
 export type AttendanceValue = 'PRESENT' | 'ABSENT' | 'HALF' | 'QUARTER'
 
 // Un registro de la carga diaria
@@ -49,11 +50,11 @@ export interface AttendanceSummaryItem {
   course: string
   totalClasses: number
   presents: number
-  absences: number
-  justified: number
-  lateArrivals: number
+  absences: number // Ausentes sin justificar
+  justified: number // Inasistencias y retardos justificados
+  lateArrivals: number // Retardos (¼ o ½) sin justificar
   attendancePercentage: number
-  weightedAbsences: number
+  weightedAbsences: number // Faltas computables: solo lo no justificado
   justifications: Array<{
     id: string
     date: string
@@ -71,6 +72,8 @@ export interface AttendanceSummaryItem {
 
 export interface AttendanceSummaryResponse {
   items: AttendanceSummaryItem[]
+  // Días hábiles del período, si la dirección ya los cargó (null si no)
+  schoolDays: number | null
   pagination: {
     page: number
     pageSize: number
@@ -79,9 +82,18 @@ export interface AttendanceSummaryResponse {
   }
 }
 
+// Días hábiles del ciclo lectivo (modal de días hábiles)
+export interface SchoolDays {
+  year: number
+  term1SchoolDays: number | null
+  term2SchoolDays: number | null
+  totalSchoolDays: number | null
+}
+
 // Todas las funciones usan fetchApi, que agrega el token del usuario logueado
 export const attendanceService = {
-  // Guarda la asistencia del día de toda la sección (solo el día de hoy, de lunes a viernes)
+  // Guarda la asistencia de un día de toda la sección.
+  // Hoy: quien toma asistencia. Un día anterior: solo dirección o administración (lo controla el back).
   saveBatch: (sectionId: string, date: string, records: AttendanceEntry[], signal?: AbortSignal) =>
     fetchApi<{ saved: number }>('/api/attendance/batch', {
       method: 'POST',
@@ -110,11 +122,21 @@ export const attendanceService = {
       signal,
     }),
 
-  // Justificación posterior de una falta (por ejemplo, con certificado médico)
+  // Justificación posterior de una inasistencia o un retardo (por ejemplo, con certificado médico)
   justify: (attendanceId: string, justification: string, signal?: AbortSignal) =>
     fetchApi<DailyAttendanceRecord>(`/api/attendance/${encodeURIComponent(attendanceId)}/justify`, {
       method: 'PATCH',
       body: JSON.stringify({ justification }),
       signal,
+    }),
+
+  // Días hábiles del ciclo (total y por cuatrimestre)
+  getSchoolDays: (year: number, signal?: AbortSignal) =>
+    fetchApi<SchoolDays>(`/api/attendance/school-days?year=${year}`, { signal }),
+
+  saveSchoolDays: (data: SchoolDays) =>
+    fetchApi<SchoolDays>('/api/attendance/school-days', {
+      method: 'PUT',
+      body: JSON.stringify(data),
     }),
 }

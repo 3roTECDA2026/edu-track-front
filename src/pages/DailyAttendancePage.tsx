@@ -6,6 +6,7 @@ import {
   CircularProgress,
   FormControl,
   InputLabel,
+  Menu,
   MenuItem,
   Select,
   Snackbar,
@@ -23,6 +24,7 @@ import {
 import SaveIcon from '@mui/icons-material/Save'
 import CheckIcon from '@mui/icons-material/Check'
 import SearchIcon from '@mui/icons-material/Search'
+import EditIcon from '@mui/icons-material/Edit'
 
 import MainLayout from '../components/layout/MainLayout'
 import PageHeader from '../components/common/PageHeader'
@@ -37,16 +39,38 @@ import {
   type DailyAttendanceRecord,
 } from '@/services/attendance.service'
 
-// Las letras del wireframe y cómo se guardan en el back:
-// P = presente · A = ausente (1 falta) · R = llegada tarde (cuarto de falta) · J = ausente justificado
-type DailyMark = 'P' | 'A' | 'R' | 'J'
+// Lo que se marca por alumno y cómo se guarda en el back:
+// P = presente · A = ausente (1 falta) · R = retardo de ¼ · RH = retardo de ½ · J = ausente justificado
+type DailyMark = 'P' | 'A' | 'R' | 'RH' | 'J'
 
-const MARK_OPTIONS: { value: DailyMark; label: string; color: string }[] = [
+// Los botones del wireframe: P · A · R · J. La R abre un menú para elegir ¼ o ½.
+type ButtonKey = 'P' | 'A' | 'R' | 'J'
+
+const BUTTONS: { value: ButtonKey; label: string; color: string }[] = [
   { value: 'P', label: 'Presente', color: '#111827' },
   { value: 'A', label: 'Ausente', color: '#dc2626' },
-  { value: 'R', label: 'Retardo (llegada tarde)', color: '#b45309' },
+  { value: 'R', label: 'Retardo (¼ o ½ falta)', color: '#b45309' },
   { value: 'J', label: 'Justificado', color: '#2563eb' },
 ]
+
+const isLate = (mark?: DailyMark) => mark === 'R' || mark === 'RH'
+
+// Quiénes pueden corregir la asistencia de un día anterior (también lo controla el back)
+const EDIT_PAST_ROLES = ['SCHOOL_MANAGEMENT', 'ADMINISTRATOR']
+
+// Rol del usuario logueado, leído del token. Solo sirve para mostrar u ocultar opciones:
+// el back valida igual los permisos en cada pedido.
+function currentRole(): string | null {
+  // Mismo orden que fetchApi: primero la sesión actual, después la recordada
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token')
+  if (!token) return null
+  try {
+    const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    return (JSON.parse(atob(payload)) as { role?: string }).role ?? null
+  } catch {
+    return null
+  }
+}
 
 // Mensajes de las acciones, con el Snackbar acordado en el proyecto
 interface SnackbarState {
@@ -62,20 +86,32 @@ const toEntry = (studentId: string, mark: DailyMark): AttendanceEntry => {
       return { studentId, value: 'ABSENT' }
     case 'R':
       return { studentId, value: 'QUARTER' }
+    case 'RH':
+      return { studentId, value: 'HALF' }
     case 'J':
       return { studentId, value: 'ABSENT', justified: true }
   }
 }
 
-// La media falta no tiene letra en el wireframe: si existiera un registro así, queda sin marcar
-const fromRecord = (record: DailyAttendanceRecord): DailyMark | null => {
+const fromRecord = (record: DailyAttendanceRecord): DailyMark => {
   if (record.value === 'PRESENT') return 'P'
   if (record.value === 'ABSENT') return record.justified ? 'J' : 'A'
   if (record.value === 'QUARTER') return 'R'
-  return null
+  return 'RH'
 }
 
-const getButtonStyle = (selected: boolean, option: (typeof MARK_OPTIONS)[number]) => {
+// Texto del botón: la R muestra si el retardo es de ¼ o de ½
+const buttonText = (button: ButtonKey, mark?: DailyMark) => {
+  if (button !== 'R') return button
+  if (mark === 'R') return 'R¼'
+  if (mark === 'RH') return 'R½'
+  return 'R'
+}
+
+const isSelected = (button: ButtonKey, mark?: DailyMark) =>
+  button === 'R' ? isLate(mark) : mark === button
+
+const getButtonStyle = (selected: boolean, option: (typeof BUTTONS)[number]) => {
   // La J sin elegir va con borde punteado, como en el wireframe
   const borderStyle = option.value === 'J' && !selected ? 'dashed' : 'solid'
   if (!selected) {
@@ -111,6 +147,8 @@ const formatDate = (date: string) => date.split('-').reverse().join('/')
 
 export const DailyAttendancePage = () => {
   const today = todayIso()
+  const canEditPast = EDIT_PAST_ROLES.includes(currentRole() ?? '')
+
   const [sections, setSections] = useState<AttendanceSection[]>([])
   const [sectionsError, setSectionsError] = useState<string | null>(null)
 
@@ -121,6 +159,10 @@ export const DailyAttendancePage = () => {
   const [search, setSearch] = useState<{ sectionId: string; date: string } | null>(null)
 
   const [marks, setMarks] = useState<Record<string, DailyMark>>({})
+  // true cuando la dirección o la administración tocó "Editar" en un día anterior
+  const [editingPast, setEditingPast] = useState(false)
+  // Menú de la R: para qué alumno se está eligiendo el retardo
+  const [lateMenu, setLateMenu] = useState<{ anchor: HTMLElement; studentId: string } | null>(null)
   const [snackbar, setSnackbar] = useState<SnackbarState | null>(null)
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
@@ -161,8 +203,7 @@ export const DailyAttendancePage = () => {
       if (!active || !data) return
       const loaded: Record<string, DailyMark> = {}
       data.records.forEach((record) => {
-        const mark = fromRecord(record)
-        if (mark) loaded[record.studentId] = mark
+        loaded[record.studentId] = fromRecord(record)
       })
       setMarks(loaded)
     })
@@ -173,7 +214,10 @@ export const DailyAttendancePage = () => {
 
   const searchedSection = sections.find((section) => section.id === search?.sectionId)
   const isToday = search?.date === today
-  const canEdit = Boolean(search) && isToday && !isWeekend(today)
+  const isPast = Boolean(search) && !isToday
+  // Hoy se carga normalmente; un día anterior, solo al tocar "Editar" (dirección o administración)
+  const canEdit =
+    Boolean(search) && !isWeekend(search?.date ?? today) && (isToday || (canEditPast && editingPast))
   const markedCount = students.filter((student) => marks[student.id]).length
   const pendingCount = students.length - markedCount
   const pageStudents = students.slice(page * rowsPerPage, (page + 1) * rowsPerPage)
@@ -190,11 +234,28 @@ export const DailyAttendancePage = () => {
     if (!sectionId || dateError) return
     setSearch({ sectionId, date })
     setMarks({})
+    setEditingPast(false)
     setPage(0)
   }
 
-  function handleMark(studentId: string, mark: DailyMark) {
-    setMarks((prev) => ({ ...prev, [studentId]: mark }))
+  // Cancelar la corrección: vuelve a traer lo guardado y deja la pantalla en solo lectura
+  function cancelEditing() {
+    setEditingPast(false)
+    if (search) setSearch({ ...search })
+  }
+
+  function handleButton(event: React.MouseEvent<HTMLElement>, studentId: string, button: ButtonKey) {
+    if (button === 'R') {
+      setLateMenu({ anchor: event.currentTarget, studentId })
+      return
+    }
+    setMarks((prev) => ({ ...prev, [studentId]: button }))
+  }
+
+  function chooseLate(mark: 'R' | 'RH') {
+    if (!lateMenu) return
+    setMarks((prev) => ({ ...prev, [lateMenu.studentId]: mark }))
+    setLateMenu(null)
   }
 
   function markAllPresent() {
@@ -207,7 +268,11 @@ export const DailyAttendancePage = () => {
     const entries = students.map((student) => toEntry(student.id, marks[student.id]))
     try {
       await submitBatchAttendance(search.date, entries)
-      setSnackbar({ message: 'Asistencia guardada.', severity: 'success' })
+      setSnackbar({
+        message: isPast ? 'Asistencia corregida.' : 'Asistencia guardada.',
+        severity: 'success',
+      })
+      setEditingPast(false)
     } catch (err: unknown) {
       setSnackbar({
         message: err instanceof Error ? err.message : 'No se pudo guardar la asistencia.',
@@ -218,12 +283,12 @@ export const DailyAttendancePage = () => {
 
   return (
     <MainLayout>
-      <Box sx={{ maxWidth: 1280, mx: 'auto', p: { xs: 2, md: 3 } }}>
+      <Box sx={{ maxWidth: 1280, mx: 'auto', p: 1 }}>
         <PageHeader
           title="Carga diaria de asistencia"
           subtitle="Registrá la asistencia de los alumnos por curso y sección."
           breadcrumbs={[
-            { label: 'Inicio', href: '/' },
+            { label: 'Inicio', href: '/home' },
             { label: 'Asistencia' },
             { label: 'Carga diaria' },
           ]}
@@ -289,19 +354,14 @@ export const DailyAttendancePage = () => {
               startIcon={<SearchIcon />}
               onClick={handleSearch}
               disabled={!sectionId || Boolean(dateError)}
-              sx={{
-                backgroundColor: '#111827',
-                px: 3,
-                height: 40,
-                '&:hover': { backgroundColor: '#1f2937' },
-              }}
+              sx={{ px: 3, height: 40 }}
             >
               Buscar
             </Button>
           </Stack>
         </ContentCard>
 
-        {/* Avisos fijos de la pantalla (no son mensajes de una acción) */}
+        {/* Los errores sí se muestran en rojo: comunican algo que hay que resolver */}
         {sectionsError && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {sectionsError}
@@ -312,14 +372,53 @@ export const DailyAttendancePage = () => {
             {error}
           </Alert>
         )}
-        {search && !isToday && (
-          <Alert severity="info" sx={{ mb: 2 }}>
-            La asistencia de días anteriores solo se puede consultar: no se puede modificar.
-          </Alert>
-        )}
 
         {search && searchedSection && (
           <ContentCard>
+            {/* Barra de estado para días anteriores: solo lectura o corrección */}
+            {isPast && (
+              <Box
+                sx={{
+                  m: 2,
+                  mb: 0,
+                  px: 2,
+                  py: 1.25,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 2,
+                  flexWrap: 'wrap',
+                  backgroundColor: '#f9fafb',
+                  border: '1px solid #e5e7eb',
+                  borderLeft: `3px solid ${editingPast ? '#b45309' : '#9ca3af'}`,
+                  borderRadius: 1,
+                }}
+              >
+                <Typography variant="body2" sx={{ color: '#374151' }}>
+                  {editingPast
+                    ? `Corrigiendo la asistencia del ${formatDate(search.date)}. Al guardar, queda registrado quién hizo el cambio.`
+                    : canEditPast
+                      ? 'Día anterior: la asistencia está en solo lectura.'
+                      : 'Día anterior: solo lectura. La dirección o la administración pueden corregirlo.'}
+                </Typography>
+                {canEditPast && !editingPast && (
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    startIcon={<EditIcon />}
+                    onClick={() => setEditingPast(true)}
+                  >
+                    Editar
+                  </Button>
+                )}
+                {editingPast && (
+                  <Button variant="outlined" size="small" onClick={cancelEditing} disabled={saving}>
+                    Cancelar
+                  </Button>
+                )}
+              </Box>
+            )}
+
             {/* Encabezado de la lista y leyenda */}
             <Box sx={{ p: 2, borderBottom: '1px solid #e5e7eb' }}>
               <Box
@@ -339,7 +438,7 @@ export const DailyAttendancePage = () => {
                 </Typography>
               </Box>
               <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap' }}>
-                {MARK_OPTIONS.map((option) => (
+                {BUTTONS.map((option) => (
                   <Box key={option.value} sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                     <Box
                       sx={{
@@ -359,7 +458,7 @@ export const DailyAttendancePage = () => {
                       {option.value}
                     </Box>
                     <Typography variant="caption" sx={{ color: '#4b5563' }}>
-                      {option.label.split(' (')[0]}
+                      {option.label}
                     </Typography>
                   </Box>
                 ))}
@@ -401,29 +500,32 @@ export const DailyAttendancePage = () => {
                         </TableCell>
                         <TableCell align="right">
                           <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
-                            {MARK_OPTIONS.map((option) => (
-                              <Tooltip key={option.value} title={option.label} arrow>
-                                <span>
-                                  <Button
-                                    size="small"
-                                    variant="outlined"
-                                    disabled={!canEdit}
-                                    onClick={() => handleMark(student.id, option.value)}
-                                    sx={{
-                                      minWidth: 34,
-                                      height: 30,
-                                      p: 0,
-                                      fontWeight: 700,
-                                      borderRadius: 1,
-                                      boxShadow: 'none',
-                                      ...getButtonStyle(marks[student.id] === option.value, option),
-                                    }}
-                                  >
-                                    {option.value}
-                                  </Button>
-                                </span>
-                              </Tooltip>
-                            ))}
+                            {BUTTONS.map((option) => {
+                              const mark = marks[student.id]
+                              return (
+                                <Tooltip key={option.value} title={option.label} arrow>
+                                  <span>
+                                    <Button
+                                      size="small"
+                                      variant="outlined"
+                                      disabled={!canEdit}
+                                      onClick={(event) => handleButton(event, student.id, option.value)}
+                                      sx={{
+                                        minWidth: 40,
+                                        height: 30,
+                                        p: 0,
+                                        fontWeight: 700,
+                                        borderRadius: 1,
+                                        boxShadow: 'none',
+                                        ...getButtonStyle(isSelected(option.value, mark), option),
+                                      }}
+                                    >
+                                      {buttonText(option.value, mark)}
+                                    </Button>
+                                  </span>
+                                </Tooltip>
+                              )
+                            })}
                           </Box>
                         </TableCell>
                       </TableRow>
@@ -470,7 +572,6 @@ export const DailyAttendancePage = () => {
                     startIcon={<CheckIcon />}
                     onClick={markAllPresent}
                     disabled={students.length === 0 || saving}
-                    sx={{ borderColor: '#d1d5db', color: '#374151' }}
                   >
                     Marcar todos presentes
                   </Button>
@@ -481,9 +582,8 @@ export const DailyAttendancePage = () => {
                     }
                     onClick={() => void saveAttendance()}
                     disabled={students.length === 0 || pendingCount > 0 || saving}
-                    sx={{ backgroundColor: '#111827', '&:hover': { backgroundColor: '#1f2937' } }}
                   >
-                    {saving ? 'Guardando...' : 'Guardar asistencia'}
+                    {saving ? 'Guardando...' : isPast ? 'Guardar corrección' : 'Guardar asistencia'}
                   </Button>
                 </Stack>
               )}
@@ -491,6 +591,12 @@ export const DailyAttendancePage = () => {
           </ContentCard>
         )}
       </Box>
+
+      {/* Menú de la R: retardo de ¼ o de ½ falta */}
+      <Menu anchorEl={lateMenu?.anchor} open={lateMenu !== null} onClose={() => setLateMenu(null)}>
+        <MenuItem onClick={() => chooseLate('R')}>Retardo ¼ de falta</MenuItem>
+        <MenuItem onClick={() => chooseLate('RH')}>Retardo ½ falta</MenuItem>
+      </Menu>
 
       {/* Mensajes de las acciones, con el Snackbar acordado en el proyecto */}
       <Snackbar
