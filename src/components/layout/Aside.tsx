@@ -13,13 +13,13 @@ import {
 } from '@mui/material';
 import PeopleIcon from '@mui/icons-material/People';
 import SchoolIcon from '@mui/icons-material/School';
-import EventNoteIcon from '@mui/icons-material/EventNote';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GradingIcon from '@mui/icons-material/Grading';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import { useLocation, useNavigate } from 'react-router-dom';
-// Importación de asset local
+import EditCalendarIcon from '@mui/icons-material/EditCalendar';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 import logoEscuela from '@/assets/logo.png';
 import { UserIcon } from 'lucide-react';
 
@@ -36,7 +36,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Usuarios', icon: <UserIcon />, path: '/users' },
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
   { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
-  { label: 'Inasistencias', icon: <EventNoteIcon />, path: '/attendance' },
+  { label: 'Carga de asistencia', path: '/attendance/daily', icon: <EditCalendarIcon /> },
+  { label: 'Resumen de asistencias', path: '/attendance', icon: <AssessmentIcon /> },
   { label: 'Calificaciones', icon: <GradingIcon />, path: '/calification-grid' },
 ];
 
