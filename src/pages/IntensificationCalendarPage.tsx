@@ -29,6 +29,7 @@ import EditIcon from '@mui/icons-material/Edit'
 import { Trash2, UserRound } from 'lucide-react'
 
 import MainLayout from '@/components/layout/MainLayout'
+import { PageContainer } from '@/components/common/PageContainer'
 import PageHeader from '@/components/common/PageHeader'
 import { ContentCard } from '@/components/common/ContentCard'
 import { AddButton } from '@/components/common/AddButton'
@@ -262,12 +263,12 @@ export const IntensificationCalendarPage = () => {
 
   return (
     <MainLayout>
-      <Box sx={{ maxWidth: 1280, mx: 'auto', p: { xs: 2, md: 3 } }}>
+      <PageContainer>
         <PageHeader
           title="Calendario de intensificación"
           subtitle="Fechas de cada período, materias que se intensifican y docentes responsables."
           breadcrumbs={[
-            { label: 'Inicio', href: '/' },
+            { label: 'Inicio', href: '/home' },
             { label: 'Intensificación' },
             { label: 'Calendario' },
           ]}
@@ -487,7 +488,7 @@ export const IntensificationCalendarPage = () => {
             </Stack>
           )
         )}
-      </Box>
+      </PageContainer>
 
       <PeriodDialog
         open={periodDialog !== null}
