@@ -51,6 +51,7 @@ import {
   reopenRite,
   signRite,
   updateRiteNotes,
+  type RiteAttendance,
   type RiteDetail,
   type RiteStatus,
   type RiteTerm,
@@ -95,6 +96,51 @@ const SUBJECT_COLUMNS = [
 interface MessageState {
   text: string
   severity: 'success' | 'error'
+}
+
+// Filas de la tarjeta de asistencia del RITE: días hábiles, asistencias e inasistencias.
+// En los RITE firmados antes de este cambio, los datos nuevos no existen y se muestra "—".
+function attendanceRows(attendance: RiteAttendance) {
+  const { term1, term2 } = attendance
+  const days = (value?: number | null) =>
+    value === undefined || value === null ? EMPTY : String(value)
+  const weight = (value?: number | null) =>
+    value === undefined || value === null ? EMPTY : formatAbsences(value)
+
+  return [
+    {
+      label: 'Días hábiles',
+      values: [days(term1.schoolDays), days(term2?.schoolDays), days(attendance.totalSchoolDays)],
+    },
+    {
+      label: 'Asistencias',
+      values: [
+        days(term1.attendances),
+        days(term2?.attendances),
+        days(attendance.totalAttendances),
+      ],
+    },
+    {
+      label: 'Inasistencias',
+      values: [weight(term1.absences), weight(term2?.absences), weight(attendance.totalAbsences)],
+    },
+    {
+      label: 'Justificadas',
+      values: [
+        weight(term1.justifiedAbsences),
+        weight(term2?.justifiedAbsences),
+        weight(attendance.totalJustifiedAbsences),
+      ],
+    },
+    {
+      label: 'Sin justificar',
+      values: [
+        weight(term1.unjustifiedAbsences),
+        weight(term2?.unjustifiedAbsences),
+        weight(attendance.totalUnjustifiedAbsences),
+      ],
+    },
+  ]
 }
 
 const StatusBadge = ({ status }: { status: RiteStatus }) => (
@@ -269,27 +315,41 @@ const RiteDocumentView = ({
       <Box
         sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' } }}
       >
+        {/* Asistencia: días hábiles (los del modal), asistencias e inasistencias por cuatrimestre */}
         <Paper variant="outlined" sx={{ ...cardSx, p: 2.5 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
-            Inasistencias
+            Asistencia
           </Typography>
-          <Box sx={{ display: 'grid', gap: 1.5, gridTemplateColumns: 'repeat(3, 1fr)' }}>
-            <Field
-              label="1° cuatrimestre"
-              value={`${formatAbsences(doc.attendance.term1.absences)} de ${doc.attendance.term1.schoolDays} días`}
-            />
-            <Field
-              label="2° cuatrimestre"
-              value={
-                doc.attendance.term2
-                  ? `${formatAbsences(doc.attendance.term2.absences)} de ${doc.attendance.term2.schoolDays} días`
-                  : EMPTY
-              }
-            />
-            <Field
-              label="Total"
-              value={`${formatAbsences(doc.attendance.totalAbsences)} de ${doc.attendance.totalSchoolDays} días`}
-            />
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: '1.3fr repeat(3, 1fr)',
+              columnGap: 1.5,
+              rowGap: 1,
+              alignItems: 'center',
+            }}
+          >
+            {['', '1° cuatr.', '2° cuatr.', 'Total'].map((header) => (
+              <Typography key={header || 'vacio'} sx={labelSx}>
+                {header}
+              </Typography>
+            ))}
+            {attendanceRows(doc.attendance).map((row) => (
+              <Box key={row.label} sx={{ display: 'contents' }}>
+                <Typography variant="body2" sx={{ color: COLORS.ink }}>
+                  {row.label}
+                </Typography>
+                {row.values.map((value, index) => (
+                  <Typography
+                    key={index}
+                    variant="body2"
+                    sx={{ color: COLORS.ink, fontWeight: 600 }}
+                  >
+                    {value}
+                  </Typography>
+                ))}
+              </Box>
+            ))}
           </Box>
         </Paper>
 
@@ -573,10 +633,7 @@ export const RiteTab = ({ studentId }: RiteTabProps) => {
           notesText={notesText}
           onNotesChange={(text) => setNotesDraft({ riteId: selectedRite.id, text })}
           onSaveNotes={() =>
-            runAction(
-              () => updateRiteNotes(selectedRite.id, notesText),
-              'Observaciones guardadas.'
-            )
+            runAction(() => updateRiteNotes(selectedRite.id, notesText), 'Observaciones guardadas.')
           }
           saving={working}
         />
@@ -610,7 +667,9 @@ export const RiteTab = ({ studentId }: RiteTabProps) => {
                       <StatusBadge status={item.status} />
                     </TableCell>
                     <TableCell sx={bodyCellSx}>
-                      {item.signedAt ? `${formatDate(item.signedAt)} · ${item.signedBy ?? ''}` : EMPTY}
+                      {item.signedAt
+                        ? `${formatDate(item.signedAt)} · ${item.signedBy ?? ''}`
+                        : EMPTY}
                     </TableCell>
                     <TableCell align="right" sx={bodyCellSx}>
                       <Button
