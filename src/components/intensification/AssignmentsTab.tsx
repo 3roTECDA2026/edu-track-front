@@ -24,7 +24,7 @@ import {
   Typography,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
-import { Trash2 } from 'lucide-react'
+import { ClipboardCheck, Trash2 } from 'lucide-react'
 
 import { ContentCard } from '@/components/common/ContentCard'
 import { AddButton } from '@/components/common/AddButton'
@@ -32,6 +32,7 @@ import { EditButton } from '@/components/common/EditButton'
 import { StandardTablePagination } from '@/components/common/StandardTablePagination'
 import { SHIFT_LABELS } from '@/components/students/studentLabels'
 import AssignmentDialog from '@/components/intensification/AssignmentDialog'
+import ResultDialog from '@/components/intensification/ResultDialog'
 import { attendanceService, type AttendanceSection } from '@/services/attendance.service'
 import {
   intensificationService,
@@ -60,24 +61,46 @@ const columns = [
   'Resultado',
 ]
 
+// Usuario logueado, leído del token: el docente solo carga el resultado de sus alumnos.
+// Solo sirve para mostrar u ocultar acciones: el back valida igual los permisos.
+function currentUser(): { userId: string | null; role: string | null } {
+  // Mismo orden que fetchApi: primero la sesión actual, después la recordada
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token')
+  if (!token) return { userId: null, role: null }
+  try {
+    const payload = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')
+    const data = JSON.parse(atob(payload)) as { userId?: string; role?: string }
+    return { userId: data.userId ?? null, role: data.role ?? null }
+  } catch {
+    return { userId: null, role: null }
+  }
+}
+
 interface AssignmentsTabProps {
   // Períodos del ciclo elegido (los carga la pantalla de Intensificación)
   schedules: IntensificationSchedule[]
+  // Dirección o administración: asignan, cambian el modelo, quitan y cargan cualquier resultado
   canEdit: boolean
   onMessage: (message: string, severity: 'success' | 'error') => void
   // Avisa a la pantalla para actualizar la cantidad de alumnos asignados de cada período
   onChanged: () => void
 }
 
-type DialogState = { mode: 'assign' } | { mode: 'edit'; assignment: IntensificationAssignment }
+type DialogState =
+  | { mode: 'assign' }
+  | { mode: 'edit'; assignment: IntensificationAssignment }
+  | { mode: 'result'; assignment: IntensificationAssignment }
 
-// Asignación de alumnos con materias pendientes a los períodos de intensificación (E3-RF-05, 06 y 07)
+// Asignación de alumnos a los períodos (E3-RF-05, 06 y 07) y carga de resultados (E3-RF-08)
 export const AssignmentsTab = ({
   schedules,
   canEdit,
   onMessage,
   onChanged,
 }: AssignmentsTabProps) => {
+  const user = useMemo(currentUser, [])
+  const isTeacher = user.role === 'TEACHER'
+
   const [scheduleId, setScheduleId] = useState('')
   const [subjectId, setSubjectId] = useState('')
   const [classSectionId, setClassSectionId] = useState('')
@@ -153,6 +176,15 @@ export const AssignmentsTab = ({
     [scheduleSubject]
   )
   const pageItems = items.slice(page * rowsPerPage, (page + 1) * rowsPerPage)
+
+  // La columna de acciones la ven la dirección, la administración y los docentes
+  const showActions = canEdit || isTeacher
+
+  // Cargar resultado: la dirección y la administración, o el docente responsable de esa fila.
+  // Con AA la materia ya quedó acreditada y el resultado no se cambia.
+  const canLoadResult = (item: IntensificationAssignment) =>
+    item.resultCode !== 'AA' &&
+    (canEdit || (isTeacher && item.responsibleTeacher?.id === user.userId))
 
   function refresh(message: string) {
     onMessage(message, 'success')
@@ -280,7 +312,7 @@ export const AssignmentsTab = ({
                 {columns.map((column) => (
                   <TableCell key={column}>{column}</TableCell>
                 ))}
-                {canEdit && <TableCell align="right">Acciones</TableCell>}
+                {showActions && <TableCell align="right">Acciones</TableCell>}
               </TableRow>
             </TableHead>
             <TableBody>
@@ -301,59 +333,81 @@ export const AssignmentsTab = ({
                   </TableCell>
                 </TableRow>
               ) : (
-                pageItems.map((item) => (
-                  <TableRow key={item.id} hover>
-                    <TableCell sx={{ fontWeight: 600, color: '#111827' }}>
-                      {item.student.lastName}, {item.student.firstName}
-                    </TableCell>
-                    <TableCell sx={{ color: '#6b7280' }}>{item.student.dni}</TableCell>
-                    <TableCell>{item.course ? sectionLabel(item.course) : '—'}</TableCell>
-                    <TableCell>
-                      {item.subject.name} · {item.subject.gradeLevel}°
-                    </TableCell>
-                    <TableCell>{MODEL_LABELS[item.model].split(' · ')[0]}</TableCell>
-                    <TableCell>
-                      {item.targetClassSection ? sectionLabel(item.targetClassSection) : '—'}
-                    </TableCell>
-                    <TableCell sx={{ color: item.responsibleTeacher ? '#111827' : '#9ca3af' }}>
-                      {item.responsibleTeacher?.name ?? 'Sin asignar'}
-                    </TableCell>
-                    <TableCell>
-                      {item.resultCode ? (
-                        <Chip
-                          size="small"
-                          label={`${item.resultCode}${item.score ? ` · ${item.score}` : ''}`}
-                        />
-                      ) : (
-                        <Typography variant="caption" sx={{ color: '#9ca3af' }}>
-                          Pendiente
-                        </Typography>
-                      )}
-                    </TableCell>
-                    {canEdit && (
-                      <TableCell align="right">
-                        {/* Con resultado cargado, ya no se cambia ni se quita la asignación */}
+                pageItems.map((item) => {
+                  const loadResult = canLoadResult(item)
+                  // Editar y quitar: dirección o administración, y solo sin resultado
+                  const manage = canEdit && !item.resultCode
+                  return (
+                    <TableRow key={item.id} hover>
+                      <TableCell sx={{ fontWeight: 600, color: '#111827' }}>
+                        {item.student.lastName}, {item.student.firstName}
+                      </TableCell>
+                      <TableCell sx={{ color: '#6b7280' }}>{item.student.dni}</TableCell>
+                      <TableCell>{item.course ? sectionLabel(item.course) : '—'}</TableCell>
+                      <TableCell>
+                        {item.subject.name} · {item.subject.gradeLevel}°
+                      </TableCell>
+                      <TableCell>{MODEL_LABELS[item.model].split(' · ')[0]}</TableCell>
+                      <TableCell>
+                        {item.targetClassSection ? sectionLabel(item.targetClassSection) : '—'}
+                      </TableCell>
+                      <TableCell sx={{ color: item.responsibleTeacher ? '#111827' : '#9ca3af' }}>
+                        {item.responsibleTeacher?.name ?? 'Sin asignar'}
+                      </TableCell>
+                      <TableCell>
                         {item.resultCode ? (
-                          <Typography variant="caption" sx={{ color: '#9ca3af' }}>
-                            —
-                          </Typography>
+                          <Chip
+                            size="small"
+                            label={`${item.resultCode}${item.score ? ` · ${item.score}` : ''}`}
+                          />
                         ) : (
-                          <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
-                            <EditButton
-                              label="Cambiar modelo y ubicación"
-                              onClick={() => setDialog({ mode: 'edit', assignment: item })}
-                            />
-                            <Tooltip title="Quitar asignación" arrow>
-                              <IconButton size="small" onClick={() => setToRemove(item)}>
-                                <Trash2 size={18} />
-                              </IconButton>
-                            </Tooltip>
-                          </Stack>
+                          <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                            Pendiente
+                          </Typography>
                         )}
                       </TableCell>
-                    )}
-                  </TableRow>
-                ))
+                      {showActions && (
+                        <TableCell align="right">
+                          {!loadResult && !manage ? (
+                            <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                              —
+                            </Typography>
+                          ) : (
+                            <Stack
+                              direction="row"
+                              spacing={0.5}
+                              sx={{ justifyContent: 'flex-end' }}
+                            >
+                              {loadResult && (
+                                <Tooltip title="Cargar resultado" arrow>
+                                  <IconButton
+                                    size="small"
+                                    onClick={() => setDialog({ mode: 'result', assignment: item })}
+                                  >
+                                    <ClipboardCheck size={18} />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                              {manage && (
+                                <EditButton
+                                  label="Cambiar modelo y ubicación"
+                                  onClick={() => setDialog({ mode: 'edit', assignment: item })}
+                                />
+                              )}
+                              {manage && (
+                                <Tooltip title="Quitar asignación" arrow>
+                                  <IconButton size="small" onClick={() => setToRemove(item)}>
+                                    <Trash2 size={18} />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                            </Stack>
+                          )}
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  )
+                })
               )}
             </TableBody>
           </Table>
@@ -374,17 +428,24 @@ export const AssignmentsTab = ({
       </ContentCard>
 
       <Typography variant="caption" sx={{ display: 'block', color: '#6b7280', mt: 1.5 }}>
-        El período y el docente responsable se toman del calendario. El resultado lo carga el
-        docente en la carga de resultados.
+        El período y el docente responsable se toman del calendario. El resultado lo cargan el
+        docente responsable o la dirección.
       </Typography>
 
       <AssignmentDialog
-        open={dialog !== null}
-        mode={dialog?.mode ?? 'assign'}
+        open={dialog?.mode === 'assign' || dialog?.mode === 'edit'}
+        mode={dialog?.mode === 'edit' ? 'edit' : 'assign'}
         scheduleId={scheduleId}
         subject={subject}
         assignment={dialog?.mode === 'edit' ? dialog.assignment : null}
         sections={sections}
+        onClose={() => setDialog(null)}
+        onSaved={refresh}
+      />
+
+      <ResultDialog
+        open={dialog?.mode === 'result'}
+        assignment={dialog?.mode === 'result' ? dialog.assignment : null}
         onClose={() => setDialog(null)}
         onSaved={refresh}
       />

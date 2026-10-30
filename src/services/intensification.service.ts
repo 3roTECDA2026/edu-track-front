@@ -12,6 +12,13 @@ export const MODEL_LABELS: Record<IntensificationModel, string> = {
   MODEL_4: 'Modelo 4 · Espacio específico',
 }
 
+// Resultados de la intensificación (E3-RF-08)
+export const RESULT_LABELS: Record<ResultCode, string> = {
+  AA: 'AA · Acreditó y aprobó',
+  CCA: 'CCA · Continúa con actividades de intensificación',
+  CSA: 'CSA · Sin actividades, no intensificó',
+}
+
 // En los modelos 2 y 3 hay que indicar el año, la sección y el turno donde intensifica (E3-RF-07)
 export const MODELS_WITH_LOCATION: IntensificationModel[] = ['MODEL_2', 'MODEL_3']
 
@@ -42,6 +49,9 @@ export interface IntensificationAssignment {
   responsibleTeacher: { id: string; name: string } | null
   resultCode: ResultCode | null
   score: number | null
+  pendingKnowledge: string | null // Saberes que le quedan pendientes
+  knowledgeAtClose: string | null // Logros o saberes alcanzados
+  evaluationDate: string | null
 }
 
 // Alumno que tiene la materia pendiente y todavía no está asignado al período
@@ -51,6 +61,13 @@ export interface IntensificationCandidate {
   course: SectionRef | null
   originYear: number
   pendingKnowledge: string | null
+}
+
+export interface RegisterResultInput {
+  resultCode: ResultCode
+  score: number | null
+  knowledgeAtClose: string | null
+  pendingKnowledge?: string | null
 }
 
 const BASE = '/api/intensifications'
@@ -91,4 +108,11 @@ export const intensificationService = {
     }),
 
   remove: (id: string) => fetchApi<{ deleted: boolean }>(`${BASE}/${id}`, { method: 'DELETE' }),
+
+  // Carga del resultado: docente responsable, dirección o administración (CRM-058)
+  registerResult: (id: string, data: RegisterResultInput) =>
+    fetchApi<IntensificationAssignment>(`${BASE}/${id}/result`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
 }
