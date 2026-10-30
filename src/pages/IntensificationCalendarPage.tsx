@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { SyntheticEvent } from 'react'
 import {
   Alert,
   Box,
@@ -25,7 +26,6 @@ import {
   Typography,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
-import EditIcon from '@mui/icons-material/Edit'
 import { Trash2, UserRound } from 'lucide-react'
 
 import MainLayout from '@/components/layout/MainLayout'
@@ -33,8 +33,11 @@ import { PageContainer } from '@/components/common/PageContainer'
 import PageHeader from '@/components/common/PageHeader'
 import { ContentCard } from '@/components/common/ContentCard'
 import { AddButton } from '@/components/common/AddButton'
+import { EditButton } from '@/components/common/EditButton'
+import { CustomTabs } from '@/components/common/CustomTabs'
 import PeriodDialog from '@/components/intensification/PeriodDialog'
 import ScheduleSubjectDialog from '@/components/intensification/ScheduleSubjectDialog'
+import AssignmentsTab from '@/components/intensification/AssignmentsTab'
 import { getSubjects, type SubjectOption } from '@/services/subjects.service'
 import {
   intensificationScheduleService,
@@ -71,6 +74,9 @@ const PERIODS: {
     defaults: (year) => [`${year + 1}-02-16`, `${year + 1}-03-06`],
   },
 ]
+
+// Pestañas de la pantalla: el calendario (CRM-055) y la asignación de alumnos (CRM-056 y 057)
+const TABS = ['Calendario', 'Asignación de alumnos']
 
 const EDIT_ROLES = ['SCHOOL_MANAGEMENT', 'ADMINISTRATOR']
 
@@ -120,6 +126,7 @@ export const IntensificationCalendarPage = () => {
   const yearOptions = [thisYear - 1, thisYear, thisYear + 1]
   const canEdit = EDIT_ROLES.includes(currentRole() ?? '')
 
+  const [tab, setTab] = useState(0)
   const [year, setYear] = useState(thisYear)
   const [schedules, setSchedules] = useState<IntensificationSchedule[]>([])
   const [loading, setLoading] = useState(false)
@@ -132,6 +139,12 @@ export const IntensificationCalendarPage = () => {
   const [confirm, setConfirm] = useState<ConfirmState | null>(null)
   const [saving, setSaving] = useState(false)
   const [snackbar, setSnackbar] = useState<SnackbarState | null>(null)
+
+  // Mensajes de la pestaña de asignación, con el mismo Snackbar de la pantalla
+  const showMessage = useCallback(
+    (message: string, severity: 'success' | 'error') => setSnackbar({ message, severity }),
+    []
+  )
 
   const loadSchedules = useCallback(async () => {
     setLoading(true)
@@ -261,233 +274,246 @@ export const IntensificationCalendarPage = () => {
           .sort((a, b) => a.gradeLevel - b.gradeLevel || a.name.localeCompare(b.name, 'es'))
       : []
 
+  // Calendario: un cuadro por período, con sus fechas, materias y docentes (CRM-055)
+  const calendar = (
+    <Stack spacing={3}>
+      {PERIODS.map((period) => {
+        const schedule = scheduleByPeriod.get(period.value)
+        return (
+          <ContentCard key={period.value}>
+            {/* Encabezado del período */}
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 1,
+                px: 3,
+                py: 2.5,
+                borderBottom: '1px solid #e5e7eb',
+              }}
+            >
+              <Box>
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700, color: '#111827' }}>
+                    {period.label}
+                  </Typography>
+                  {schedule ? (
+                    <Chip
+                      label={`${formatDate(schedule.startDate)} al ${formatDate(schedule.endDate)}`}
+                      sx={{ fontWeight: 600 }}
+                    />
+                  ) : (
+                    <Chip variant="outlined" label="Sin configurar" />
+                  )}
+                </Stack>
+                <Typography variant="body2" sx={{ color: '#6b7280', mt: 0.5 }}>
+                  {period.hint(year)}
+                  {schedule ? ` · ${schedule.assignedStudents} alumnos asignados` : ''}
+                </Typography>
+              </Box>
+
+              {canEdit &&
+                (schedule ? (
+                  <Stack direction="row" spacing={0.5}>
+                    <EditButton
+                      label="Editar fechas"
+                      onClick={() => setPeriodDialog({ mode: 'edit', period, schedule })}
+                    />
+                    <Tooltip
+                      title={
+                        schedule.assignedStudents > 0
+                          ? 'Tiene alumnos asignados: no se puede eliminar'
+                          : 'Eliminar período'
+                      }
+                      arrow
+                    >
+                      <span>
+                        <IconButton
+                          size="small"
+                          disabled={schedule.assignedStudents > 0}
+                          onClick={() =>
+                            setConfirm({ kind: 'schedule', schedule, label: period.label })
+                          }
+                        >
+                          <Trash2 size={18} />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  </Stack>
+                ) : (
+                  <AddButton
+                    label="Configurar período"
+                    icon={<AddIcon />}
+                    onClick={() => setPeriodDialog({ mode: 'create', period })}
+                  />
+                ))}
+            </Box>
+
+            {/* Período todavía sin fechas */}
+            {!schedule && (
+              <Box sx={{ px: 3, py: 4, textAlign: 'center' }}>
+                <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                  Todavía no se definieron las fechas de este período.
+                </Typography>
+                {canEdit && (
+                  <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                    Usá “Configurar período” para cargarlas.
+                  </Typography>
+                )}
+              </Box>
+            )}
+
+            {/* Materias del período */}
+            {schedule && (
+              <>
+                <Table sx={{ '& .MuiTableCell-root': { px: 3 } }}>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell sx={headCellSx}>Materia</TableCell>
+                      <TableCell sx={headCellSx} width={110}>
+                        Año
+                      </TableCell>
+                      <TableCell sx={headCellSx}>Docente responsable</TableCell>
+                      {canEdit && (
+                        <TableCell sx={headCellSx} align="right" width={130}>
+                          Acciones
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {schedule.subjects.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={canEdit ? 4 : 3}
+                          sx={{ color: '#6b7280', py: 4 }}
+                          align="center"
+                        >
+                          Todavía no hay materias en este período.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      schedule.subjects.map((entry) => (
+                        <TableRow key={entry.id} hover>
+                          <TableCell sx={{ fontWeight: 600, color: '#111827' }}>
+                            {entry.subjectName}
+                          </TableCell>
+                          <TableCell>{entry.gradeLevel}° año</TableCell>
+                          <TableCell sx={{ color: entry.teacher ? '#111827' : '#9ca3af' }}>
+                            {entry.teacher?.name ?? 'Sin asignar'}
+                          </TableCell>
+                          {canEdit && (
+                            <TableCell align="right">
+                              <Tooltip title="Cambiar docente" arrow>
+                                <IconButton
+                                  size="small"
+                                  onClick={() =>
+                                    setSubjectDialog({ mode: 'teacher', schedule, entry })
+                                  }
+                                >
+                                  <UserRound size={18} />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Quitar del período" arrow>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => setConfirm({ kind: 'subject', schedule, entry })}
+                                >
+                                  <Trash2 size={18} />
+                                </IconButton>
+                              </Tooltip>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+                {canEdit && (
+                  <Box sx={{ px: 3, py: 2, borderTop: '1px solid #e5e7eb' }}>
+                    <Button
+                      startIcon={<AddIcon />}
+                      onClick={() => setSubjectDialog({ mode: 'add', schedule })}
+                      sx={{ color: '#111827', fontWeight: 600 }}
+                    >
+                      Agregar materia
+                    </Button>
+                  </Box>
+                )}
+              </>
+            )}
+          </ContentCard>
+        )
+      })}
+    </Stack>
+  )
+
   return (
     <MainLayout>
       <PageContainer>
         <PageHeader
-          title="Calendario de intensificación"
-          subtitle="Fechas de cada período, materias que se intensifican y docentes responsables."
+          title="Intensificación"
+          subtitle="Calendario de los períodos y asignación de los alumnos con materias pendientes."
           breadcrumbs={[
             { label: 'Inicio', href: '/home' },
             { label: 'Intensificación' },
-            { label: 'Calendario' },
+            { label: TABS[tab] },
           ]}
         />
 
-        <Stack direction="row" sx={{ alignItems: 'center', gap: 2, mb: 3 }}>
-          <FormControl size="small" sx={{ minWidth: 160 }}>
-            <InputLabel id="lbl-year">Ciclo lectivo</InputLabel>
-            <Select
-              labelId="lbl-year"
-              label="Ciclo lectivo"
-              value={year}
-              onChange={(event) => setYear(Number(event.target.value))}
-            >
-              {yearOptions.map((option) => (
-                <MenuItem key={option} value={option}>
-                  {option}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          {!canEdit && (
-            <Typography variant="caption" sx={{ color: '#6b7280' }}>
-              Solo la dirección y la administración pueden modificar el calendario.
-            </Typography>
-          )}
-        </Stack>
+        {/* Pestañas dentro de la tarjeta estándar, como en la ficha del alumno */}
+        <ContentCard>
+          <CustomTabs
+            tabs={TABS}
+            value={tab}
+            onChange={(_: SyntheticEvent, index: number) => setTab(index)}
+          />
 
-        {error && (
-          <Alert severity="info" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-            <CircularProgress size={28} />
-          </Box>
-        ) : (
-          !error && (
-            <Stack spacing={3}>
-              {PERIODS.map((period) => {
-                const schedule = scheduleByPeriod.get(period.value)
-                return (
-                  <ContentCard key={period.value}>
-                    {/* Encabezado del período */}
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        gap: 1,
-                        px: 3,
-                        py: 2.5,
-                        borderBottom: '1px solid #e5e7eb',
-                        backgroundColor: '#fafafa',
-                      }}
-                    >
-                      <Box>
-                        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-                          <Typography variant="h6" sx={{ fontWeight: 700, color: '#111827' }}>
-                            {period.label}
-                          </Typography>
-                          {schedule ? (
-                            <Chip
-                              label={`${formatDate(schedule.startDate)} al ${formatDate(schedule.endDate)}`}
-                              sx={{ fontWeight: 600 }}
-                            />
-                          ) : (
-                            <Chip variant="outlined" label="Sin configurar" />
-                          )}
-                        </Stack>
-                        <Typography variant="body2" sx={{ color: '#6b7280', mt: 0.5 }}>
-                          {period.hint(year)}
-                          {schedule ? ` · ${schedule.assignedStudents} alumnos asignados` : ''}
-                        </Typography>
-                      </Box>
-
-                      {canEdit &&
-                        (schedule ? (
-                          <Stack direction="row" spacing={0.5}>
-                            <Tooltip title="Editar fechas" arrow>
-                              <IconButton
-                                onClick={() => setPeriodDialog({ mode: 'edit', period, schedule })}
-                              >
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip
-                              title={
-                                schedule.assignedStudents > 0
-                                  ? 'Tiene alumnos asignados: no se puede eliminar'
-                                  : 'Eliminar período'
-                              }
-                              arrow
-                            >
-                              <span>
-                                <IconButton
-                                  disabled={schedule.assignedStudents > 0}
-                                  onClick={() =>
-                                    setConfirm({ kind: 'schedule', schedule, label: period.label })
-                                  }
-                                >
-                                  <Trash2 size={18} />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                          </Stack>
-                        ) : (
-                          <AddButton
-                            label="Configurar período"
-                            icon={<AddIcon />}
-                            onClick={() => setPeriodDialog({ mode: 'create', period })}
-                          />
-                        ))}
-                    </Box>
-
-                    {/* Período todavía sin fechas */}
-                    {!schedule && (
-                      <Box sx={{ px: 3, py: 4, textAlign: 'center' }}>
-                        <Typography variant="body2" sx={{ color: '#6b7280' }}>
-                          Todavía no se definieron las fechas de este período.
-                        </Typography>
-                        {canEdit && (
-                          <Typography variant="caption" sx={{ color: '#9ca3af' }}>
-                            Usá “Configurar período” para cargarlas.
-                          </Typography>
-                        )}
-                      </Box>
-                    )}
-
-                    {/* Materias del período */}
-                    {schedule && (
-                      <>
-                        <Table sx={{ '& .MuiTableCell-root': { px: 3 } }}>
-                          <TableHead>
-                            <TableRow>
-                              <TableCell sx={headCellSx}>Materia</TableCell>
-                              <TableCell sx={headCellSx} width={110}>
-                                Año
-                              </TableCell>
-                              <TableCell sx={headCellSx}>Docente responsable</TableCell>
-                              {canEdit && (
-                                <TableCell sx={headCellSx} align="right" width={130}>
-                                  Acciones
-                                </TableCell>
-                              )}
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {schedule.subjects.length === 0 ? (
-                              <TableRow>
-                                <TableCell
-                                  colSpan={canEdit ? 4 : 3}
-                                  sx={{ color: '#6b7280', py: 4 }}
-                                  align="center"
-                                >
-                                  Todavía no hay materias en este período.
-                                </TableCell>
-                              </TableRow>
-                            ) : (
-                              schedule.subjects.map((entry) => (
-                                <TableRow key={entry.id} hover>
-                                  <TableCell sx={{ fontWeight: 600, color: '#111827' }}>
-                                    {entry.subjectName}
-                                  </TableCell>
-                                  <TableCell>{entry.gradeLevel}° año</TableCell>
-                                  <TableCell sx={{ color: entry.teacher ? '#111827' : '#9ca3af' }}>
-                                    {entry.teacher?.name ?? 'Sin asignar'}
-                                  </TableCell>
-                                  {canEdit && (
-                                    <TableCell align="right">
-                                      <Tooltip title="Cambiar docente" arrow>
-                                        <IconButton
-                                          size="small"
-                                          onClick={() =>
-                                            setSubjectDialog({ mode: 'teacher', schedule, entry })
-                                          }
-                                        >
-                                          <UserRound size={18} />
-                                        </IconButton>
-                                      </Tooltip>
-                                      <Tooltip title="Quitar del período" arrow>
-                                        <IconButton
-                                          size="small"
-                                          onClick={() =>
-                                            setConfirm({ kind: 'subject', schedule, entry })
-                                          }
-                                        >
-                                          <Trash2 size={18} />
-                                        </IconButton>
-                                      </Tooltip>
-                                    </TableCell>
-                                  )}
-                                </TableRow>
-                              ))
-                            )}
-                          </TableBody>
-                        </Table>
-                        {canEdit && (
-                          <Box sx={{ px: 3, py: 2, borderTop: '1px solid #e5e7eb' }}>
-                            <Button
-                              startIcon={<AddIcon />}
-                              onClick={() => setSubjectDialog({ mode: 'add', schedule })}
-                              sx={{ color: '#111827', fontWeight: 600 }}
-                            >
-                              Agregar materia
-                            </Button>
-                          </Box>
-                        )}
-                      </>
-                    )}
-                  </ContentCard>
-                )
-              })}
+          <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
+            {/* Ciclo lectivo: se aplica a las dos pestañas */}
+            <Stack direction="row" sx={{ alignItems: 'center', gap: 2, mb: 3 }}>
+              <FormControl size="small" sx={{ minWidth: 160 }}>
+                <InputLabel id="lbl-year">Ciclo lectivo</InputLabel>
+                <Select
+                  labelId="lbl-year"
+                  label="Ciclo lectivo"
+                  value={year}
+                  onChange={(event) => setYear(Number(event.target.value))}
+                >
+                  {yearOptions.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              {!canEdit && (
+                <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                  Solo la dirección y la administración pueden hacer cambios.
+                </Typography>
+              )}
             </Stack>
-          )
-        )}
+
+            {error ? (
+              <Alert severity="info">{error}</Alert>
+            ) : loading ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                <CircularProgress size={28} />
+              </Box>
+            ) : tab === 0 ? (
+              calendar
+            ) : (
+              <AssignmentsTab
+                schedules={schedules}
+                canEdit={canEdit}
+                onMessage={showMessage}
+                onChanged={() => void loadSchedules()}
+              />
+            )}
+          </Box>
+        </ContentCard>
       </PageContainer>
 
       <PeriodDialog
