@@ -16,11 +16,10 @@ import {
   Typography,
 } from '@mui/material'
 
-import { SHIFT_LABELS } from '@/components/students/studentLabels'
+import { MODEL_LABELS, sectionLabel } from '@/components/intensification/intensificationLabels'
 import type { AttendanceSection } from '@/services/attendance.service'
 import {
   intensificationService,
-  MODEL_LABELS,
   MODELS_WITH_LOCATION,
   type IntensificationAssignment,
   type IntensificationCandidate,
@@ -38,9 +37,6 @@ interface AssignmentDialogProps {
   onClose: () => void
   onSaved: (message: string) => void
 }
-
-const sectionLabel = (section: { grade: number; division: string; shift: string }) =>
-  `${section.grade}° ${section.division} · ${SHIFT_LABELS[section.shift as keyof typeof SHIFT_LABELS] ?? section.shift}`
 
 export const AssignmentDialog = ({
   open,
@@ -80,7 +76,7 @@ export const AssignmentDialog = ({
       .then(setCandidates)
       .catch((err: unknown) => {
         if (controller.signal.aborted) return
-        setError(err instanceof Error ? err.message : 'No se pudieron cargar los alumnos')
+        setError(err instanceof Error ? err.message : 'No se pudieron cargar los alumnos.')
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false)
@@ -90,12 +86,35 @@ export const AssignmentDialog = ({
 
   const gradeLevel = mode === 'edit' ? assignment?.subject.gradeLevel : subject?.gradeLevel
   const needsLocation = MODELS_WITH_LOCATION.includes(model)
-  // Solo se ofrecen secciones del año de la materia (el back valida igual el turno)
-  const gradeSections = sections.filter((section) => section.grade === gradeLevel)
+
+  // Turnos de los alumnos elegidos (o del alumno que se está cambiando)
+  const chosenCourses =
+    mode === 'edit'
+      ? [assignment?.course ?? null]
+      : candidates
+          .filter((candidate) => selected.has(candidate.pendingSubjectId))
+          .map((candidate) => candidate.course)
+  const shifts = new Set(chosenCourses.flatMap((course) => (course ? [course.shift] : [])))
+  const withoutCourse = chosenCourses.some((course) => course === null)
+
+  // Modelo 2 con alumnos de turnos distintos: una sola sección no puede ser del turno de todos
+  const mixedShifts = model === 'MODEL_2' && shifts.size > 1
+
+  // Secciones posibles: del año de la materia y, según el modelo, del mismo turno (2) o de otro (3)
+  const validSections = sections.filter((section) => {
+    if (section.grade !== gradeLevel) return false
+    if (model === 'MODEL_2') return shifts.size === 1 && shifts.has(section.shift)
+    if (model === 'MODEL_3') return !shifts.has(section.shift)
+    return true
+  })
+  // Si la sección elegida dejó de servir (cambió el modelo o los alumnos), no cuenta como elegida
+  const validTargetId = validSections.some((section) => section.id === targetId) ? targetId : ''
 
   const allSelected = candidates.length > 0 && selected.size === candidates.length
   const canSave =
-    !saving && (mode === 'edit' || selected.size > 0) && (!needsLocation || Boolean(targetId))
+    !saving &&
+    (mode === 'edit' || selected.size > 0) &&
+    (!needsLocation || (Boolean(validTargetId) && !mixedShifts && !withoutCourse))
 
   function toggle(id: string) {
     setSelected((prev) => {
@@ -106,10 +125,16 @@ export const AssignmentDialog = ({
     })
   }
 
+  // Al cambiar el modelo, la sección anterior ya no sirve (por ejemplo, del 2 al 3 cambia el turno)
+  function changeModel(next: IntensificationModel) {
+    setModel(next)
+    setTargetId('')
+  }
+
   async function handleSave() {
     setSaving(true)
     setError(null)
-    const targetClassSectionId = needsLocation ? targetId : null
+    const targetClassSectionId = needsLocation ? validTargetId : null
     try {
       if (mode === 'edit' && assignment) {
         await intensificationService.updatePlacement(assignment.id, { model, targetClassSectionId })
@@ -128,14 +153,14 @@ export const AssignmentDialog = ({
       }
       onClose()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'No se pudo guardar')
+      setError(err instanceof Error ? err.message : 'No se pudo guardar.')
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={() => !saving && onClose()} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ fontWeight: 700 }}>
         {mode === 'assign'
           ? `Asignar alumnos · ${subject?.name ?? ''} ${subject?.gradeLevel ?? ''}°`
@@ -150,7 +175,7 @@ export const AssignmentDialog = ({
                 <CircularProgress size={24} />
               </Box>
             ) : candidates.length === 0 ? (
-              <Typography variant="body2" sx={{ color: '#6b7280' }}>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                 No hay alumnos con esta materia pendiente para asignar en este período.
               </Typography>
             ) : (
@@ -172,7 +197,7 @@ export const AssignmentDialog = ({
                         setSelected(
                           allSelected
                             ? new Set()
-                            : new Set(candidates.map((c) => c.pendingSubjectId))
+                            : new Set(candidates.map((candidate) => candidate.pendingSubjectId))
                         )
                       }
                     />
@@ -199,7 +224,7 @@ export const AssignmentDialog = ({
                         <Typography
                           component="span"
                           variant="caption"
-                          sx={{ color: '#6b7280', ml: 1 }}
+                          sx={{ color: 'text.secondary', ml: 1 }}
                         >
                           {candidate.course ? sectionLabel(candidate.course) : 'Sin curso'} ·
                           pendiente de {candidate.originYear}
@@ -217,7 +242,7 @@ export const AssignmentDialog = ({
             label="Modelo"
             size="small"
             value={model}
-            onChange={(event) => setModel(event.target.value as IntensificationModel)}
+            onChange={(event) => changeModel(event.target.value as IntensificationModel)}
           >
             {(Object.keys(MODEL_LABELS) as IntensificationModel[]).map((key) => (
               <MenuItem key={key} value={key}>
@@ -227,25 +252,37 @@ export const AssignmentDialog = ({
           </TextField>
 
           {/* Dónde intensifica, solo en los modelos 2 y 3 (E3-RF-07) */}
-          {needsLocation && (
+          {needsLocation && mixedShifts && (
+            <Alert severity="warning">
+              Los alumnos elegidos son de turnos distintos. En el modelo 2, la sección tiene que ser
+              del mismo turno de cada uno: asignalos por separado, de a un turno.
+            </Alert>
+          )}
+          {needsLocation && withoutCourse && (
+            <Alert severity="warning">
+              Hay alumnos sin curso en el ciclo activo: no se puede validar el turno. Asignalos con
+              el modelo 1 o el 4, o primero inscribilos en un curso.
+            </Alert>
+          )}
+          {needsLocation && !mixedShifts && !withoutCourse && (
             <TextField
               select
               label="Año, sección y turno donde intensifica"
               size="small"
-              value={targetId}
+              value={validTargetId}
               onChange={(event) => setTargetId(event.target.value)}
               helperText={
                 model === 'MODEL_2'
-                  ? `Una sección de ${gradeLevel}° año, del mismo turno del alumno.`
-                  : `Una sección de ${gradeLevel}° año, de otro turno (contraturno).`
+                  ? `Secciones de ${gradeLevel}° año del mismo turno del alumno.`
+                  : `Secciones de ${gradeLevel}° año de otro turno (contraturno).`
               }
             >
-              {gradeSections.length === 0 ? (
+              {validSections.length === 0 ? (
                 <MenuItem value="" disabled>
-                  No hay secciones de {gradeLevel}° año en el ciclo
+                  No hay secciones de {gradeLevel}° año que sirvan para este modelo
                 </MenuItem>
               ) : (
-                gradeSections.map((section) => (
+                validSections.map((section) => (
                   <MenuItem key={section.id} value={section.id}>
                     {sectionLabel(section)}
                   </MenuItem>
@@ -267,7 +304,7 @@ export const AssignmentDialog = ({
           onClick={() => void handleSave()}
           startIcon={saving ? <CircularProgress size={16} color="inherit" /> : undefined}
         >
-          {mode === 'assign' ? 'Asignar' : 'Guardar'}
+          {saving ? 'Guardando...' : mode === 'assign' ? 'Asignar' : 'Guardar'}
         </Button>
       </DialogActions>
     </Dialog>

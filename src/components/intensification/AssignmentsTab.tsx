@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
+  Alert,
   Box,
   Button,
   Chip,
@@ -24,30 +25,24 @@ import {
   Typography,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
-import { Trash2 } from 'lucide-react'
-
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined'
 import { ContentCard } from '@/components/common/ContentCard'
 import { AddButton } from '@/components/common/AddButton'
 import { EditButton } from '@/components/common/EditButton'
 import { StandardTablePagination } from '@/components/common/StandardTablePagination'
-import { SHIFT_LABELS } from '@/components/students/studentLabels'
 import AssignmentDialog from '@/components/intensification/AssignmentDialog'
+import {
+  MODEL_SHORT_LABELS,
+  PERIOD_LABELS,
+  sectionLabel,
+} from '@/components/intensification/intensificationLabels'
+import { useIntensifications } from '@/hooks/useIntensifications'
 import { attendanceService, type AttendanceSection } from '@/services/attendance.service'
 import {
   intensificationService,
-  MODEL_LABELS,
   type IntensificationAssignment,
 } from '@/services/intensification.service'
 import type { IntensificationSchedule } from '@/services/intensificationSchedule.service'
-
-const PERIOD_LABELS = {
-  AUGUST: 'Agosto',
-  DECEMBER: 'Diciembre',
-  FEBRUARY_MARCH: 'Febrero / Marzo',
-} as const
-
-const sectionLabel = (section: { grade: number; division: string; shift: string }) =>
-  `${section.grade}° ${section.division} · ${SHIFT_LABELS[section.shift as keyof typeof SHIFT_LABELS] ?? section.shift}`
 
 const columns = [
   'Alumno',
@@ -59,6 +54,9 @@ const columns = [
   'Docente',
   'Resultado',
 ]
+
+const studentName = (item: IntensificationAssignment) =>
+  `${item.student.lastName}, ${item.student.firstName}`
 
 interface AssignmentsTabProps {
   // Períodos del ciclo elegido (los carga la pantalla de Intensificación)
@@ -82,10 +80,6 @@ export const AssignmentsTab = ({
   const [subjectId, setSubjectId] = useState('')
   const [classSectionId, setClassSectionId] = useState('')
   const [sections, setSections] = useState<AttendanceSection[]>([])
-
-  const [items, setItems] = useState<IntensificationAssignment[]>([])
-  const [loading, setLoading] = useState(false)
-  const [reloadKey, setReloadKey] = useState(0)
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
 
@@ -93,11 +87,18 @@ export const AssignmentsTab = ({
   const [toRemove, setToRemove] = useState<IntensificationAssignment | null>(null)
   const [removing, setRemoving] = useState(false)
 
+  const { items, loading, error, reload } = useIntensifications({
+    scheduleId,
+    subjectId,
+    classSectionId,
+  })
+
   // Si el período elegido no está en el ciclo, se elige el primero
   useEffect(() => {
     if (!schedules.some((schedule) => schedule.id === scheduleId)) {
       setScheduleId(schedules[0]?.id ?? '')
       setSubjectId('')
+      setPage(0)
     }
   }, [schedules, scheduleId])
 
@@ -110,34 +111,6 @@ export const AssignmentsTab = ({
       .catch(() => undefined)
     return () => controller.abort()
   }, [])
-
-  // Asignados del período, con los filtros. Al cambiar los filtros, se cancela el pedido anterior.
-  useEffect(() => {
-    if (!scheduleId) {
-      setItems([])
-      return
-    }
-    const controller = new AbortController()
-    setLoading(true)
-    intensificationService
-      .list({ scheduleId, subjectId, classSectionId }, controller.signal)
-      .then((data) => {
-        setItems(data)
-        setPage(0)
-      })
-      .catch((err: unknown) => {
-        if (controller.signal.aborted) return
-        setItems([])
-        onMessage(
-          err instanceof Error ? err.message : 'No se pudieron cargar las asignaciones',
-          'error'
-        )
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false)
-      })
-    return () => controller.abort()
-  }, [scheduleId, subjectId, classSectionId, reloadKey, onMessage])
 
   const schedule = schedules.find((item) => item.id === scheduleId)
   const scheduleSubject = schedule?.subjects.find((entry) => entry.subjectId === subjectId)
@@ -152,11 +125,15 @@ export const AssignmentsTab = ({
         : null,
     [scheduleSubject]
   )
-  const pageItems = items.slice(page * rowsPerPage, (page + 1) * rowsPerPage)
+
+  // Si después de quitar a alguien la página quedó vacía, se muestra la última que tiene datos
+  const lastPage = Math.max(0, Math.ceil(items.length / rowsPerPage) - 1)
+  const currentPage = Math.min(page, lastPage)
+  const pageItems = items.slice(currentPage * rowsPerPage, (currentPage + 1) * rowsPerPage)
 
   function refresh(message: string) {
     onMessage(message, 'success')
-    setReloadKey((key) => key + 1)
+    reload()
     onChanged()
   }
 
@@ -168,7 +145,7 @@ export const AssignmentsTab = ({
       setToRemove(null)
       refresh('Asignación quitada.')
     } catch (err: unknown) {
-      onMessage(err instanceof Error ? err.message : 'No se pudo quitar la asignación', 'error')
+      onMessage(err instanceof Error ? err.message : 'No se pudo quitar la asignación.', 'error')
     } finally {
       setRemoving(false)
     }
@@ -177,7 +154,7 @@ export const AssignmentsTab = ({
   if (schedules.length === 0) {
     return (
       <Box sx={{ py: 4, textAlign: 'center' }}>
-        <Typography variant="body2" sx={{ color: '#6b7280' }}>
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
           Todavía no hay períodos configurados en este ciclo. Configuralos en la pestaña Calendario.
         </Typography>
       </Box>
@@ -206,6 +183,7 @@ export const AssignmentsTab = ({
               onChange={(event) => {
                 setScheduleId(event.target.value)
                 setSubjectId('')
+                setPage(0)
               }}
             >
               {schedules.map((item) => (
@@ -227,7 +205,10 @@ export const AssignmentsTab = ({
               notched
               displayEmpty
               value={subjectId}
-              onChange={(event) => setSubjectId(event.target.value)}
+              onChange={(event) => {
+                setSubjectId(event.target.value)
+                setPage(0)
+              }}
             >
               <MenuItem value="">Todas</MenuItem>
               {schedule?.subjects.map((entry) => (
@@ -248,7 +229,10 @@ export const AssignmentsTab = ({
               notched
               displayEmpty
               value={classSectionId}
-              onChange={(event) => setClassSectionId(event.target.value)}
+              onChange={(event) => {
+                setClassSectionId(event.target.value)
+                setPage(0)
+              }}
             >
               <MenuItem value="">Todos</MenuItem>
               {sections.map((section) => (
@@ -275,7 +259,7 @@ export const AssignmentsTab = ({
 
         <TableContainer sx={{ overflowX: 'auto' }}>
           <Table size="small" sx={{ minWidth: 980 }}>
-            <TableHead>
+            <TableHead sx={{ backgroundColor: '#fafafa' }}>
               <TableRow>
                 {columns.map((column) => (
                   <TableCell key={column}>{column}</TableCell>
@@ -290,12 +274,18 @@ export const AssignmentsTab = ({
                     <CircularProgress size={28} />
                   </TableCell>
                 </TableRow>
+              ) : error ? (
+                <TableRow>
+                  <TableCell colSpan={columns.length + 1} sx={{ py: 3 }}>
+                    <Alert severity="error">{error}</Alert>
+                  </TableCell>
+                </TableRow>
               ) : items.length === 0 ? (
                 <TableRow>
                   <TableCell
                     colSpan={columns.length + 1}
                     align="center"
-                    sx={{ py: 4, color: '#6b7280' }}
+                    sx={{ py: 4, color: 'text.secondary' }}
                   >
                     Todavía no hay alumnos asignados con estos filtros.
                   </TableCell>
@@ -303,19 +293,21 @@ export const AssignmentsTab = ({
               ) : (
                 pageItems.map((item) => (
                   <TableRow key={item.id} hover>
-                    <TableCell sx={{ fontWeight: 600, color: '#111827' }}>
-                      {item.student.lastName}, {item.student.firstName}
+                    <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>
+                      {studentName(item)}
                     </TableCell>
-                    <TableCell sx={{ color: '#6b7280' }}>{item.student.dni}</TableCell>
+                    <TableCell sx={{ color: 'text.secondary' }}>{item.student.dni}</TableCell>
                     <TableCell>{item.course ? sectionLabel(item.course) : '—'}</TableCell>
                     <TableCell>
                       {item.subject.name} · {item.subject.gradeLevel}°
                     </TableCell>
-                    <TableCell>{MODEL_LABELS[item.model].split(' · ')[0]}</TableCell>
+                    <TableCell>{MODEL_SHORT_LABELS[item.model]}</TableCell>
                     <TableCell>
                       {item.targetClassSection ? sectionLabel(item.targetClassSection) : '—'}
                     </TableCell>
-                    <TableCell sx={{ color: item.responsibleTeacher ? '#111827' : '#9ca3af' }}>
+                    <TableCell
+                      sx={{ color: item.responsibleTeacher ? 'text.primary' : 'text.secondary' }}
+                    >
                       {item.responsibleTeacher?.name ?? 'Sin asignar'}
                     </TableCell>
                     <TableCell>
@@ -325,7 +317,7 @@ export const AssignmentsTab = ({
                           label={`${item.resultCode}${item.score ? ` · ${item.score}` : ''}`}
                         />
                       ) : (
-                        <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                           Pendiente
                         </Typography>
                       )}
@@ -334,7 +326,7 @@ export const AssignmentsTab = ({
                       <TableCell align="right">
                         {/* Con resultado cargado, ya no se cambia ni se quita la asignación */}
                         {item.resultCode ? (
-                          <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                          <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                             —
                           </Typography>
                         ) : (
@@ -345,7 +337,7 @@ export const AssignmentsTab = ({
                             />
                             <Tooltip title="Quitar asignación" arrow>
                               <IconButton size="small" onClick={() => setToRemove(item)}>
-                                <Trash2 size={18} />
+                                <DeleteOutlineIcon fontSize="small" />
                               </IconButton>
                             </Tooltip>
                           </Stack>
@@ -361,7 +353,7 @@ export const AssignmentsTab = ({
 
         <StandardTablePagination
           count={items.length}
-          page={page}
+          page={currentPage}
           rowsPerPage={rowsPerPage}
           onPageChange={setPage}
           onRowsPerPageChange={(rows) => {
@@ -373,7 +365,7 @@ export const AssignmentsTab = ({
         />
       </ContentCard>
 
-      <Typography variant="caption" sx={{ display: 'block', color: '#6b7280', mt: 1.5 }}>
+      <Typography variant="caption" sx={{ display: 'block', color: 'text.secondary', mt: 1.5 }}>
         El período y el docente responsable se toman del calendario. El resultado lo carga el
         docente en la carga de resultados.
       </Typography>
@@ -389,13 +381,19 @@ export const AssignmentsTab = ({
         onSaved={refresh}
       />
 
-      {/* Confirmación para quitar una asignación */}
-      <Dialog open={toRemove !== null} onClose={() => setToRemove(null)} maxWidth="xs" fullWidth>
-        <DialogTitle sx={{ fontWeight: 700 }}>Quitar asignación</DialogTitle>
+      {/* Confirmación para quitar: mientras se procesa, no se cierra (estándar §7) */}
+      <Dialog
+        open={toRemove !== null}
+        onClose={() => !removing && setToRemove(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          ¿Quitar a {toRemove ? studentName(toRemove) : ''} del período?
+        </DialogTitle>
         <DialogContent>
           <Typography variant="body2">
-            ¿Quitar a {toRemove?.student.lastName}, {toRemove?.student.firstName} de este período?
-            La materia sigue pendiente y se puede volver a asignar.
+            La materia sigue pendiente y se puede volver a asignar a este período o a otro.
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -409,7 +407,7 @@ export const AssignmentsTab = ({
             disabled={removing}
             onClick={() => void handleRemove()}
           >
-            Quitar
+            {removing ? 'Quitando...' : 'Quitar'}
           </Button>
         </DialogActions>
       </Dialog>

@@ -1,16 +1,10 @@
 import { fetchApi } from '@/services/api'
 import type { IntensificationPeriod } from '@/services/intensificationSchedule.service'
 
+// Los textos de los modelos y períodos están en components/intensification/intensificationLabels.ts
+
 export type IntensificationModel = 'MODEL_1' | 'MODEL_2' | 'MODEL_3' | 'MODEL_4'
 export type ResultCode = 'AA' | 'CCA' | 'CSA'
-
-// Modelos de intensificación (E3-RF-06)
-export const MODEL_LABELS: Record<IntensificationModel, string> = {
-  MODEL_1: 'Modelo 1 · Materia del año siguiente',
-  MODEL_2: 'Modelo 2 · Misma materia, mismo turno',
-  MODEL_3: 'Modelo 3 · Misma materia, contraturno',
-  MODEL_4: 'Modelo 4 · Espacio específico',
-}
 
 // En los modelos 2 y 3 hay que indicar el año, la sección y el turno donde intensifica (E3-RF-07)
 export const MODELS_WITH_LOCATION: IntensificationModel[] = ['MODEL_2', 'MODEL_3']
