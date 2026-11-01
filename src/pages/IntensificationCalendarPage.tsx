@@ -26,7 +26,8 @@ import {
   Typography,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
-import { Trash2, UserRound } from 'lucide-react'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined'
+import PersonOutlineIcon from '@mui/icons-material/PersonOutlined'
 
 import MainLayout from '@/components/layout/MainLayout'
 import { PageContainer } from '@/components/common/PageContainer'
@@ -113,14 +114,6 @@ type ConfirmState =
   | { kind: 'schedule'; schedule: IntensificationSchedule; label: string }
   | { kind: 'subject'; schedule: IntensificationSchedule; entry: ScheduleSubject }
 
-const headCellSx = {
-  fontWeight: 700,
-  color: '#4b5563',
-  fontSize: '0.75rem',
-  letterSpacing: '0.05em',
-  textTransform: 'uppercase',
-} as const
-
 export const IntensificationCalendarPage = () => {
   const thisYear = new Date().getFullYear()
   const yearOptions = [thisYear - 1, thisYear, thisYear + 1]
@@ -129,6 +122,8 @@ export const IntensificationCalendarPage = () => {
   const [tab, setTab] = useState(0)
   const [year, setYear] = useState(thisYear)
   const [schedules, setSchedules] = useState<IntensificationSchedule[]>([])
+  // Ciclo de los períodos que se están mostrando: el spinner sale solo si cambia el ciclo
+  const [loadedYear, setLoadedYear] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [subjects, setSubjects] = useState<SubjectOption[]>([])
@@ -151,9 +146,10 @@ export const IntensificationCalendarPage = () => {
     setError(null)
     try {
       setSchedules(await intensificationScheduleService.list(year))
+      setLoadedYear(year)
     } catch (err: unknown) {
       setSchedules([])
-      setError(err instanceof Error ? err.message : 'No se pudo cargar el calendario')
+      setError(err instanceof Error ? err.message : 'No se pudo cargar el calendario.')
     } finally {
       setLoading(false)
     }
@@ -183,6 +179,10 @@ export const IntensificationCalendarPage = () => {
     [schedules]
   )
 
+  // El spinner reemplaza el contenido solo al cargar un ciclo nuevo. Al recargar el mismo ciclo
+  // (después de asignar, editar o quitar), la pestaña sigue montada y conserva sus filtros.
+  const showSpinner = loading && loadedYear !== year
+
   // Ejecuta una acción, muestra el resultado y recarga el calendario
   async function runAction(action: () => Promise<unknown>, successMessage: string) {
     setSaving(true)
@@ -195,7 +195,7 @@ export const IntensificationCalendarPage = () => {
       await loadSchedules()
     } catch (err: unknown) {
       setSnackbar({
-        message: err instanceof Error ? err.message : 'No se pudo completar la acción',
+        message: err instanceof Error ? err.message : 'No se pudo completar la acción.',
         severity: 'error',
       })
     } finally {
@@ -296,7 +296,7 @@ export const IntensificationCalendarPage = () => {
             >
               <Box>
                 <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-                  <Typography variant="h6" sx={{ fontWeight: 700, color: '#111827' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
                     {period.label}
                   </Typography>
                   {schedule ? (
@@ -308,7 +308,7 @@ export const IntensificationCalendarPage = () => {
                     <Chip variant="outlined" label="Sin configurar" />
                   )}
                 </Stack>
-                <Typography variant="body2" sx={{ color: '#6b7280', mt: 0.5 }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
                   {period.hint(year)}
                   {schedule ? ` · ${schedule.assignedStudents} alumnos asignados` : ''}
                 </Typography>
@@ -337,7 +337,7 @@ export const IntensificationCalendarPage = () => {
                             setConfirm({ kind: 'schedule', schedule, label: period.label })
                           }
                         >
-                          <Trash2 size={18} />
+                          <DeleteOutlineIcon fontSize="small" />
                         </IconButton>
                       </span>
                     </Tooltip>
@@ -354,11 +354,11 @@ export const IntensificationCalendarPage = () => {
             {/* Período todavía sin fechas */}
             {!schedule && (
               <Box sx={{ px: 3, py: 4, textAlign: 'center' }}>
-                <Typography variant="body2" sx={{ color: '#6b7280' }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                   Todavía no se definieron las fechas de este período.
                 </Typography>
                 {canEdit && (
-                  <Typography variant="caption" sx={{ color: '#9ca3af' }}>
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                     Usá “Configurar período” para cargarlas.
                   </Typography>
                 )}
@@ -368,16 +368,14 @@ export const IntensificationCalendarPage = () => {
             {/* Materias del período */}
             {schedule && (
               <>
-                <Table sx={{ '& .MuiTableCell-root': { px: 3 } }}>
-                  <TableHead>
+                <Table size="small" sx={{ '& .MuiTableCell-root': { px: 3 } }}>
+                  <TableHead sx={{ backgroundColor: '#fafafa' }}>
                     <TableRow>
-                      <TableCell sx={headCellSx}>Materia</TableCell>
-                      <TableCell sx={headCellSx} width={110}>
-                        Año
-                      </TableCell>
-                      <TableCell sx={headCellSx}>Docente responsable</TableCell>
+                      <TableCell>Materia</TableCell>
+                      <TableCell width={110}>Año</TableCell>
+                      <TableCell>Docente responsable</TableCell>
                       {canEdit && (
-                        <TableCell sx={headCellSx} align="right" width={130}>
+                        <TableCell align="right" width={130}>
                           Acciones
                         </TableCell>
                       )}
@@ -388,7 +386,7 @@ export const IntensificationCalendarPage = () => {
                       <TableRow>
                         <TableCell
                           colSpan={canEdit ? 4 : 3}
-                          sx={{ color: '#6b7280', py: 4 }}
+                          sx={{ color: 'text.secondary', py: 4 }}
                           align="center"
                         >
                           Todavía no hay materias en este período.
@@ -397,11 +395,13 @@ export const IntensificationCalendarPage = () => {
                     ) : (
                       schedule.subjects.map((entry) => (
                         <TableRow key={entry.id} hover>
-                          <TableCell sx={{ fontWeight: 600, color: '#111827' }}>
+                          <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>
                             {entry.subjectName}
                           </TableCell>
                           <TableCell>{entry.gradeLevel}° año</TableCell>
-                          <TableCell sx={{ color: entry.teacher ? '#111827' : '#9ca3af' }}>
+                          <TableCell
+                            sx={{ color: entry.teacher ? 'text.primary' : 'text.secondary' }}
+                          >
                             {entry.teacher?.name ?? 'Sin asignar'}
                           </TableCell>
                           {canEdit && (
@@ -413,7 +413,7 @@ export const IntensificationCalendarPage = () => {
                                     setSubjectDialog({ mode: 'teacher', schedule, entry })
                                   }
                                 >
-                                  <UserRound size={18} />
+                                  <PersonOutlineIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
                               <Tooltip title="Quitar del período" arrow>
@@ -421,7 +421,7 @@ export const IntensificationCalendarPage = () => {
                                   size="small"
                                   onClick={() => setConfirm({ kind: 'subject', schedule, entry })}
                                 >
-                                  <Trash2 size={18} />
+                                  <DeleteOutlineIcon fontSize="small" />
                                 </IconButton>
                               </Tooltip>
                             </TableCell>
@@ -436,7 +436,7 @@ export const IntensificationCalendarPage = () => {
                     <Button
                       startIcon={<AddIcon />}
                       onClick={() => setSubjectDialog({ mode: 'add', schedule })}
-                      sx={{ color: '#111827', fontWeight: 600 }}
+                      sx={{ color: 'text.primary', fontWeight: 600 }}
                     >
                       Agregar materia
                     </Button>
@@ -490,15 +490,15 @@ export const IntensificationCalendarPage = () => {
                 </Select>
               </FormControl>
               {!canEdit && (
-                <Typography variant="caption" sx={{ color: '#6b7280' }}>
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                   Solo la dirección y la administración pueden hacer cambios.
                 </Typography>
               )}
             </Stack>
 
             {error ? (
-              <Alert severity="info">{error}</Alert>
-            ) : loading ? (
+              <Alert severity="error">{error}</Alert>
+            ) : showSpinner ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
                 <CircularProgress size={28} />
               </Box>
@@ -553,16 +553,23 @@ export const IntensificationCalendarPage = () => {
         onSubmit={handleSubjectSubmit}
       />
 
-      {/* Confirmación para eliminar */}
-      <Dialog open={confirm !== null} onClose={() => setConfirm(null)} maxWidth="xs" fullWidth>
+      {/* Confirmación para eliminar: mientras se procesa, no se cierra (estándar §7) */}
+      <Dialog
+        open={confirm !== null}
+        onClose={() => !saving && setConfirm(null)}
+        maxWidth="xs"
+        fullWidth
+      >
         <DialogTitle sx={{ fontWeight: 700 }}>
-          {confirm?.kind === 'schedule' ? 'Eliminar período' : 'Quitar materia'}
+          {confirm?.kind === 'schedule'
+            ? `¿Eliminar el período de ${confirm.label.toLowerCase()}?`
+            : `¿Quitar ${confirm?.kind === 'subject' ? confirm.entry.subjectName : ''} del período?`}
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2">
             {confirm?.kind === 'schedule'
-              ? `¿Eliminar el período de ${confirm.label.toLowerCase()} del ciclo ${year}? Se quitan también sus materias.`
-              : `¿Quitar ${confirm?.kind === 'subject' ? confirm.entry.subjectName : ''} de este período?`}
+              ? `Se eliminan las fechas del ciclo ${year} y sus materias. Se puede volver a configurar.`
+              : 'La materia deja de intensificarse en este período. Se puede volver a agregar.'}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -576,12 +583,12 @@ export const IntensificationCalendarPage = () => {
             disabled={saving}
             onClick={handleConfirm}
           >
-            Eliminar
+            {saving ? 'Eliminando...' : 'Eliminar'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Mensajes de las acciones, con el Snackbar acordado en el proyecto */}
+      {/* Mensajes de las acciones */}
       <Snackbar
         open={snackbar !== null}
         autoHideDuration={4000}

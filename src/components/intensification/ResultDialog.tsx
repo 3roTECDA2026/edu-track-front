@@ -13,9 +13,9 @@ import {
   Typography,
 } from '@mui/material'
 
+import { RESULT_LABELS } from '@/components/intensification/intensificationLabels'
 import {
   intensificationService,
-  RESULT_LABELS,
   type IntensificationAssignment,
   type ResultCode,
 } from '@/services/intensification.service'
@@ -84,20 +84,20 @@ export const ResultDialog = ({ open, assignment, onClose, onSaved }: ResultDialo
       )
       onClose()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'No se pudo guardar el resultado')
+      setError(err instanceof Error ? err.message : 'No se pudo guardar el resultado.')
     } finally {
       setSaving(false)
     }
   }
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={() => !saving && onClose()} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ fontWeight: 700 }}>
         Resultado · {assignment?.student.lastName}, {assignment?.student.firstName}
       </DialogTitle>
       <DialogContent>
         <Stack spacing={2} sx={{ mt: 0.5 }}>
-          <Typography variant="body2" sx={{ color: '#6b7280' }}>
+          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             {assignment?.subject.name} · {assignment?.subject.gradeLevel}° año
           </Typography>
 
@@ -167,7 +167,7 @@ export const ResultDialog = ({ open, assignment, onClose, onSaved }: ResultDialo
           onClick={() => void handleSave()}
           startIcon={saving ? <CircularProgress size={16} color="inherit" /> : undefined}
         >
-          Guardar resultado
+          {saving ? 'Guardando...' : 'Guardar resultado'}
         </Button>
       </DialogActions>
     </Dialog>
