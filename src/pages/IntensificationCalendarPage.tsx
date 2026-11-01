@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { SyntheticEvent } from 'react'
 import {
   Alert,
   Box,
@@ -25,16 +26,19 @@ import {
   Typography,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
-import EditIcon from '@mui/icons-material/Edit'
-import { Trash2, UserRound } from 'lucide-react'
+import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined'
+import PersonOutlineIcon from '@mui/icons-material/PersonOutlined'
 
 import MainLayout from '@/components/layout/MainLayout'
 import { PageContainer } from '@/components/common/PageContainer'
 import PageHeader from '@/components/common/PageHeader'
 import { ContentCard } from '@/components/common/ContentCard'
 import { AddButton } from '@/components/common/AddButton'
+import { EditButton } from '@/components/common/EditButton'
+import { CustomTabs } from '@/components/common/CustomTabs'
 import PeriodDialog from '@/components/intensification/PeriodDialog'
 import ScheduleSubjectDialog from '@/components/intensification/ScheduleSubjectDialog'
+import AssignmentsTab from '@/components/intensification/AssignmentsTab'
 import { getSubjects, type SubjectOption } from '@/services/subjects.service'
 import {
   intensificationScheduleService,
@@ -72,6 +76,9 @@ const PERIODS: {
   },
 ]
 
+// Pestañas de la pantalla: el calendario (CRM-055) y la asignación de alumnos (CRM-056 y 057)
+const TABS = ['Calendario', 'Asignación de alumnos']
+
 const EDIT_ROLES = ['SCHOOL_MANAGEMENT', 'ADMINISTRATOR']
 
 // Rol del usuario logueado, leído del token. Solo sirve para mostrar u ocultar botones:
@@ -107,21 +114,16 @@ type ConfirmState =
   | { kind: 'schedule'; schedule: IntensificationSchedule; label: string }
   | { kind: 'subject'; schedule: IntensificationSchedule; entry: ScheduleSubject }
 
-const headCellSx = {
-  fontWeight: 700,
-  color: '#4b5563',
-  fontSize: '0.75rem',
-  letterSpacing: '0.05em',
-  textTransform: 'uppercase',
-} as const
-
 export const IntensificationCalendarPage = () => {
   const thisYear = new Date().getFullYear()
   const yearOptions = [thisYear - 1, thisYear, thisYear + 1]
   const canEdit = EDIT_ROLES.includes(currentRole() ?? '')
 
+  const [tab, setTab] = useState(0)
   const [year, setYear] = useState(thisYear)
   const [schedules, setSchedules] = useState<IntensificationSchedule[]>([])
+  // Ciclo de los períodos que se están mostrando: el spinner sale solo si cambia el ciclo
+  const [loadedYear, setLoadedYear] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [subjects, setSubjects] = useState<SubjectOption[]>([])
@@ -133,14 +135,21 @@ export const IntensificationCalendarPage = () => {
   const [saving, setSaving] = useState(false)
   const [snackbar, setSnackbar] = useState<SnackbarState | null>(null)
 
+  // Mensajes de la pestaña de asignación, con el mismo Snackbar de la pantalla
+  const showMessage = useCallback(
+    (message: string, severity: 'success' | 'error') => setSnackbar({ message, severity }),
+    []
+  )
+
   const loadSchedules = useCallback(async () => {
     setLoading(true)
     setError(null)
     try {
       setSchedules(await intensificationScheduleService.list(year))
+      setLoadedYear(year)
     } catch (err: unknown) {
       setSchedules([])
-      setError(err instanceof Error ? err.message : 'No se pudo cargar el calendario')
+      setError(err instanceof Error ? err.message : 'No se pudo cargar el calendario.')
     } finally {
       setLoading(false)
     }
@@ -170,6 +179,10 @@ export const IntensificationCalendarPage = () => {
     [schedules]
   )
 
+  // El spinner reemplaza el contenido solo al cargar un ciclo nuevo. Al recargar el mismo ciclo
+  // (después de asignar, editar o quitar), la pestaña sigue montada y conserva sus filtros.
+  const showSpinner = loading && loadedYear !== year
+
   // Ejecuta una acción, muestra el resultado y recarga el calendario
   async function runAction(action: () => Promise<unknown>, successMessage: string) {
     setSaving(true)
@@ -182,7 +195,7 @@ export const IntensificationCalendarPage = () => {
       await loadSchedules()
     } catch (err: unknown) {
       setSnackbar({
-        message: err instanceof Error ? err.message : 'No se pudo completar la acción',
+        message: err instanceof Error ? err.message : 'No se pudo completar la acción.',
         severity: 'error',
       })
     } finally {
@@ -261,233 +274,246 @@ export const IntensificationCalendarPage = () => {
           .sort((a, b) => a.gradeLevel - b.gradeLevel || a.name.localeCompare(b.name, 'es'))
       : []
 
+  // Calendario: un cuadro por período, con sus fechas, materias y docentes (CRM-055)
+  const calendar = (
+    <Stack spacing={3}>
+      {PERIODS.map((period) => {
+        const schedule = scheduleByPeriod.get(period.value)
+        return (
+          <ContentCard key={period.value}>
+            {/* Encabezado del período */}
+            <Box
+              sx={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: 1,
+                px: 3,
+                py: 2.5,
+                borderBottom: '1px solid #e5e7eb',
+              }}
+            >
+              <Box>
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 700, color: 'text.primary' }}>
+                    {period.label}
+                  </Typography>
+                  {schedule ? (
+                    <Chip
+                      label={`${formatDate(schedule.startDate)} al ${formatDate(schedule.endDate)}`}
+                      sx={{ fontWeight: 600 }}
+                    />
+                  ) : (
+                    <Chip variant="outlined" label="Sin configurar" />
+                  )}
+                </Stack>
+                <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                  {period.hint(year)}
+                  {schedule ? ` · ${schedule.assignedStudents} alumnos asignados` : ''}
+                </Typography>
+              </Box>
+
+              {canEdit &&
+                (schedule ? (
+                  <Stack direction="row" spacing={0.5}>
+                    <EditButton
+                      label="Editar fechas"
+                      onClick={() => setPeriodDialog({ mode: 'edit', period, schedule })}
+                    />
+                    <Tooltip
+                      title={
+                        schedule.assignedStudents > 0
+                          ? 'Tiene alumnos asignados: no se puede eliminar'
+                          : 'Eliminar período'
+                      }
+                      arrow
+                    >
+                      <span>
+                        <IconButton
+                          size="small"
+                          disabled={schedule.assignedStudents > 0}
+                          onClick={() =>
+                            setConfirm({ kind: 'schedule', schedule, label: period.label })
+                          }
+                        >
+                          <DeleteOutlineIcon fontSize="small" />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  </Stack>
+                ) : (
+                  <AddButton
+                    label="Configurar período"
+                    icon={<AddIcon />}
+                    onClick={() => setPeriodDialog({ mode: 'create', period })}
+                  />
+                ))}
+            </Box>
+
+            {/* Período todavía sin fechas */}
+            {!schedule && (
+              <Box sx={{ px: 3, py: 4, textAlign: 'center' }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  Todavía no se definieron las fechas de este período.
+                </Typography>
+                {canEdit && (
+                  <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                    Usá “Configurar período” para cargarlas.
+                  </Typography>
+                )}
+              </Box>
+            )}
+
+            {/* Materias del período */}
+            {schedule && (
+              <>
+                <Table size="small" sx={{ '& .MuiTableCell-root': { px: 3 } }}>
+                  <TableHead sx={{ backgroundColor: '#fafafa' }}>
+                    <TableRow>
+                      <TableCell>Materia</TableCell>
+                      <TableCell width={110}>Año</TableCell>
+                      <TableCell>Docente responsable</TableCell>
+                      {canEdit && (
+                        <TableCell align="right" width={130}>
+                          Acciones
+                        </TableCell>
+                      )}
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {schedule.subjects.length === 0 ? (
+                      <TableRow>
+                        <TableCell
+                          colSpan={canEdit ? 4 : 3}
+                          sx={{ color: 'text.secondary', py: 4 }}
+                          align="center"
+                        >
+                          Todavía no hay materias en este período.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      schedule.subjects.map((entry) => (
+                        <TableRow key={entry.id} hover>
+                          <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>
+                            {entry.subjectName}
+                          </TableCell>
+                          <TableCell>{entry.gradeLevel}° año</TableCell>
+                          <TableCell
+                            sx={{ color: entry.teacher ? 'text.primary' : 'text.secondary' }}
+                          >
+                            {entry.teacher?.name ?? 'Sin asignar'}
+                          </TableCell>
+                          {canEdit && (
+                            <TableCell align="right">
+                              <Tooltip title="Cambiar docente" arrow>
+                                <IconButton
+                                  size="small"
+                                  onClick={() =>
+                                    setSubjectDialog({ mode: 'teacher', schedule, entry })
+                                  }
+                                >
+                                  <PersonOutlineIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                              <Tooltip title="Quitar del período" arrow>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => setConfirm({ kind: 'subject', schedule, entry })}
+                                >
+                                  <DeleteOutlineIcon fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </TableCell>
+                          )}
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+                {canEdit && (
+                  <Box sx={{ px: 3, py: 2, borderTop: '1px solid #e5e7eb' }}>
+                    <Button
+                      startIcon={<AddIcon />}
+                      onClick={() => setSubjectDialog({ mode: 'add', schedule })}
+                      sx={{ color: 'text.primary', fontWeight: 600 }}
+                    >
+                      Agregar materia
+                    </Button>
+                  </Box>
+                )}
+              </>
+            )}
+          </ContentCard>
+        )
+      })}
+    </Stack>
+  )
+
   return (
     <MainLayout>
       <PageContainer>
         <PageHeader
-          title="Calendario de intensificación"
-          subtitle="Fechas de cada período, materias que se intensifican y docentes responsables."
+          title="Intensificación"
+          subtitle="Calendario de los períodos y asignación de los alumnos con materias pendientes."
           breadcrumbs={[
             { label: 'Inicio', href: '/home' },
             { label: 'Intensificación' },
-            { label: 'Calendario' },
+            { label: TABS[tab] },
           ]}
         />
 
-        <Stack direction="row" sx={{ alignItems: 'center', gap: 2, mb: 3 }}>
-          <FormControl size="small" sx={{ minWidth: 160 }}>
-            <InputLabel id="lbl-year">Ciclo lectivo</InputLabel>
-            <Select
-              labelId="lbl-year"
-              label="Ciclo lectivo"
-              value={year}
-              onChange={(event) => setYear(Number(event.target.value))}
-            >
-              {yearOptions.map((option) => (
-                <MenuItem key={option} value={option}>
-                  {option}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          {!canEdit && (
-            <Typography variant="caption" sx={{ color: '#6b7280' }}>
-              Solo la dirección y la administración pueden modificar el calendario.
-            </Typography>
-          )}
-        </Stack>
+        {/* Pestañas dentro de la tarjeta estándar, como en la ficha del alumno */}
+        <ContentCard>
+          <CustomTabs
+            tabs={TABS}
+            value={tab}
+            onChange={(_: SyntheticEvent, index: number) => setTab(index)}
+          />
 
-        {error && (
-          <Alert severity="info" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        {loading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
-            <CircularProgress size={28} />
-          </Box>
-        ) : (
-          !error && (
-            <Stack spacing={3}>
-              {PERIODS.map((period) => {
-                const schedule = scheduleByPeriod.get(period.value)
-                return (
-                  <ContentCard key={period.value}>
-                    {/* Encabezado del período */}
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        gap: 1,
-                        px: 3,
-                        py: 2.5,
-                        borderBottom: '1px solid #e5e7eb',
-                        backgroundColor: '#fafafa',
-                      }}
-                    >
-                      <Box>
-                        <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-                          <Typography variant="h6" sx={{ fontWeight: 700, color: '#111827' }}>
-                            {period.label}
-                          </Typography>
-                          {schedule ? (
-                            <Chip
-                              label={`${formatDate(schedule.startDate)} al ${formatDate(schedule.endDate)}`}
-                              sx={{ fontWeight: 600 }}
-                            />
-                          ) : (
-                            <Chip variant="outlined" label="Sin configurar" />
-                          )}
-                        </Stack>
-                        <Typography variant="body2" sx={{ color: '#6b7280', mt: 0.5 }}>
-                          {period.hint(year)}
-                          {schedule ? ` · ${schedule.assignedStudents} alumnos asignados` : ''}
-                        </Typography>
-                      </Box>
-
-                      {canEdit &&
-                        (schedule ? (
-                          <Stack direction="row" spacing={0.5}>
-                            <Tooltip title="Editar fechas" arrow>
-                              <IconButton
-                                onClick={() => setPeriodDialog({ mode: 'edit', period, schedule })}
-                              >
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                            <Tooltip
-                              title={
-                                schedule.assignedStudents > 0
-                                  ? 'Tiene alumnos asignados: no se puede eliminar'
-                                  : 'Eliminar período'
-                              }
-                              arrow
-                            >
-                              <span>
-                                <IconButton
-                                  disabled={schedule.assignedStudents > 0}
-                                  onClick={() =>
-                                    setConfirm({ kind: 'schedule', schedule, label: period.label })
-                                  }
-                                >
-                                  <Trash2 size={18} />
-                                </IconButton>
-                              </span>
-                            </Tooltip>
-                          </Stack>
-                        ) : (
-                          <AddButton
-                            label="Configurar período"
-                            icon={<AddIcon />}
-                            onClick={() => setPeriodDialog({ mode: 'create', period })}
-                          />
-                        ))}
-                    </Box>
-
-                    {/* Período todavía sin fechas */}
-                    {!schedule && (
-                      <Box sx={{ px: 3, py: 4, textAlign: 'center' }}>
-                        <Typography variant="body2" sx={{ color: '#6b7280' }}>
-                          Todavía no se definieron las fechas de este período.
-                        </Typography>
-                        {canEdit && (
-                          <Typography variant="caption" sx={{ color: '#9ca3af' }}>
-                            Usá “Configurar período” para cargarlas.
-                          </Typography>
-                        )}
-                      </Box>
-                    )}
-
-                    {/* Materias del período */}
-                    {schedule && (
-                      <>
-                        <Table sx={{ '& .MuiTableCell-root': { px: 3 } }}>
-                          <TableHead>
-                            <TableRow>
-                              <TableCell sx={headCellSx}>Materia</TableCell>
-                              <TableCell sx={headCellSx} width={110}>
-                                Año
-                              </TableCell>
-                              <TableCell sx={headCellSx}>Docente responsable</TableCell>
-                              {canEdit && (
-                                <TableCell sx={headCellSx} align="right" width={130}>
-                                  Acciones
-                                </TableCell>
-                              )}
-                            </TableRow>
-                          </TableHead>
-                          <TableBody>
-                            {schedule.subjects.length === 0 ? (
-                              <TableRow>
-                                <TableCell
-                                  colSpan={canEdit ? 4 : 3}
-                                  sx={{ color: '#6b7280', py: 4 }}
-                                  align="center"
-                                >
-                                  Todavía no hay materias en este período.
-                                </TableCell>
-                              </TableRow>
-                            ) : (
-                              schedule.subjects.map((entry) => (
-                                <TableRow key={entry.id} hover>
-                                  <TableCell sx={{ fontWeight: 600, color: '#111827' }}>
-                                    {entry.subjectName}
-                                  </TableCell>
-                                  <TableCell>{entry.gradeLevel}° año</TableCell>
-                                  <TableCell sx={{ color: entry.teacher ? '#111827' : '#9ca3af' }}>
-                                    {entry.teacher?.name ?? 'Sin asignar'}
-                                  </TableCell>
-                                  {canEdit && (
-                                    <TableCell align="right">
-                                      <Tooltip title="Cambiar docente" arrow>
-                                        <IconButton
-                                          size="small"
-                                          onClick={() =>
-                                            setSubjectDialog({ mode: 'teacher', schedule, entry })
-                                          }
-                                        >
-                                          <UserRound size={18} />
-                                        </IconButton>
-                                      </Tooltip>
-                                      <Tooltip title="Quitar del período" arrow>
-                                        <IconButton
-                                          size="small"
-                                          onClick={() =>
-                                            setConfirm({ kind: 'subject', schedule, entry })
-                                          }
-                                        >
-                                          <Trash2 size={18} />
-                                        </IconButton>
-                                      </Tooltip>
-                                    </TableCell>
-                                  )}
-                                </TableRow>
-                              ))
-                            )}
-                          </TableBody>
-                        </Table>
-                        {canEdit && (
-                          <Box sx={{ px: 3, py: 2, borderTop: '1px solid #e5e7eb' }}>
-                            <Button
-                              startIcon={<AddIcon />}
-                              onClick={() => setSubjectDialog({ mode: 'add', schedule })}
-                              sx={{ color: '#111827', fontWeight: 600 }}
-                            >
-                              Agregar materia
-                            </Button>
-                          </Box>
-                        )}
-                      </>
-                    )}
-                  </ContentCard>
-                )
-              })}
+          <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
+            {/* Ciclo lectivo: se aplica a las dos pestañas */}
+            <Stack direction="row" sx={{ alignItems: 'center', gap: 2, mb: 3 }}>
+              <FormControl size="small" sx={{ minWidth: 160 }}>
+                <InputLabel id="lbl-year">Ciclo lectivo</InputLabel>
+                <Select
+                  labelId="lbl-year"
+                  label="Ciclo lectivo"
+                  value={year}
+                  onChange={(event) => setYear(Number(event.target.value))}
+                >
+                  {yearOptions.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              {!canEdit && (
+                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                  Solo la dirección y la administración pueden hacer cambios.
+                </Typography>
+              )}
             </Stack>
-          )
-        )}
+
+            {error ? (
+              <Alert severity="error">{error}</Alert>
+            ) : showSpinner ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+                <CircularProgress size={28} />
+              </Box>
+            ) : tab === 0 ? (
+              calendar
+            ) : (
+              <AssignmentsTab
+                schedules={schedules}
+                canEdit={canEdit}
+                onMessage={showMessage}
+                onChanged={() => void loadSchedules()}
+              />
+            )}
+          </Box>
+        </ContentCard>
       </PageContainer>
 
       <PeriodDialog
@@ -527,16 +553,23 @@ export const IntensificationCalendarPage = () => {
         onSubmit={handleSubjectSubmit}
       />
 
-      {/* Confirmación para eliminar */}
-      <Dialog open={confirm !== null} onClose={() => setConfirm(null)} maxWidth="xs" fullWidth>
+      {/* Confirmación para eliminar: mientras se procesa, no se cierra (estándar §7) */}
+      <Dialog
+        open={confirm !== null}
+        onClose={() => !saving && setConfirm(null)}
+        maxWidth="xs"
+        fullWidth
+      >
         <DialogTitle sx={{ fontWeight: 700 }}>
-          {confirm?.kind === 'schedule' ? 'Eliminar período' : 'Quitar materia'}
+          {confirm?.kind === 'schedule'
+            ? `¿Eliminar el período de ${confirm.label.toLowerCase()}?`
+            : `¿Quitar ${confirm?.kind === 'subject' ? confirm.entry.subjectName : ''} del período?`}
         </DialogTitle>
         <DialogContent>
           <Typography variant="body2">
             {confirm?.kind === 'schedule'
-              ? `¿Eliminar el período de ${confirm.label.toLowerCase()} del ciclo ${year}? Se quitan también sus materias.`
-              : `¿Quitar ${confirm?.kind === 'subject' ? confirm.entry.subjectName : ''} de este período?`}
+              ? `Se eliminan las fechas del ciclo ${year} y sus materias. Se puede volver a configurar.`
+              : 'La materia deja de intensificarse en este período. Se puede volver a agregar.'}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -550,12 +583,12 @@ export const IntensificationCalendarPage = () => {
             disabled={saving}
             onClick={handleConfirm}
           >
-            Eliminar
+            {saving ? 'Eliminando...' : 'Eliminar'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Mensajes de las acciones, con el Snackbar acordado en el proyecto */}
+      {/* Mensajes de las acciones */}
       <Snackbar
         open={snackbar !== null}
         autoHideDuration={4000}
