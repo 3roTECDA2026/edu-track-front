@@ -57,6 +57,7 @@ export interface RegisterResultInput {
   score: number | null
   knowledgeAtClose: string | null
   pendingKnowledge?: string | null
+  evaluationDate?: string // Fecha del examen (AAAA-MM-DD); si no viene, el back usa la de carga
 }
 
 const BASE = '/api/intensifications'
