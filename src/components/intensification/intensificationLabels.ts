@@ -26,11 +26,11 @@ export const MODEL_SHORT_LABELS: Record<IntensificationModel, string> = {
   MODEL_4: 'Modelo 4',
 }
 
-// Resultados de la intensificación (E3-RF-08)
+// Resultados de la intensificación (E3-RF-08), con los nombres del documento de requerimientos
 export const RESULT_LABELS: Record<ResultCode, string> = {
   AA: 'AA · Acreditó y aprobó',
-  CCA: 'CCA · Continúa con actividades de intensificación',
-  CSA: 'CSA · Sin actividades, no intensificó',
+  CCA: 'CCA · Continúa con avances',
+  CSA: 'CSA · Continúa sin avances',
 }
 
 // Año, sección y turno de una sección, por ejemplo "2° B · Tarde"

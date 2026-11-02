@@ -27,12 +27,22 @@ interface ResultDialogProps {
   onSaved: (message: string) => void
 }
 
+// Fecha de hoy en formato AAAA-MM-DD, con la hora local
+const todayIso = () => {
+  const now = new Date()
+  const offset = now.getTimezoneOffset() * 60000
+  return new Date(now.getTime() - offset).toISOString().slice(0, 10)
+}
+
 // Carga del resultado de la intensificación (E3-RF-08).
 // AA: nota obligatoria de 4 a 10, y la materia queda acreditada.
-// CCA o CSA: nota opcional de 1 a 3, y la materia sigue pendiente.
+// CCA (continúa con avances) o CSA (continúa sin avances): nota opcional de 1 a 3,
+// y la materia sigue pendiente.
 export const ResultDialog = ({ open, assignment, onClose, onSaved }: ResultDialogProps) => {
+  const today = todayIso()
   const [resultCode, setResultCode] = useState<ResultCode | ''>('')
   const [score, setScore] = useState('')
+  const [evaluationDate, setEvaluationDate] = useState(today)
   const [knowledgeAtClose, setKnowledgeAtClose] = useState('')
   const [pendingKnowledge, setPendingKnowledge] = useState('')
   const [saving, setSaving] = useState(false)
@@ -43,6 +53,7 @@ export const ResultDialog = ({ open, assignment, onClose, onSaved }: ResultDialo
     if (!open || !assignment) return
     setResultCode(assignment.resultCode ?? '')
     setScore(assignment.score !== null ? String(assignment.score) : '')
+    setEvaluationDate(assignment.evaluationDate?.slice(0, 10) ?? todayIso())
     setKnowledgeAtClose(assignment.knowledgeAtClose ?? '')
     setPendingKnowledge(assignment.pendingKnowledge ?? '')
     setError(null)
@@ -64,7 +75,14 @@ export const ResultDialog = ({ open, assignment, onClose, onSaved }: ResultDialo
     return null
   })()
 
-  const canSave = Boolean(resultCode) && !scoreError && !saving
+  // La fecha del examen es obligatoria y no puede ser futura (el back controla además el inicio del período)
+  const dateError = !evaluationDate
+    ? 'Elegí la fecha de evaluación.'
+    : evaluationDate > today
+      ? 'La fecha de evaluación no puede ser futura.'
+      : null
+
+  const canSave = Boolean(resultCode) && !scoreError && !dateError && !saving
 
   async function handleSave() {
     if (!assignment || !resultCode) return
@@ -74,6 +92,7 @@ export const ResultDialog = ({ open, assignment, onClose, onSaved }: ResultDialo
       await intensificationService.registerResult(assignment.id, {
         resultCode,
         score: scoreValue,
+        evaluationDate,
         knowledgeAtClose: knowledgeAtClose.trim() || null,
         ...(!approved && { pendingKnowledge: pendingKnowledge.trim() || null }),
       })
@@ -115,17 +134,32 @@ export const ResultDialog = ({ open, assignment, onClose, onSaved }: ResultDialo
             ))}
           </TextField>
 
-          <TextField
-            label={approved ? 'Nota (4 a 10)' : 'Nota (opcional, 1 a 3)'}
-            size="small"
-            value={score}
-            onChange={(event) => setScore(event.target.value)}
-            disabled={!resultCode}
-            error={Boolean(scoreError)}
-            helperText={scoreError ?? ' '}
-            slotProps={{ htmlInput: { inputMode: 'numeric', maxLength: 2 } }}
-            sx={{ maxWidth: 220 }}
-          />
+          <Stack direction="row" spacing={2}>
+            <TextField
+              label={approved ? 'Nota (4 a 10)' : 'Nota (opcional, 1 a 3)'}
+              size="small"
+              value={score}
+              onChange={(event) => setScore(event.target.value)}
+              disabled={!resultCode}
+              error={Boolean(scoreError)}
+              helperText={scoreError ?? ' '}
+              slotProps={{ htmlInput: { inputMode: 'numeric', maxLength: 2 } }}
+              sx={{ maxWidth: 220 }}
+            />
+
+            {/* Fecha del examen: por defecto hoy, se puede cambiar si se carga días después */}
+            <TextField
+              type="date"
+              label="Fecha de evaluación"
+              size="small"
+              value={evaluationDate}
+              onChange={(event) => setEvaluationDate(event.target.value)}
+              error={Boolean(dateError)}
+              helperText={dateError ?? ' '}
+              slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: today } }}
+              sx={{ minWidth: 180 }}
+            />
+          </Stack>
 
           <TextField
             label="Logros o saberes alcanzados"
