@@ -1,4 +1,5 @@
 import type { IntensificationModel, ResultCode } from '@/services/intensification.service'
+import type { IntensificationAttendanceValue } from '@/services/intensificationAttendance.service'
 import type { IntensificationPeriod } from '@/services/intensificationSchedule.service'
 import { SHIFT_LABELS } from '@/components/students/studentLabels'
 
@@ -31,6 +32,19 @@ export const RESULT_LABELS: Record<ResultCode, string> = {
   AA: 'AA · Acreditó y aprobó',
   CCA: 'CCA · Continúa con avances',
   CSA: 'CSA · Continúa sin avances',
+}
+
+// Asistencia en intensificación (CRM-059): la letra del botón y el texto completo
+export const ATTENDANCE_SHORT_LABELS: Record<IntensificationAttendanceValue, string> = {
+  PRESENT: 'P',
+  ABSENT: 'A',
+  EXCUSED: 'J',
+}
+
+export const ATTENDANCE_LABELS: Record<IntensificationAttendanceValue, string> = {
+  PRESENT: 'Presente',
+  ABSENT: 'Ausente',
+  EXCUSED: 'Ausente con justificación',
 }
 
 // Año, sección y turno de una sección, por ejemplo "2° B · Tarde"
