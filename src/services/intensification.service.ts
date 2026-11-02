@@ -1,7 +1,8 @@
 import { fetchApi } from '@/services/api'
 import type { IntensificationPeriod } from '@/services/intensificationSchedule.service'
 
-// Los textos de los modelos y períodos están en components/intensification/intensificationLabels.ts
+// Los textos de los modelos, períodos y resultados están en
+// components/intensification/intensificationLabels.ts
 
 export type IntensificationModel = 'MODEL_1' | 'MODEL_2' | 'MODEL_3' | 'MODEL_4'
 export type ResultCode = 'AA' | 'CCA' | 'CSA'
@@ -36,6 +37,9 @@ export interface IntensificationAssignment {
   responsibleTeacher: { id: string; name: string } | null
   resultCode: ResultCode | null
   score: number | null
+  pendingKnowledge: string | null // Saberes que le quedan pendientes
+  knowledgeAtClose: string | null // Logros o saberes alcanzados
+  evaluationDate: string | null
 }
 
 // Alumno que tiene la materia pendiente y todavía no está asignado al período
@@ -45,6 +49,15 @@ export interface IntensificationCandidate {
   course: SectionRef | null
   originYear: number
   pendingKnowledge: string | null
+}
+
+// Resultado de la intensificación (CRM-058)
+export interface RegisterResultInput {
+  resultCode: ResultCode
+  score: number | null
+  knowledgeAtClose: string | null
+  pendingKnowledge?: string | null
+  evaluationDate?: string // Fecha del examen (AAAA-MM-DD); si no viene, el back usa la de carga
 }
 
 const BASE = '/api/intensifications'
@@ -85,4 +98,11 @@ export const intensificationService = {
     }),
 
   remove: (id: string) => fetchApi<{ deleted: boolean }>(`${BASE}/${id}`, { method: 'DELETE' }),
+
+  // Carga del resultado: docente responsable, dirección o administración (CRM-058)
+  registerResult: (id: string, data: RegisterResultInput) =>
+    fetchApi<IntensificationAssignment>(`${BASE}/${id}/result`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
 }
