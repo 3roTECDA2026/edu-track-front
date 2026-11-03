@@ -12,6 +12,8 @@ import CoursesPage from '@/pages/CoursesPage';
 import StudentProfilePage from '@/pages/StudentProfilePage';
 import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage';
 import IntensificationCalendarPage from '@/pages/IntensificationCalendarPage';
+import ModeloOrganizativoPage from '@/pages/OrganizationalModelPage';
+
 const AppRouter = () => {
   return (
     <BrowserRouter>
@@ -52,6 +54,8 @@ const AppRouter = () => {
         <Route path="/users" element={<UsersPage />} />
 
         <Route path="/intensification-calendar" element={<IntensificationCalendarPage />} />
+
+        <Route path="/modelo-organizativo" element={<ModeloOrganizativoPage />} />
         
         {/* Ruta por defecto */}
         <Route path="*" element={<Navigate to="/login" replace />} />

@@ -23,6 +23,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import logoEscuela from '@/assets/logo.png';
 import { UserIcon } from 'lucide-react';
 import EventRepeatIcon from '@mui/icons-material/EventRepeat';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 const drawerWidth = 250;
 
@@ -41,6 +42,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Resumen de asistencias', path: '/attendance', icon: <AssessmentIcon /> },
   { label: 'Calificaciones', icon: <GradingIcon />, path: '/calification-grid' },
   { label: 'Intensificación', icon: <EventRepeatIcon />, path: '/intensification-calendar' },
+  { label: 'Modelo organizativo', icon: <SettingsIcon />, path: '/modelo-organizativo' },
 ];
 
 export const Aside: React.FC = () => {
