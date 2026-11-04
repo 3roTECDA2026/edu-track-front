@@ -381,20 +381,30 @@ export const CalificationGridPage: React.FC = () => {
         ]
       }
     )
-    const resultErrors = results.length > 0 ? await saveResults(results) : []
+    const { errors: resultErrors, failedIds } =
+      results.length > 0 ? await saveResults(results) : { errors: [], failedIds: [] }
 
+    // Todo guardado: se limpian los pendientes y se recarga desde el back
     if (gradesOk && resultErrors.length === 0) {
       setNotice({ type: 'success', text: 'Se guardaron las calificaciones.' })
-    } else {
-      const details = [
-        ...(gradesOk ? [] : ['No se pudieron guardar las calificaciones de los cuatrimestres.']),
-        ...resultErrors,
-      ]
-      setNotice({ type: 'error', text: `Hubo errores al guardar. ${details.join(' · ')}` })
+      setModified(new Set())
+      setModifiedIntensifications(new Set())
+      refetch() // recargo desde el back para ver lo que realmente quedó
+      return
     }
-    setModified(new Set())
-    setModifiedIntensifications(new Set())
-    refetch() // recargo desde el back para ver lo que realmente quedó
+
+    // Algo falló: no se recarga, para no perder lo que no se pudo guardar.
+    // Siguen pendientes solo los cambios que fallaron; los que se guardaron dejan de estarlo.
+    const details = [
+      ...(gradesOk ? [] : ['No se pudieron guardar las calificaciones de los cuatrimestres']),
+      ...resultErrors,
+    ]
+    setNotice({
+      type: 'error',
+      text: `Hubo errores al guardar. ${details.join(' · ')}. Corregí y volvé a guardar.`,
+    })
+    if (gradesOk) setModified(new Set())
+    setModifiedIntensifications(new Set(failedIds))
   }
 
   function clearGrades() {
