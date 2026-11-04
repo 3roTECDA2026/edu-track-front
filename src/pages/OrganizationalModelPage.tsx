@@ -56,10 +56,6 @@ function getCurrentUserRole(): string | null {
   }
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('es-AR')
-}
-
 export const OrganizationalModelPage = () => {
   const { config, loading, error, saving, save } = useInstitutionalConfig()
 
@@ -115,8 +111,8 @@ export const OrganizationalModelPage = () => {
                 {config ? (
                   <Alert severity={config.minimumPeriodMet ? 'warning' : 'info'} sx={{ mb: 3 }}>
                     {config.minimumPeriodMet
-                      ? `Se cumplió el plazo mínimo de 3 ciclos (venció el ${formatDate(config.minimumExpiryDate)}). Ya se puede cambiar el modelo.`
-                      : `El modelo rige desde el ${formatDate(config.adoptedAt)} y se sostiene hasta el ${formatDate(config.minimumExpiryDate)} (plazo mínimo de 3 ciclos).`}
+                      ? 'Se cumplió el mínimo de 3 ciclos lectivos. Ya se puede cambiar el modelo.'
+                      : `Rige desde el ciclo ${new Date(config.adoptedAt).getFullYear()} y debe sostenerse un mínimo de 3 ciclos lectivos; se podrá cambiar a partir del ciclo ${new Date(config.minimumExpiryDate).getFullYear()} (inciso 35, Anexo 5).`}
                   </Alert>
                 ) : (
                   <Alert severity="info" sx={{ mb: 3 }}>
