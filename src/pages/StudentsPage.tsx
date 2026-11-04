@@ -1,23 +1,19 @@
-import { useState } from 'react'
-import { Alert, Box, Button, Snackbar } from '@mui/material'
-import { useNavigate } from 'react-router-dom'
 
-import MainLayout from '@/components/layout/MainLayout'
-import { PageContainer } from '@/components/common/PageContainer'
-import { PageHeader } from '@/components/common/PageHeader'
-import { ContentCard } from '@/components/common/ContentCard'
-import { AddButton } from '@/components/common/AddButton'
-import { StandardTablePagination } from '@/components/common/StandardTablePagination'
-import { StudentFilters, type StudentFiltersState } from '@/components/students/StudentFilters'
-import { StudentsTable } from '@/components/students/StudentsTable'
-import { StudentsEmptyState } from '@/components/students/StudentsEmptyState'
-import { DeactivateStudentDialog } from '@/components/students/DeactivateStudentDialog'
-import { StudentFormDialog } from '@/components/students/StudentFormDialog'
-import { useDebounce } from '@/hooks/useDebounce'
-import { useStudents } from '@/hooks/useStudents'
-import { deactivateStudent, type StudentListItem } from '@/services/students.service'
-
-const DEFAULT_ROWS_PER_PAGE = 10
+import { useState } from 'react';
+import { Alert, Box, Button, Pagination, Paper, Snackbar, Typography } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
+import MainLayout from '@/components/layout/MainLayout';
+import { StudentFilters, type StudentFiltersState } from '@/components/students/StudentFilters';
+import { StudentsTable } from '@/components/students/StudentsTable';
+import { StudentsEmptyState } from '@/components/students/StudentsEmptyState';
+import { DeactivateStudentDialog } from '@/components/students/DeactivateStudentDialog';
+import { useDebounce } from '@/hooks/useDebounce';
+import { useStudents } from '@/hooks/useStudents';
+import { deactivateStudent, type StudentListItem } from '@/services/students.service';
+import { AddButton } from '@/components/common/AddButton';
+import { StudentFormDialog } from '@/components/students/StudentFormDialog';
+import { PageHeader } from '@/components/common/PageHeader';
+const PAGE_SIZE = 20;
 
 const INITIAL_FILTERS: StudentFiltersState = {
   search: '',
@@ -115,17 +111,17 @@ export const StudentsPage = () => {
 
   return (
     <MainLayout>
-      <PageContainer>
+      <Box className="students-page" sx={{ maxWidth: 1280, mx: 'auto' }}>
         <PageHeader
-          title="Listado de estudiantes"
-          subtitle="Buscá, filtrá y gestioná los estudiantes de la institución."
-          breadcrumbs={[
-            { label: 'Inicio', href: '/home' },
-            { label: 'Estudiantes', href: '/students' },
-            { label: 'Listado' },
-          ]}
-          action={<AddButton label="Alta estudiante" onClick={() => setCreateOpen(true)} />}
-        />
+      title="Listado de estudiantes"
+      subtitle="Buscá, filtrá y gestioná los estudiantes de la institución."
+      breadcrumbs={[
+    { label: 'Inicio', href: '/home' },
+    { label: 'Estudiantes', href: '/students' },
+    { label: 'Listado' },
+     ]}
+     action={<AddButton label="Alta estudiante" onClick={() => setCreateOpen(true)} />}
+    />
 
         {/* Tarjeta contenedora estándar: filtros, tabla y paginado */}
         <ContentCard>
