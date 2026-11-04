@@ -93,8 +93,8 @@ export const StudentsTable = ({ students, loading, onView, onEdit, onDeactivate 
                         </IconButton>
                       </Tooltip>
 
-                      {/* Lápiz estándar del equipo para editar */}
-                      <EditButton onClick={() => onEdit(student)} />
+                       {/* Lápiz estándar del equipo para editar */}
+                       <EditButton onClick={() => onEdit(student)} />
 
                       {/* La baja es lógica: el alumno pasa a inactivo, no se elimina */}
                       <Tooltip title={isInactive ? 'Ya está dado de baja' : 'Dar de baja'}>

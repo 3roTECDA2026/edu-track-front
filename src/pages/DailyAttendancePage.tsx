@@ -5,7 +5,7 @@ import {
   Button,
   CircularProgress,
   FormControl,
-  InputLabel,
+  IconButton,  InputLabel,
   Menu,
   MenuItem,
   Select,
@@ -22,6 +22,7 @@ import {
   Typography,
 } from '@mui/material'
 import SaveIcon from '@mui/icons-material/Save'
+import QrCodeIcon from '@mui/icons-material/QrCode'
 import CheckIcon from '@mui/icons-material/Check'
 import SearchIcon from '@mui/icons-material/Search'
 import EditIcon from '@mui/icons-material/Edit'
@@ -169,6 +170,24 @@ export const DailyAttendancePage = () => {
 
   const { loading, saving, error, students, fetchAttendanceByDate, submitBatchAttendance } =
     useAttendance(search?.sectionId ?? '')
+
+  // Al volver a la pestaña, recarga la asistencia del día buscado (ej. tras escanear un QR)
+  useEffect(() => {
+    if (!search) return
+    const onVisible = () => {
+      if (document.visibilityState !== 'visible') return
+      void fetchAttendanceByDate(search.date).then((data) => {
+        if (!data) return
+        const loaded: Record<string, DailyMark> = {}
+        data.records.forEach((record) => {
+          loaded[record.studentId] = fromRecord(record)
+        })
+        setMarks(loaded)
+      })
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [search, fetchAttendanceByDate])
 
   // Secciones del ciclo lectivo activo
   useEffect(() => {
@@ -526,8 +545,23 @@ export const DailyAttendancePage = () => {
                                 </Tooltip>
                               )
                             })}
-                          </Box>
-                        </TableCell>
+                           <Tooltip title="Ver QR de asistencia" arrow>
+                             <IconButton
+                               size="small"
+                               aria-label="Ver QR de asistencia"
+                               onClick={() =>
+                                 window.open(
+                                   `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/attendance/qr/${student.id}/image`,
+                                   '_blank',
+                                 )
+                               }
+                               sx={{ color: '#374151' }}
+                             >
+                               <QrCodeIcon fontSize="small" />
+                             </IconButton>
+                           </Tooltip>
+                         </Box>
+                         </TableCell>
                       </TableRow>
                     ))
                   )}
