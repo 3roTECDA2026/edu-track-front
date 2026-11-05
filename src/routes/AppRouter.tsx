@@ -12,6 +12,9 @@ import CoursesPage from '@/pages/CoursesPage';
 import StudentProfilePage from '@/pages/StudentProfilePage';
 import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage';
 import IntensificationCalendarPage from '@/pages/IntensificationCalendarPage';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { ADMIN_ROLE } from '@/utils/auth';
+
 const AppRouter = () => {
   return (
     <BrowserRouter>
@@ -49,8 +52,14 @@ const AppRouter = () => {
         />
 
         {/* Usuarios */}
-        <Route path="/users" element={<UsersPage />} />
-
+        <Route
+          path="/users"
+          element={
+            <ProtectedRoute roles={[ADMIN_ROLE]}>
+              <UsersPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/intensification-calendar" element={<IntensificationCalendarPage />} />
         
         {/* Ruta por defecto */}
