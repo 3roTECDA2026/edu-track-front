@@ -39,6 +39,7 @@ import { CustomTabs } from '@/components/common/CustomTabs'
 import PeriodDialog from '@/components/intensification/PeriodDialog'
 import ScheduleSubjectDialog from '@/components/intensification/ScheduleSubjectDialog'
 import AssignmentsTab from '@/components/intensification/AssignmentsTab'
+import IntensificationAttendanceTab from '@/components/intensification/IntensificationAttendanceTab'
 import { getSubjects, type SubjectOption } from '@/services/subjects.service'
 import {
   intensificationScheduleService,
@@ -76,8 +77,9 @@ const PERIODS: {
   },
 ]
 
-// Pestañas de la pantalla: el calendario (CRM-055) y la asignación de alumnos (CRM-056 y 057)
-const TABS = ['Calendario', 'Asignación de alumnos']
+// Pestañas de la pantalla: el calendario (CRM-055), la asignación de alumnos (CRM-056 y 057)
+// y la asistencia de quienes intensifican en otra sección (CRM-059)
+const TABS = ['Calendario', 'Asignación de alumnos', 'Asistencia']
 
 const EDIT_ROLES = ['SCHOOL_MANAGEMENT', 'ADMINISTRATOR']
 
@@ -455,7 +457,7 @@ export const IntensificationCalendarPage = () => {
       <PageContainer>
         <PageHeader
           title="Intensificación"
-          subtitle="Calendario de los períodos y asignación de los alumnos con materias pendientes."
+          subtitle="Calendario de los períodos, asignación de los alumnos con materias pendientes y su asistencia."
           breadcrumbs={[
             { label: 'Inicio', href: '/home' },
             { label: 'Intensificación' },
@@ -472,7 +474,7 @@ export const IntensificationCalendarPage = () => {
           />
 
           <Box sx={{ p: { xs: 2, sm: 2.5 } }}>
-            {/* Ciclo lectivo: se aplica a las dos pestañas */}
+            {/* Ciclo lectivo: se aplica a todas las pestañas */}
             <Stack direction="row" sx={{ alignItems: 'center', gap: 2, mb: 3 }}>
               <FormControl size="small" sx={{ minWidth: 160 }}>
                 <InputLabel id="lbl-year">Ciclo lectivo</InputLabel>
@@ -504,12 +506,18 @@ export const IntensificationCalendarPage = () => {
               </Box>
             ) : tab === 0 ? (
               calendar
-            ) : (
+            ) : tab === 1 ? (
               <AssignmentsTab
                 schedules={schedules}
                 canEdit={canEdit}
                 onMessage={showMessage}
                 onChanged={() => void loadSchedules()}
+              />
+            ) : (
+              <IntensificationAttendanceTab
+                schedules={schedules}
+                canEdit={canEdit}
+                onMessage={showMessage}
               />
             )}
           </Box>
