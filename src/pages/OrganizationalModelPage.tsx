@@ -17,7 +17,7 @@ import { AddButton } from '@/components/common/AddButton'
 import { useInstitutionalConfig } from '@/hooks/useInstitutionalConfig'
 import type { OrganizationalModel } from '@/services/institutionalConfig.service'
 
-// Opciones del Anexo 5 (Cuadro 2). Las descripciones son provisorias.
+// Combinaciones del Anexo 5, Cuadro 2 (incisos 27-35).
 const MODEL_OPTIONS: { value: OrganizationalModel; label: string; description: string }[] = [
   {
     value: 'OPTION_A',
@@ -70,18 +70,34 @@ export const OrganizationalModelPage = () => {
   // El modelo mostrado: el elegido localmente, o el ya guardado.
   const currentModel: OrganizationalModel | '' = selected || config?.organizationalModel || ''
 
+  // Plazo mínimo todavía vigente: no se puede cambiar de modelo.
+  const locked = Boolean(config && !config.minimumPeriodMet)
+  // ¿La opción elegida es distinta de la guardada? Si no, no hay nada para guardar.
+  const hasChanges = currentModel !== (config?.organizationalModel ?? '')
+
   const handleSave = async () => {
     if (!currentModel) {
       setNotice({ type: 'error', text: 'Elegí una opción antes de guardar.' })
       return
     }
-    const ok = await save({ organizationalModel: currentModel })
-    setNotice(
-      ok
-        ? { type: 'success', text: 'Modelo organizativo guardado correctamente.' }
-        : { type: 'error', text: 'No se pudo guardar. Intentá de nuevo.' }
-    )
-    if (ok) setSelected('')
+    // Cambiar de modelo fija la nueva combinación por 3 ciclos: pedir confirmación.
+    if (config && config.organizationalModel !== currentModel) {
+      const confirmed = window.confirm(
+        'Al cambiar el modelo, la nueva combinación queda fija por un mínimo de 3 ciclos lectivos. ¿Confirmás el cambio?'
+      )
+      if (!confirmed) return
+    }
+    try {
+      await save({ organizationalModel: currentModel })
+      setNotice({ type: 'success', text: 'Modelo organizativo guardado correctamente.' })
+      setSelected('')
+    } catch (err: unknown) {
+      // Muestra el mensaje real del back (por ejemplo el 409 del plazo).
+      setNotice({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'No se pudo guardar. Intentá de nuevo.',
+      })
+    }
   }
 
   return (
@@ -91,7 +107,7 @@ export const OrganizationalModelPage = () => {
           title="Modelo organizativo institucional"
           subtitle="Elegí la combinación de modelos de intensificación que adopta la escuela (Opciones A, B, C o D del Anexo 5). El modelo se sostiene por un mínimo de 3 ciclos lectivos."
           breadcrumbs={[
-            { label: 'Inicio', href: '/' },
+            { label: 'Inicio', href: '/home' },
             { label: 'Configuración' },
             { label: 'Modelo organizativo' },
           ]}
@@ -141,7 +157,9 @@ export const OrganizationalModelPage = () => {
                     <FormControlLabel
                       key={option.value}
                       value={option.value}
-                      disabled={!canEdit}
+                      disabled={
+                        !canEdit || (locked && option.value !== config?.organizationalModel)
+                      }
                       control={<Radio />}
                       sx={{ alignItems: 'flex-start', mb: 1 }}
                       label={
@@ -163,7 +181,7 @@ export const OrganizationalModelPage = () => {
                       label={saving ? 'Guardando…' : 'Guardar'}
                       icon={<SaveIcon />}
                       onClick={handleSave}
-                      disabled={saving}
+                      disabled={saving || !hasChanges}
                     />
                   </Box>
                 ) : (

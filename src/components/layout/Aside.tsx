@@ -1,5 +1,5 @@
 // src/components/layout/Aside.tsx
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   Box,
   Collapse,
@@ -10,27 +10,27 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
-} from '@mui/material';
-import PeopleIcon from '@mui/icons-material/People';
-import SchoolIcon from '@mui/icons-material/School';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import GradingIcon from '@mui/icons-material/Grading';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import { useLocation, useNavigate } from 'react-router-dom';
-import EditCalendarIcon from '@mui/icons-material/EditCalendar';
-import AssessmentIcon from '@mui/icons-material/Assessment';
-import logoEscuela from '@/assets/logo.png';
-import { UserIcon } from 'lucide-react';
-import EventRepeatIcon from '@mui/icons-material/EventRepeat';
-import SettingsIcon from '@mui/icons-material/Settings';
+} from '@mui/material'
+import PeopleIcon from '@mui/icons-material/People'
+import SchoolIcon from '@mui/icons-material/School'
+import ExpandLessIcon from '@mui/icons-material/ExpandLess'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import GradingIcon from '@mui/icons-material/Grading'
+import DashboardIcon from '@mui/icons-material/Dashboard'
+import { useLocation, useNavigate } from 'react-router-dom'
+import EditCalendarIcon from '@mui/icons-material/EditCalendar'
+import AssessmentIcon from '@mui/icons-material/Assessment'
+import logoEscuela from '@/assets/logo.png'
+import { UserIcon } from 'lucide-react'
+import EventRepeatIcon from '@mui/icons-material/EventRepeat'
+import SettingsIcon from '@mui/icons-material/Settings'
 
-const drawerWidth = 250;
+const drawerWidth = 250
 
 interface NavItem {
-  label: string;
-  icon: React.ReactNode;
-  path?: string;
+  label: string
+  icon: React.ReactNode
+  path?: string
 }
 
 const NAV_ITEMS: NavItem[] = [
@@ -42,19 +42,19 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Resumen de asistencias', path: '/attendance', icon: <AssessmentIcon /> },
   { label: 'Calificaciones', icon: <GradingIcon />, path: '/calification-grid' },
   { label: 'Intensificación', icon: <EventRepeatIcon />, path: '/intensification-calendar' },
-  { label: 'Modelo organizativo', icon: <SettingsIcon />, path: '/modelo-organizativo' },
-];
+  { label: 'Modelo organizativo', icon: <SettingsIcon />, path: '/organizational-model' },
+]
 
 export const Aside: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [open, setOpen] = useState(true);
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [open, setOpen] = useState(true)
 
   const handleNavigation = (item: NavItem) => {
     if (item.path) {
-      navigate(item.path);
+      navigate(item.path)
     }
-  };
+  }
 
   return (
     <Drawer
@@ -165,7 +165,7 @@ export const Aside: React.FC = () => {
         <Collapse in={open} timeout="auto" unmountOnExit>
           <List disablePadding>
             {NAV_ITEMS.map((item) => {
-              const isActive = item.path === location.pathname;
+              const isActive = item.path === location.pathname
               return (
                 <ListItem key={item.label} disablePadding sx={{ mb: 0.5, px: 0.5 }}>
                   <ListItemButton
@@ -203,7 +203,7 @@ export const Aside: React.FC = () => {
                     />
                   </ListItemButton>
                 </ListItem>
-              );
+              )
             })}
           </List>
         </Collapse>
@@ -223,7 +223,7 @@ export const Aside: React.FC = () => {
         </Typography>
       </Box>
     </Drawer>
-  );
-};
+  )
+}
 
-export default Aside;
+export default Aside
