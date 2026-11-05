@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Box,
@@ -12,7 +11,6 @@ import {
   ListItemIcon,
   ListItemText,
 } from '@mui/material';
-
 import LogoutIcon from '@mui/icons-material/Logout';
 import LoginIcon from '@mui/icons-material/Login';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -32,8 +30,8 @@ export interface HeaderUserProps {
 }
 
 /**
- * Componente de presentación para mostrar el usuario
- * autenticado y las acciones de inicio y cierre de sesión.
+ * Pure presentational component for user identity and authentication actions in the Header.
+ * The user avatar/name acts as a trigger for a dropdown menu with auth actions.
  */
 export const HeaderUser: React.FC<HeaderUserProps> = ({
   user,
@@ -42,7 +40,6 @@ export const HeaderUser: React.FC<HeaderUserProps> = ({
   rightAction,
 }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-
   const open = Boolean(anchorEl);
 
   const handleOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -62,7 +59,6 @@ export const HeaderUser: React.FC<HeaderUserProps> = ({
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
       {user ? (
         <>
-          {/* Usuario autenticado */}
           <IconButton
             onClick={handleOpen}
             aria-controls={open ? 'user-menu' : undefined}
@@ -74,9 +70,7 @@ export const HeaderUser: React.FC<HeaderUserProps> = ({
               px: 1,
               py: 0.5,
               gap: 1.2,
-              '&:hover': {
-                backgroundColor: '#f0f0f0',
-              },
+              '&:hover': { backgroundColor: '#f0f0f0' },
             }}
           >
             <Avatar
@@ -94,12 +88,7 @@ export const HeaderUser: React.FC<HeaderUserProps> = ({
               {user.name.charAt(0).toUpperCase()}
             </Avatar>
 
-            <Box
-              sx={{
-                textAlign: 'left',
-                display: { xs: 'none', sm: 'block' },
-              }}
-            >
+            <Box sx={{ textAlign: 'left', display: { xs: 'none', sm: 'block' } }}>
               <Typography
                 variant="body2"
                 sx={{
@@ -111,7 +100,6 @@ export const HeaderUser: React.FC<HeaderUserProps> = ({
               >
                 {user.name}
               </Typography>
-
               {(user.role || user.shift) && (
                 <Typography
                   variant="caption"
@@ -122,9 +110,7 @@ export const HeaderUser: React.FC<HeaderUserProps> = ({
                     display: 'block',
                   }}
                 >
-                  {[user.role, user.shift]
-                    .filter(Boolean)
-                    .join(' · ')}
+                  {[user.role, user.shift].filter(Boolean).join(' · ')}
                 </Typography>
               )}
             </Box>
@@ -134,27 +120,18 @@ export const HeaderUser: React.FC<HeaderUserProps> = ({
                 fontSize: '1rem',
                 color: '#666666',
                 transition: 'transform 0.2s',
-                transform: open
-                  ? 'rotate(180deg)'
-                  : 'rotate(0deg)',
+                transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
               }}
             />
           </IconButton>
 
-          {/* Menú desplegable del usuario */}
           <Menu
             id="user-menu"
             anchorEl={anchorEl}
             open={open}
             onClose={handleClose}
-            transformOrigin={{
-              horizontal: 'right',
-              vertical: 'top',
-            }}
-            anchorOrigin={{
-              horizontal: 'right',
-              vertical: 'bottom',
-            }}
+            transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+            anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
             slotProps={{
               paper: {
                 elevation: 2,
@@ -167,75 +144,41 @@ export const HeaderUser: React.FC<HeaderUserProps> = ({
               },
             }}
           >
-            {/* Información del usuario */}
+            {/* User info summary at top of menu */}
             <Box sx={{ px: 2, py: 1.2 }}>
-              <Typography
-                variant="body2"
-                sx={{
-                  fontWeight: 700,
-                  fontSize: '0.82rem',
-                }}
-              >
+              <Typography variant="body2" sx={{ fontWeight: 700, fontSize: '0.82rem' }}>
                 {user.name}
               </Typography>
-
               {(user.role || user.shift) && (
-                <Typography
-                  variant="caption"
-                  sx={{
-                    color: '#666666',
-                    fontSize: '0.7rem',
-                  }}
-                >
-                  {[user.role, user.shift]
-                    .filter(Boolean)
-                    .join(' · ')}
+                <Typography variant="caption" sx={{ color: '#666666', fontSize: '0.7rem' }}>
+                  {[user.role, user.shift].filter(Boolean).join(' · ')}
                 </Typography>
               )}
             </Box>
 
-            {/* Acciones adicionales */}
             {rightAction && (
               <>
                 <Divider />
-                <Box sx={{ px: 1, py: 0.5 }}>
-                  {rightAction}
-                </Box>
+                <Box sx={{ px: 1, py: 0.5 }}>{rightAction}</Box>
               </>
             )}
 
-            {/* Cerrar sesión */}
             {onLogout && (
               <>
                 <Divider />
-
                 <MenuItem
                   onClick={handleLogout}
                   sx={{
                     fontSize: '0.82rem',
                     fontWeight: 600,
-                    '&:hover': {
-                      backgroundColor: '#f5f5f5',
-                    },
+                    '&:hover': { backgroundColor: '#f5f5f5' },
                   }}
                 >
                   <ListItemIcon sx={{ minWidth: 32 }}>
-                    <LogoutIcon
-                      sx={{ fontSize: '1rem' }}
-                    />
+                    <LogoutIcon sx={{ fontSize: '1rem' }} />
                   </ListItemIcon>
-
-                  <ListItemText
-                    slotProps={{
-                      primary: {
-                        sx: {
-                          fontSize: '0.82rem',
-                          fontWeight: 600,
-                        },
-                      },
-                    }}
-                  >
-                    Sign out
+                  <ListItemText slotProps={{ primary: { sx: { fontSize: '0.82rem', fontWeight: 600 } } }}>
+                    Cerrar sesión
                   </ListItemText>
                 </MenuItem>
               </>
@@ -247,13 +190,7 @@ export const HeaderUser: React.FC<HeaderUserProps> = ({
           <Button
             size="small"
             onClick={onLogin}
-            startIcon={
-              <LoginIcon
-                sx={{
-                  fontSize: '0.95rem !important',
-                }}
-              />
-            }
+            startIcon={<LoginIcon sx={{ fontSize: '0.95rem !important' }} />}
             sx={{
               backgroundColor: '#000000',
               color: '#ffffff',

@@ -4,49 +4,46 @@ import { fetchApi } from '@/services/api';
 export { ApiError } from '@/services/api';
 
 // =====================================================
-// ROLES DEL FRONTEND
+// ROLES
 // =====================================================
 
-// La API recibe los roles en minúscula.
-// Prisma realiza su propia conversión internamente.
+// Roles que pueden seleccionarse al crear o editar.
 export const ROLES = ['admin', 'docente', 'preceptor'] as const;
 
 export type Role = (typeof ROLES)[number];
 
-// Roles definidos en Prisma.
+// Roles que puede devolver el backend.
 export type BackendRole =
   | 'ADMINISTRATOR'
+  | 'SCHOOL_MANAGEMENT'
+  | 'EOE_DIRECTIVE'
   | 'TEACHER'
-  | 'PRECEPTOR';
+  | 'PRECEPTOR'
+  | 'STUDENT'
+  | 'FAMILY';
 
-// Estados definidos en Prisma.
 export type BackendUserStatus =
   | 'ACTIVE'
   | 'SUSPENDED'
   | 'INACTIVE';
 
-// Conversión de roles de Prisma al frontend.
-// El backend actual devuelve roles en minúscula,
-// pero conservamos compatibilidad con valores Prisma.
-const ROLE_FROM_BACKEND: Record<BackendRole, Role> = {
-  ADMINISTRATOR: 'admin',
-  TEACHER: 'docente',
-  PRECEPTOR: 'preceptor',
-};
+// El listado puede contener otros roles del sistema.
+// No los convertimos incorrectamente en preceptores.
+export type UserDisplayRole = Role | BackendRole;
 
 // =====================================================
 // TIPOS DEL FRONTEND
 // =====================================================
 
 export interface UserListItem {
-  id: string;
+  id: string | number;
   firstName: string;
   lastName: string;
   dni: string;
   email: string;
   phone: string | null;
   username: string;
-  role: Role;
+  role: UserDisplayRole;
   active: boolean;
   courseIds: number[];
 }
@@ -64,8 +61,6 @@ export interface UsersPageResult {
   total: number;
 }
 
-// Conservamos los campos heredados para mantener
-// compatibilidad con los componentes existentes.
 export interface UserPayload {
   firstName: string;
   lastName: string;
@@ -87,25 +82,17 @@ export type UpdateUserPayload = UserPayload & {
 };
 
 // =====================================================
-// TIPOS DE RESPUESTA DEL BACKEND
+// TIPOS DEL BACKEND
 // =====================================================
 
 interface BackendUser {
-  id: string;
+  id: string | number;
   firstName: string;
   lastName: string;
   email: string;
-
-  // El backend actual devuelve admin o docente.
-  // Preceptor quedará disponible cuando se habilite.
-  role: Role | BackendRole;
-
-  // La API actual devuelve active.
-  // status se mantiene por compatibilidad.
-  active?: boolean;
+  role: BackendRole | Role;
   status?: BackendUserStatus;
-
-  // Campos heredados opcionales.
+  active?: boolean;
   dni?: string | null;
   phone?: string | null;
   username?: string | null;
@@ -118,57 +105,64 @@ interface BackendResponse<T> {
   message?: string;
 }
 
-interface BackendListResponse
-  extends BackendResponse<BackendUser[]> {
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-  };
+interface BackendPagination {
+  page?: number;
+  limit?: number;
+  total: number;
+}
+
+interface BackendListData {
+  items: BackendUser[];
+  pagination: BackendPagination;
 }
 
 // =====================================================
-// CONVERSIÓN DE DATOS
+// CONVERSION DE ROLES
 // =====================================================
 
-// Convertir rol del backend al frontend.
-function fromBackendRole(role: BackendUser['role']): Role {
-  if (
-    role === 'admin' ||
-    role === 'docente' ||
-    role === 'preceptor'
-  ) {
-    return role;
+const ROLE_TO_BACKEND: Record<Role, BackendRole> = {
+  admin: 'ADMINISTRATOR',
+  docente: 'TEACHER',
+  preceptor: 'PRECEPTOR',
+};
+
+function fromBackendRole(
+  role: BackendUser['role'],
+): UserDisplayRole {
+  switch (role) {
+    case 'admin':
+    case 'ADMINISTRATOR':
+      return 'admin';
+
+    case 'docente':
+    case 'TEACHER':
+      return 'docente';
+
+    case 'preceptor':
+    case 'PRECEPTOR':
+      return 'preceptor';
+
+    default:
+      // Mantener el rol real de otros usuarios.
+      return role;
   }
-
-  const converted = ROLE_FROM_BACKEND[role as BackendRole];
-
-  if (!converted) {
-    throw new Error(
-      `Rol de usuario no soportado por el frontend: ${role}`,
-    );
-  }
-
-  return converted;
 }
 
-// Convertir usuario recibido de la API.
+// =====================================================
+// CONVERSION DE USUARIOS
+// =====================================================
+
 function fromBackendUser(user: BackendUser): UserListItem {
   return {
     id: user.id,
     firstName: user.firstName,
     lastName: user.lastName,
     email: user.email,
-
     role: fromBackendRole(user.role),
-
     active:
       typeof user.active === 'boolean'
         ? user.active
         : user.status === 'ACTIVE',
-
-    // Estos campos todavía no están implementados
-    // en el modelo User de Prisma.
     dni: user.dni ?? '',
     phone: user.phone ?? null,
     username: user.username ?? user.email,
@@ -177,7 +171,7 @@ function fromBackendUser(user: BackendUser): UserListItem {
 }
 
 // =====================================================
-// DATOS PARA CREAR USUARIOS
+// DATOS PARA CREAR USUARIO
 // =====================================================
 
 function toBackendCreatePayload(payload: CreateUserPayload) {
@@ -185,18 +179,13 @@ function toBackendCreatePayload(payload: CreateUserPayload) {
     firstName: payload.firstName.trim(),
     lastName: payload.lastName.trim(),
     email: payload.email.trim().toLowerCase(),
-
-    // La API espera admin, docente o, cuando
-    // se habilite, preceptor.
-    role: payload.role,
-
-    active: payload.active,
+    role: ROLE_TO_BACKEND[payload.role],
     password: payload.password,
   };
 }
 
 // =====================================================
-// DATOS PARA ACTUALIZAR USUARIOS
+// DATOS PARA ACTUALIZAR USUARIO
 // =====================================================
 
 function toBackendUpdatePayload(payload: UpdateUserPayload) {
@@ -204,17 +193,12 @@ function toBackendUpdatePayload(payload: UpdateUserPayload) {
     firstName: payload.firstName.trim(),
     lastName: payload.lastName.trim(),
     email: payload.email.trim().toLowerCase(),
-
-    role: payload.role,
-    active: payload.active,
-
-    // No enviamos password en edición.
+    role: ROLE_TO_BACKEND[payload.role],
   };
 }
 
 // =====================================================
-// GET /api/users
-// LISTAR USUARIOS
+// GET /api/users - LISTAR USUARIOS
 // =====================================================
 
 export async function listUsers(
@@ -230,48 +214,40 @@ export async function listUsers(
     params.set('search', query.search.trim());
   }
 
-  // El backend espera el rol en minúscula.
   if (query.role) {
-    params.set('role', query.role);
+    params.set('role', ROLE_TO_BACKEND[query.role]);
   }
 
   if (query.active) {
     params.set('active', query.active);
   }
 
-  const response = await fetchApi<BackendListResponse>(
-    `/users?${params.toString()}`,
-    {
-      signal,
-    },
-  );
+  const response = await fetchApi<
+    BackendResponse<BackendListData>
+  >(`/api/users?${params.toString()}`, { signal });
 
   return {
-    items: response.data.map(fromBackendUser),
-    total: response.pagination.total,
+    items: response.data.items.map(fromBackendUser),
+    total: response.data.pagination.total,
   };
 }
 
 // =====================================================
-// GET /api/users/:id
-// OBTENER USUARIO
+// GET /api/users/:id - OBTENER USUARIO
 // =====================================================
 
-// Esta función queda preparada, pero la ruta GET /:id
-// todavía no aparece implementada en user.routes.ts.
 export async function getUserById(
   id: UserListItem['id'],
 ): Promise<UserListItem> {
   const response = await fetchApi<
     BackendResponse<BackendUser>
-  >(`/users/${encodeURIComponent(id)}`);
+  >(`/api/users/${encodeURIComponent(String(id))}`);
 
   return fromBackendUser(response.data);
 }
 
 // =====================================================
-// POST /api/users
-// CREAR USUARIO
+// POST /api/users - CREAR USUARIO
 // =====================================================
 
 export async function createUser(
@@ -279,11 +255,9 @@ export async function createUser(
 ): Promise<BackendResponse<UserListItem>> {
   const response = await fetchApi<
     BackendResponse<BackendUser>
-  >('/users', {
+  >('/api/users', {
     method: 'POST',
-    body: JSON.stringify(
-      toBackendCreatePayload(payload),
-    ),
+    body: JSON.stringify(toBackendCreatePayload(payload)),
   });
 
   return {
@@ -293,8 +267,7 @@ export async function createUser(
 }
 
 // =====================================================
-// PUT /api/users/:id
-// ACTUALIZAR USUARIO
+// PUT /api/users/:id - ACTUALIZAR USUARIO
 // =====================================================
 
 export async function updateUser(
@@ -303,11 +276,9 @@ export async function updateUser(
 ): Promise<BackendResponse<UserListItem>> {
   const response = await fetchApi<
     BackendResponse<BackendUser>
-  >(`/users/${encodeURIComponent(id)}`, {
+  >(`/api/users/${encodeURIComponent(String(id))}`, {
     method: 'PUT',
-    body: JSON.stringify(
-      toBackendUpdatePayload(payload),
-    ),
+    body: JSON.stringify(toBackendUpdatePayload(payload)),
   });
 
   return {
@@ -318,7 +289,6 @@ export async function updateUser(
 
 // =====================================================
 // PATCH /api/users/:id/suspend
-// SUSPENDER USUARIO
 // =====================================================
 
 export async function suspendUser(
@@ -326,9 +296,10 @@ export async function suspendUser(
 ): Promise<BackendResponse<UserListItem>> {
   const response = await fetchApi<
     BackendResponse<BackendUser>
-  >(`/users/${encodeURIComponent(id)}/suspend`, {
-    method: 'PATCH',
-  });
+  >(
+    `/api/users/${encodeURIComponent(String(id))}/suspend`,
+    { method: 'PATCH' },
+  );
 
   return {
     ...response,
@@ -338,7 +309,6 @@ export async function suspendUser(
 
 // =====================================================
 // PATCH /api/users/:id/activate
-// REACTIVAR USUARIO
 // =====================================================
 
 export async function activateUser(
@@ -346,9 +316,10 @@ export async function activateUser(
 ): Promise<BackendResponse<UserListItem>> {
   const response = await fetchApi<
     BackendResponse<BackendUser>
-  >(`/users/${encodeURIComponent(id)}/activate`, {
-    method: 'PATCH',
-  });
+  >(
+    `/api/users/${encodeURIComponent(String(id))}/activate`,
+    { method: 'PATCH' },
+  );
 
   return {
     ...response,

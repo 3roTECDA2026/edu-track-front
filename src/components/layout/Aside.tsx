@@ -13,17 +13,16 @@ import {
 } from '@mui/material';
 import PeopleIcon from '@mui/icons-material/People';
 import SchoolIcon from '@mui/icons-material/School';
-import EventNoteIcon from '@mui/icons-material/EventNote';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import GradingIcon from '@mui/icons-material/Grading';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import { useLocation, useNavigate } from 'react-router-dom';
-
-// Importación de asset local
+import EditCalendarIcon from '@mui/icons-material/EditCalendar';
+import AssessmentIcon from '@mui/icons-material/Assessment';
 import logoEscuela from '@/assets/logo.png';
 import { UserIcon } from 'lucide-react';
-
+import EventRepeatIcon from '@mui/icons-material/EventRepeat';
 
 const drawerWidth = 250;
 
@@ -38,8 +37,10 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Usuarios', icon: <UserIcon />, path: '/users' },
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
   { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
-  { label: 'Inasistencias', icon: <EventNoteIcon />, path: '/attendance' },
+  { label: 'Carga de asistencia', path: '/attendance/daily', icon: <EditCalendarIcon /> },
+  { label: 'Resumen de asistencias', path: '/attendance', icon: <AssessmentIcon /> },
   { label: 'Calificaciones', icon: <GradingIcon />, path: '/calification-grid' },
+  { label: 'Intensificación', icon: <EventRepeatIcon />, path: '/intensification-calendar' },
 ];
 
 export const Aside: React.FC = () => {
@@ -62,13 +63,13 @@ export const Aside: React.FC = () => {
         '& .MuiDrawer-paper': {
           width: drawerWidth,
           boxSizing: 'border-box',
-          backgroundColor: '#ffffff',
-          color: '#37474f',
+          backgroundColor: '#d1d5db',
+          color: '#111827',
           display: 'flex',
           flexDirection: 'column',
           px: 2,
           py: 3,
-          borderRight: '1px solid #eceff1',
+          borderRight: '1px solid #9ca3af',
         },
       }}
     >
@@ -84,7 +85,7 @@ export const Aside: React.FC = () => {
           cursor: 'pointer',
           borderRadius: '10px',
           py: 0.75,
-          '&:hover': { backgroundColor: '#f4f6f8' },
+          '&:hover': { backgroundColor: '#e5e7eb' },
         }}
       >
         <Box
@@ -93,7 +94,7 @@ export const Aside: React.FC = () => {
             height: 52,
             flexShrink: 0,
             borderRadius: '12px',
-            backgroundColor: '#f1f4f8',
+            backgroundColor: '#e5e7eb',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -110,7 +111,7 @@ export const Aside: React.FC = () => {
         <Box sx={{ minWidth: 0 }}>
           <Typography
             sx={{
-              color: '#102a43',
+              color: '#111827',
               fontWeight: 'bold',
               fontSize: '0.85rem',
               lineHeight: 1.2,
@@ -122,7 +123,7 @@ export const Aside: React.FC = () => {
       </Box>
 
       {/* Separador sutil */}
-      <Box sx={{ borderBottom: '1px solid #eceff1', mb: 2 }} />
+      <Box sx={{ borderBottom: '1px solid #9ca3af', mb: 2 }} />
 
       <List sx={{ px: 0, width: '100%' }} disablePadding>
         <ListItem
@@ -136,12 +137,12 @@ export const Aside: React.FC = () => {
             justifyContent: 'space-between',
             cursor: 'pointer',
             borderRadius: '8px',
-            '&:hover': { backgroundColor: '#f4f6f8' },
+            '&:hover': { backgroundColor: '#e5e7eb' },
           }}
         >
           <Typography
             sx={{
-              color: '#90a4ae',
+              color: '#374151',
               fontSize: '0.72rem',
               fontWeight: 'bold',
               textTransform: 'uppercase',
@@ -152,9 +153,9 @@ export const Aside: React.FC = () => {
           </Typography>
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             {open ? (
-              <ExpandLessIcon sx={{ fontSize: '1.1rem', color: '#90a4ae' }} />
+              <ExpandLessIcon sx={{ fontSize: '1.1rem', color: '#374151' }} />
             ) : (
-              <ExpandMoreIcon sx={{ fontSize: '1.1rem', color: '#90a4ae' }} />
+              <ExpandMoreIcon sx={{ fontSize: '1.1rem', color: '#374151' }} />
             )}
           </Box>
         </ListItem>
@@ -171,16 +172,16 @@ export const Aside: React.FC = () => {
                       borderRadius: '10px',
                       px: 1.5,
                       py: 0.9,
-                      backgroundColor: isActive ? '#eaf1fa' : 'transparent',
+                      backgroundColor: isActive ? '#e5e7eb' : 'transparent',
                       '&:hover': {
-                        backgroundColor: isActive ? '#eaf1fa' : '#f4f6f8',
+                        backgroundColor: isActive ? '#e5e7eb' : '#e5e7eb',
                       },
                     }}
                   >
                     <ListItemIcon
                       sx={{
                         minWidth: 36,
-                        color: isActive ? '#0a2540' : '#607d8b',
+                        color: isActive ? '#111827' : '#4b5563',
                       }}
                     >
                       {item.icon}
@@ -191,7 +192,7 @@ export const Aside: React.FC = () => {
                           sx={{
                             fontSize: '0.9rem',
                             fontWeight: isActive ? 'bold' : 500,
-                            color: isActive ? '#0a2540' : '#37474f',
+                            color: isActive ? '#111827' : '#374151',
                           }}
                         >
                           {item.label}
@@ -210,7 +211,7 @@ export const Aside: React.FC = () => {
       <Box sx={{ mt: 'auto', px: 1, pt: 2 }}>
         <Typography
           sx={{
-            color: '#b0bec5',
+            color: '#4b5563',
             fontSize: '0.65rem',
             textAlign: 'center',
             lineHeight: 1.4,

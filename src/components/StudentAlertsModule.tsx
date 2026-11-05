@@ -57,6 +57,8 @@ export const StudentAlertsModule: React.FC = () => {
   const [newAlertMessage, setNewAlertMessage] = useState<string>("");
 
   // Mapeo de Categorías
+  // Los nombres "Convivencia" y "Trayectoria educativa" los pidió el equipo directivo (CRM-066).
+  // Los tipos internos (CONDUCT, ACADEMIC) no cambian.
   const alertCategories: {
     type: AlertType | "ALL";
     label: string;
@@ -83,13 +85,13 @@ export const StudentAlertsModule: React.FC = () => {
     },
     {
       type: "CONDUCT",
-      label: "Mala Conducta",
+      label: "Convivencia",
       icon: <GavelIcon fontSize="small" />,
       color: "#374151",
     },
     {
       type: "ACADEMIC",
-      label: "Bajas Notas",
+      label: "Trayectoria educativa",
       icon: <TrendingDownIcon fontSize="small" />,
       color: "#111827",
     },
@@ -217,8 +219,8 @@ export const StudentAlertsModule: React.FC = () => {
             Alertas y Trayectorias Estudiantiles
           </Typography>
           <Typography variant="body2" sx={{ color: "#6b7280" }}>
-            Seguimiento de inasistencias, salud, disciplina y rendimiento
-            académico.
+            Seguimiento de inasistencias, salud, convivencia y trayectoria
+            educativa.
           </Typography>
         </Box>
 
@@ -333,7 +335,7 @@ export const StudentAlertsModule: React.FC = () => {
                     variant="caption"
                     sx={{ color: "#111827", fontWeight: 700 }}
                   >
-                    Reportes de conducta
+                    Reportes de convivencia
                   </Typography>
                   <Typography
                     variant="h4"
@@ -369,7 +371,7 @@ export const StudentAlertsModule: React.FC = () => {
                     variant="caption"
                     sx={{ color: "#111827", fontWeight: 700 }}
                   >
-                    Bajos rendimientos
+                    Trayectoria educativa
                   </Typography>
                   <Typography
                     variant="h4"
@@ -624,7 +626,7 @@ export const StudentAlertsModule: React.FC = () => {
         </Grid>
       </ContentCard>
 
-      {/* Modal para Editar Alerta */}
+      {/* Modal para Crear Alerta */}
       <Dialog
         open={createDialogOpen}
         onClose={() => setCreateDialogOpen(false)}
@@ -663,7 +665,7 @@ export const StudentAlertsModule: React.FC = () => {
               size="small"
             >
               <MenuItem value="HEALTH">Salud / Enfermedad</MenuItem>
-              <MenuItem value="CONDUCT">Mala conducta</MenuItem>
+              <MenuItem value="CONDUCT">Convivencia</MenuItem>
               <MenuItem value="ABSENCE">Inasistencia</MenuItem>
             </TextField>
 
@@ -692,6 +694,7 @@ export const StudentAlertsModule: React.FC = () => {
         </DialogActions>
       </Dialog>
 
+      {/* Modal para Editar Alerta */}
       <Dialog
         open={Boolean(selectedAlert)}
         onClose={() => setSelectedAlert(null)}

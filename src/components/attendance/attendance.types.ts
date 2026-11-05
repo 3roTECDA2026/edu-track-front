@@ -1,5 +1,5 @@
 export type JustificationRecord = {
-  id: number;
+  id: string;
   date: string;
   type: 'ausente' | 'media' | 'cuarto';
   reason: string;

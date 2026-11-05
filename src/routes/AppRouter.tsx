@@ -5,32 +5,30 @@ import UsersPage from '@/pages/UsersPage';
 import HomePage from '@/pages/HomePage';
 import LoginPage from '@/pages/LoginPage';
 import AttendanceSummaryPage from '@/pages/AttendanceSummaryPage';
+import DailyAttendancePage from '@/pages/DailyAttendancePage';
 import StudentsPage from '@/pages/StudentsPage';
 import CalificationGridPage from '@/pages/CalificationGridPage';
 import CoursesPage from '@/pages/CoursesPage';
 import StudentProfilePage from '@/pages/StudentProfilePage';
 import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage';
-import ForgotPasswordPage from '@/pages/ForgotPasswordPage';
-import ResetPasswordPage from '@/pages/ResetPasswordPage';
-
+import IntensificationCalendarPage from '@/pages/IntensificationCalendarPage';
 const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
-       {/* Login */}
+        {/* Login */}
         <Route path="/login" element={<LoginPage />} />
 
-{/* Recuperación de contraseña */}
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
         {/* Inicio */}
         <Route path="/home" element={<HomePage />} />
 
         {/* Cursos */}
         <Route path="/courses" element={<CoursesPage />} />
-
-        {/* Asistencia */}
+{/* Asistencia - Resumen */}
         <Route path="/attendance" element={<AttendanceSummaryPage />} />
+
+        {/* Asistencia - Carga diaria */}
+        <Route path="/attendance/daily" element={<DailyAttendancePage />} />
 
         {/* Alumnos */}
         <Route path="/students" element={<StudentsPage />} />
@@ -53,6 +51,8 @@ const AppRouter = () => {
         {/* Usuarios */}
         <Route path="/users" element={<UsersPage />} />
 
+        <Route path="/intensification-calendar" element={<IntensificationCalendarPage />} />
+        
         {/* Ruta por defecto */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

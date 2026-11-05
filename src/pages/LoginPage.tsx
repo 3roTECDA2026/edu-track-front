@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Box,
@@ -12,37 +11,20 @@ import {
   Alert,
   FormControlLabel,
   Checkbox,
-  Link,
   CircularProgress,
 } from '@mui/material';
-
 import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
+// Assets institucionales
 import logoEscuela from '@/assets/logo-normal.jpg';
 import logoProvincia from '@/assets/bsas.png';
-
-// URL configurable para desarrollo local y Vercel.
-const API_URL = (
-  import.meta.env.VITE_API_URL || 'http://localhost:3000'
-).replace(/\/+$/, '');
-
-interface LoginResponse {
-  token: string;
-  user: {
-    id: string;
-    email: string;
-    role: string;
-    firstName: string;
-    lastName: string;
-  };
-}
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
 
-  const [usuario, setUsuario] = useState('');
-  const [password, setPassword] = useState('');
+  const [user, setUser] = useState('admin@notar.local');
+  const [password, setPassword] = useState('Admin1234!');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,13 +34,11 @@ export const LoginPage: React.FC = () => {
     setShowPassword((prev) => !prev);
   };
 
-  const handleSubmit = async (
-    e: React.FormEvent<HTMLFormElement>
-  ) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!usuario.trim() || !password) {
-      setError('Ingresá tu usuario y contraseña.');
+    if (!user || !password) {
+      setError('Por favor, ingresa tu usuario y contraseña.');
       return;
     }
 
@@ -66,60 +46,33 @@ export const LoginPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/auth/login`, {
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          user: usuario.trim(),
-          password,
-        }),
+        body: JSON.stringify({ user, password }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        if (response.status === 400 || response.status === 401) {
-          throw new Error('Usuario o contraseña incorrectos.');
-        }
-
-        if (response.status === 403) {
-          throw new Error('Tu cuenta no tiene permiso para ingresar.');
-        }
-
-        throw new Error('Error del servidor. Intentá nuevamente.');
+        throw new Error(data.message || 'Credenciales inválidas o error en el servidor.');
       }
 
-      const data: LoginResponse = await response.json();
-
-      if (!data.token || !data.user?.id) {
-        throw new Error('El servidor devolvió una respuesta inválida.');
-      }
-
-      // Eliminar sesiones anteriores.
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      sessionStorage.removeItem('token');
-      sessionStorage.removeItem('user');
-
-      // Guardar la sesión según la opción Recordarme.
       const storage = rememberMe ? localStorage : sessionStorage;
-
       storage.setItem('token', data.token);
-      storage.setItem('user', JSON.stringify(data.user));
-
-      navigate('/home', { replace: true });
-    } catch (err) {
-      if (err instanceof TypeError) {
-        setError(
-          'No se pudo conectar con el backend. Verificá que esté funcionando.'
-        );
-      } else {
-        setError(
-          err instanceof Error
-            ? err.message
-            : 'Ocurrió un error al iniciar sesión.'
-        );
+      
+      if (data.user) {
+        storage.setItem('user', JSON.stringify(data.user));
       }
+
+      navigate('/home');
+
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'No se pudo conectar con el servidor.';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -134,7 +87,6 @@ export const LoginPage: React.FC = () => {
         backgroundColor: '#f9fafb',
       }}
     >
-      {/* Header institucional */}
       <Box
         component="header"
         sx={{
@@ -149,14 +101,10 @@ export const LoginPage: React.FC = () => {
           component="img"
           src={logoProvincia}
           alt="Gobierno de la Provincia de Buenos Aires"
-          sx={{
-            height: 65,
-            objectFit: 'contain',
-          }}
+          sx={{ height: 65, objectFit: 'contain' }}
         />
       </Box>
 
-      {/* Contenedor principal */}
       <Box
         sx={{
           flexGrow: 1,
@@ -179,10 +127,9 @@ export const LoginPage: React.FC = () => {
               border: '1px solid #e5e7eb',
             }}
           >
-            {/* Logo de la escuela */}
             <Box
               sx={{
-                width: 64,
+                width: 43,
                 height: 64,
                 mb: 2.5,
                 borderRadius: 0,
@@ -196,104 +143,45 @@ export const LoginPage: React.FC = () => {
               <Box
                 component="img"
                 src={logoEscuela}
-                alt="Logo Escuela"
-                sx={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain',
-                }}
+                alt="Ícono Escuela"
+                sx={{ width: 64, height: 64, objectFit: 'contain' }}
               />
             </Box>
 
-            <Typography
-              variant="h6"
-              sx={{
-                fontWeight: 700,
-                color: '#111827',
-                mb: 0.5,
-              }}
-            >
+            <Typography variant="h6" sx={{ fontWeight: 700, color: '#111827', mb: 0.5 }}>
               Gestión Escolar
             </Typography>
-
-            <Typography
-              variant="body2"
-              sx={{
-                color: '#6b7280',
-                mb: 3,
-                fontSize: '0.85rem',
-                textAlign: 'center',
-              }}
-            >
+            <Typography variant="body2" sx={{ color: '#6b7280', mb: 3, fontSize: '0.85rem' }}>
               Ingresá tu usuario y contraseña para acceder al sistema
             </Typography>
 
-            {/* Mensajes de error */}
             {error && (
-              <Alert
-                severity="error"
-                sx={{
-                  width: '100%',
-                  mb: 2,
-                }}
-              >
+              <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
                 {error}
               </Alert>
             )}
 
-            {/* Formulario */}
-            <Box
-              component="form"
-              onSubmit={handleSubmit}
-              noValidate
-              sx={{ width: '100%' }}
-            >
-              <Typography
-                variant="caption"
-                sx={{
-                  fontWeight: 700,
-                  color: '#374151',
-                  display: 'block',
-                  mb: 0.5,
-                  letterSpacing: '0.05em',
-                }}
-              >
+            <Box component="form" onSubmit={handleSubmit} noValidate sx={{ width: '100%' }}>
+              
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#374151', display: 'block', mb: 0.5, letterSpacing: '0.05em' }}>
                 USUARIO
               </Typography>
-
               <TextField
                 margin="dense"
                 required
                 fullWidth
-                id="usuario"
-                name="usuario"
-                autoComplete="username"
-                placeholder="Ingresá tu correo electrónico"
+                id="user"
+                name="user"
+                autoComplete="user"
                 size="small"
-                value={usuario}
-                onChange={(e) => setUsuario(e.target.value)}
-                disabled={loading}
-                sx={{
-                  mb: 2,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '8px',
-                  },
-                }}
+                value={user}
+                onChange={(e) => setUser(e.target.value)}
+                sx={{ mb: 2, '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
               />
 
-              <Typography
-                variant="caption"
-                sx={{
-                  fontWeight: 700,
-                  color: '#374151',
-                  display: 'block',
-                  mb: 0.5,
-                  letterSpacing: '0.05em',
-                }}
-              >
+              <Typography variant="caption" sx={{ fontWeight: 700, color: '#374151', display: 'block', mb: 0.5, letterSpacing: '0.05em' }}>
                 CONTRASEÑA
               </Typography>
-
               <TextField
                 margin="dense"
                 required
@@ -302,17 +190,10 @@ export const LoginPage: React.FC = () => {
                 type={showPassword ? 'text' : 'password'}
                 id="password"
                 autoComplete="current-password"
-                placeholder="Ingresá tu contraseña"
                 size="small"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                disabled={loading}
-                sx={{
-                  mb: 1,
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '8px',
-                  },
-                }}
+                sx={{ mb: 1, '& .MuiOutlinedInput-root': { borderRadius: '8px' } }}
                 slotProps={{
                   input: {
                     endAdornment: (
@@ -322,13 +203,8 @@ export const LoginPage: React.FC = () => {
                           onClick={handleClickShowPassword}
                           edge="end"
                           size="small"
-                          disabled={loading}
                         >
-                          {showPassword ? (
-                            <VisibilityOff fontSize="small" />
-                          ) : (
-                            <Visibility fontSize="small" />
-                          )}
+                          {showPassword ? <VisibilityOff fontSize="small" /> : <Visibility fontSize="small" />}
                         </IconButton>
                       </InputAdornment>
                     ),
@@ -336,64 +212,24 @@ export const LoginPage: React.FC = () => {
                 }}
               />
 
-              {/* Recordarme y recuperación */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  mb: 3,
-                  mt: 1,
-                }}
-              >
+              {/* (Recordarme / Olvidé contraseña) */}
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3, mt: 1 }}>
                 <FormControlLabel
                   control={
                     <Checkbox
                       checked={rememberMe}
-                      onChange={(e) =>
-                        setRememberMe(e.target.checked)
-                      }
+                      onChange={(e) => setRememberMe(e.target.checked)}
                       size="small"
-                      disabled={loading}
-                      sx={{
-                        color: '#4b5563',
-                        '&.Mui-checked': {
-                          color: '#111827',
-                        },
-                      }}
+                      sx={{ color: '#4b5563', '&.Mui-checked': { color: '#111827' } }}
                     />
                   }
-                  label={
-                    <Typography
-                      sx={{
-                        fontSize: '0.85rem',
-                        color: '#4b5563',
-                      }}
-                    >
-                      Recordarme
-                    </Typography>
-                  }
+                  label={<Typography sx={{ fontSize: '0.85rem', color: '#4b5563' }}>Recordarme</Typography>}
                 />
-
-                {/* Enlace funcional a recuperación */}
-                <Link
-                  component={RouterLink}
-                  to="/forgot-password"
-                  variant="body2"
-                  sx={{
-                    fontSize: '0.85rem',
-                    color: '#4b5563',
-                    textDecoration: 'none',
-                    '&:hover': {
-                      textDecoration: 'underline',
-                    },
-                  }}
-                >
+                {/* <Link href="#" variant="body2" sx={{ fontSize: '0.85rem', color: '#4b5563', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } }}>
                   Olvidé mi contraseña
-                </Link>
+                </Link> */}
               </Box>
 
-              {/* Botón de inicio de sesión */}
               <Button
                 type="submit"
                 fullWidth
@@ -408,64 +244,28 @@ export const LoginPage: React.FC = () => {
                   fontSize: '0.9rem',
                   borderRadius: '8px',
                   boxShadow: 'none',
-                  '&:hover': {
-                    backgroundColor: '#111827',
-                    boxShadow: 'none',
-                  },
+                  '&:hover': { backgroundColor: '#111827', boxShadow: 'none' },
                 }}
               >
-                {loading ? (
-                  <>
-                    <CircularProgress
-                      size={18}
-                      color="inherit"
-                      sx={{ mr: 1 }}
-                    />
-                    Ingresando...
-                  </>
-                ) : (
-                  'Iniciar sesión'
-                )}
+                {loading ? <CircularProgress size={24} color="inherit" /> : 'Iniciar sesión'}
               </Button>
             </Box>
           </Paper>
 
-          {/* Footer */}
-          <Box
-            sx={{
-              mt: 3,
-              textAlign: 'center',
-            }}
-          >
-            <Typography
-              variant="caption"
-              sx={{
-                color: '#9ca3af',
-                fontSize: '0.75rem',
-                display: 'block',
-                mb: 0.5,
-              }}
-            >
+          <Box sx={{ mt: 3, textAlign: 'center' }}>
+            <Typography variant="caption" sx={{ color: '#9ca3af', fontSize: '0.75rem', display: 'block', mb: 0.5 }}>
               Sistema de Gestión Escolar v1.0
             </Typography>
-
-            <Link
-              href="#"
-              onClick={(e) => e.preventDefault()}
-              variant="caption"
-              sx={{
-                color: '#6b7280',
-                fontSize: '0.75rem',
-                textDecoration: 'underline',
-              }}
-            >
+            {/* <Link href="#" variant="caption" sx={{ color: '#6b7280', fontSize: '0.75rem', textDecoration: 'underline' }}>
               Soporte técnico
-            </Link>
+            </Link> */}
           </Box>
+
         </Container>
       </Box>
     </Box>
   );
 };
+
 
 export default LoginPage;
