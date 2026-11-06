@@ -23,6 +23,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import logoEscuela from '@/assets/logo.png';
 import { UserIcon } from 'lucide-react';
 import EventRepeatIcon from '@mui/icons-material/EventRepeat';
+import { ADMIN_ROLE, hasRole } from '@/utils/auth';
 
 const drawerWidth = 250;
 
@@ -30,11 +31,12 @@ interface NavItem {
   label: string;
   icon: React.ReactNode;
   path?: string;
+  roles?: string[]; // Roles permitidos para este item
 }
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Panel', icon: <DashboardIcon />, path: '/home' },
-  { label: 'Usuarios', icon: <UserIcon />, path: '/users' },
+  { label: 'Usuarios', icon: <UserIcon />, path: '/users', roles: [ADMIN_ROLE] },
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
   { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
   { label: 'Carga de asistencia', path: '/attendance/daily', icon: <EditCalendarIcon /> },
@@ -162,8 +164,7 @@ export const Aside: React.FC = () => {
 
         <Collapse in={open} timeout="auto" unmountOnExit>
           <List disablePadding>
-            {NAV_ITEMS.map((item) => {
-              const isActive = item.path === location.pathname;
+            {NAV_ITEMS.filter((item) => hasRole(item.roles)).map((item) => {              const isActive = item.path === location.pathname;
               return (
                 <ListItem key={item.label} disablePadding sx={{ mb: 0.5, px: 0.5 }}>
                   <ListItemButton
