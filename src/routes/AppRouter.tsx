@@ -12,6 +12,8 @@ import CoursesPage from '@/pages/CoursesPage';
 import StudentProfilePage from '@/pages/StudentProfilePage';
 import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage';
 import IntensificationCalendarPage from '@/pages/IntensificationCalendarPage';
+import InterventionFormPage from '@/pages/InterventionFormPage';
+
 const AppRouter = () => {
   return (
     <BrowserRouter>
@@ -24,7 +26,7 @@ const AppRouter = () => {
 
         {/* Cursos */}
         <Route path="/courses" element={<CoursesPage />} />
-{/* Asistencia - Resumen */}
+        {/* Asistencia - Resumen */}
         <Route path="/attendance" element={<AttendanceSummaryPage />} />
 
         {/* Asistencia - Carga diaria */}
@@ -50,7 +52,7 @@ const AppRouter = () => {
 
         {/* Usuarios */}
         <Route path="/users" element={<UsersPage />} />
-
+        <Route path="/interventions/new" element={<InterventionFormPage />} />
         <Route path="/intensification-calendar" element={<IntensificationCalendarPage />} />
         
         {/* Ruta por defecto */}
