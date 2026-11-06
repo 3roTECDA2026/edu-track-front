@@ -15,20 +15,20 @@ const USE_MOCK = import.meta.env.DEV && import.meta.env.VITE_USE_MOCK !== 'false
 type Body = Omit<UserListItem, 'id'> & { password?: string };
 
 export const COURSES = [
-  { id: '1', label: '1º Año — Sección A — Matemática' },
-  { id: '2', label: '1º Año — Sección B — Matemática' },
-  { id: '3', label: '2º Año — Sección A — Matemática' },
-  { id: '4', label: '3º Año — Sección A — Física' },
+  { id: 1, label: '1º Año — Sección A — Matemática' },
+  { id: 2, label: '1º Año — Sección B — Matemática' },
+  { id: 3, label: '2º Año — Sección A — Matemática' },
+  { id: 4, label: '3º Año — Sección A — Física' },
 ];
 
 export const INITIAL_USERS: UserListItem[] = [
   { id: 1, firstName: 'María', lastName: 'González', dni: '25456789', email: 'mgonzalez@escuela.edu', phone: '351 555-1234', username: 'mgonzalez', role: 'admin', active: true, courseIds: [] },
   { id: 2, firstName: 'Carlos', lastName: 'Rodríguez', dni: '27123456', email: 'crodriguez@escuela.edu', phone: null, username: 'crodriguez', role: 'preceptor', active: true, courseIds: [] },
   { id: 3, firstName: 'Lucía', lastName: 'Fernández', dni: '30222111', email: 'lfernandez@escuela.edu', phone: '351 555-2222', username: 'lfernandez', role: 'preceptor', active: true, courseIds: [] },
-  { id: 4, firstName: 'Jorge', lastName: 'Martínez', dni: '28333444', email: 'jmartinez@escuela.edu', phone: null, username: 'jmartinez', role: 'docente', active: true, courseIds: ['1', '3'] },
+  { id: 4, firstName: 'Jorge', lastName: 'Martínez', dni: '28333444', email: 'jmartinez@escuela.edu', phone: null, username: 'jmartinez', role: 'docente', active: true, courseIds: [1, 3] },
   { id: 5, firstName: 'Ana', lastName: 'López', dni: '31555666', email: 'alopez@escuela.edu', phone: '351 555-3333', username: 'alopez', role: 'preceptor', active: true, courseIds: [] },
-  { id: 6, firstName: 'Pedro', lastName: 'Sánchez', dni: '26777888', email: 'psanchez@escuela.edu', phone: null, username: 'psanchez', role: 'docente', active: false, courseIds: ['4'] },
-  { id: 7, firstName: 'Sofía', lastName: 'Ramírez', dni: '33111222', email: 'sramirez@escuela.edu', phone: '351 555-4444', username: 'sramirez', role: 'docente', active: true, courseIds: ['2'] },
+  { id: 6, firstName: 'Pedro', lastName: 'Sánchez', dni: '26777888', email: 'psanchez@escuela.edu', phone: null, username: 'psanchez', role: 'docente', active: false, courseIds: [4] },
+  { id: 7, firstName: 'Sofía', lastName: 'Ramírez', dni: '33111222', email: 'sramirez@escuela.edu', phone: '351 555-4444', username: 'sramirez', role: 'docente', active: true, courseIds: [2] },
   { id: 8, firstName: 'Diego', lastName: 'Torres', dni: '29444555', email: 'dtorres@escuela.edu', phone: null, username: 'dtorres', role: 'preceptor', active: true, courseIds: [] },
 ];
 

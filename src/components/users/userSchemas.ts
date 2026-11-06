@@ -25,7 +25,7 @@ export const buildUserSchema = (mode: UserFormMode) =>
         .regex(/^[a-zA-Z0-9._-]+$/, 'Solo letras, números, punto, guion y guion bajo'),
       role: z.string().refine((v) => ROLES.includes(v as Role), 'Seleccioná un rol'),
       active: z.boolean(),
-      courseIds: z.array(z.string()),
+      courseIds: z.array(z.number()),
       password: z.string(),
       confirmPassword: z.string(),
     })
