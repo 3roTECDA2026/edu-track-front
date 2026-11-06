@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAcademicYears } from '@/hooks/useAcademicYears'
 import { Box, Button, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material'
 import MainLayout from '@/components/layout/MainLayout'
 import PageHeader from '@/components/common/PageHeader'
@@ -8,23 +9,29 @@ import { fetchApi } from '@/services/api'
 interface Decision {
   id: string
   studentId: string
+  student?: { firstName?: string; lastName?: string }
+  studentName?: string
   pendingCount: number
   outcome: 'PROMOTED' | 'REFERRED_TO_EDTE'
 }
 
 export default function PromotionPage() {
+  const { academicYears, selectedYear } = useAcademicYears()
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<Decision[]>([])
   const [error, setError] = useState<string | null>(null)
 
   const run = async () => {
     if (!confirm('¿Ejecutar el motor de promoción?')) return
+    const activeYear = academicYears.find((y) => y.active) ?? academicYears.find((y) => y.year === selectedYear)
+    const userRaw = (typeof window !== 'undefined' ? (sessionStorage.getItem('user') || localStorage.getItem('user')) : null)
+    const user = userRaw ? JSON.parse(userRaw) : null
     setLoading(true)
     setError(null)
     try {
       const data = await fetchApi<{ decisions: Decision[] }>('/api/promotion/run', {
         method: 'POST',
-        body: JSON.stringify({ academicYearId: '', executedById: '' }),
+        body: JSON.stringify({ academicYearId: activeYear?.id ?? '', executedById: user?.id ?? '' }),
       })
       setResults(data.decisions ?? [])
     } catch (e) {
@@ -48,7 +55,7 @@ export default function PromotionPage() {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Alumno (ID)</TableCell>
+                <TableCell>Alumno</TableCell>
                 <TableCell align="center">MPAA</TableCell>
                 <TableCell>Resultado</TableCell>
               </TableRow>
@@ -56,7 +63,7 @@ export default function PromotionPage() {
             <TableBody>
               {results.map((r) => (
                 <TableRow key={r.id}>
-                  <TableCell>{r.studentId}</TableCell>
+                  <TableCell>{r.studentName ?? ([r.student?.firstName, r.student?.lastName].filter(Boolean).join(' ') || r.studentId)}</TableCell>
                   <TableCell align="center">{r.pendingCount}</TableCell>
                   <TableCell>{r.outcome === 'PROMOTED' ? 'Promueve' : 'Derivado al EDTE'}</TableCell>
                 </TableRow>
