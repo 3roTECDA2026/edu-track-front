@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { Alert, Box, Button, Pagination, Paper, Snackbar, Typography } from '@mui/material';
+import { Alert, Box, Button, Snackbar } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { StudentFilters, type StudentFiltersState } from '@/components/students/StudentFilters';
@@ -13,6 +13,8 @@ import { deactivateStudent, type StudentListItem } from '@/services/students.ser
 import { AddButton } from '@/components/common/AddButton';
 import { StudentFormDialog } from '@/components/students/StudentFormDialog';
 import { PageHeader } from '@/components/common/PageHeader';
+import ContentCard from '@/components/common/ContentCard';
+import StandardTablePagination from '@/components/common/StandardTablePagination';
 const PAGE_SIZE = 20;
 
 const INITIAL_FILTERS: StudentFiltersState = {
@@ -34,7 +36,7 @@ export const StudentsPage = () => {
   const [filters, setFilters] = useState<StudentFiltersState>(INITIAL_FILTERS)
   // El back pagina desde 1; el paginado común (MUI) cuenta desde 0
   const [page, setPage] = useState(1)
-  const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_ROWS_PER_PAGE)
+  const [rowsPerPage, setRowsPerPage] = useState(PAGE_SIZE)
 
   const [studentToDeactivate, setStudentToDeactivate] = useState<StudentListItem | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
@@ -175,7 +177,7 @@ export const StudentsPage = () => {
             </>
           )}
         </ContentCard>
-      </PageContainer>
+      </Box>
 
       <DeactivateStudentDialog
         open={dialogOpen}
