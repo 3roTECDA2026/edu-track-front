@@ -1,11 +1,12 @@
 // src/pages/StudentProfilePage.tsx
 import { useState, type SyntheticEvent } from 'react'
 import { Alert, Box, Button, Skeleton, Snackbar } from '@mui/material'
+import NoteAddIcon from '@mui/icons-material/NoteAdd'
 import { useNavigate, useParams } from 'react-router-dom'
-
 import { MainLayout } from '@/components/layout/MainLayout'
 import { PageContainer } from '@/components/common/PageContainer'
 import { PageHeader } from '@/components/common/PageHeader'
+import { AddButton } from '@/components/common/AddButton'
 import { ContentCard } from '@/components/common/ContentCard'
 import { CustomTabs } from '@/components/common/CustomTabs'
 import { DeactivateStudentDialog } from '@/components/students/DeactivateStudentDialog'
@@ -17,6 +18,7 @@ import { AttendanceTab } from '@/components/studentProfile/AttendanceTab'
 import { GradesTab } from '@/components/studentProfile/GradesTab'
 import { ObservationsTab } from '@/components/studentProfile/ObservationsTab'
 import { RiteTab } from '@/components/studentProfile/RiteTab'
+import { InterventionsTab } from '@/components/studentProfile/InterventionsTab'
 import { useLazyResource } from '@/hooks/useLazyResource'
 import { deactivateStudent } from '@/services/students.service'
 import {
@@ -26,7 +28,7 @@ import {
   getStudentHistory,
 } from '@/services/studentProfile.service'
 
-type TabKey = 'personal' | 'enrollment' | 'attendance' | 'grades' | 'observations' | 'rite'
+type TabKey = 'personal' | 'enrollment' | 'attendance' | 'grades' | 'observations' | 'interventions' | 'rite'
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'personal', label: 'Datos personales' },
@@ -34,6 +36,7 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'attendance', label: 'Asistencia' },
   { key: 'grades', label: 'Calificaciones' },
   { key: 'observations', label: 'Observaciones' },
+  { key: 'interventions', label: 'Intervenciones' },
   { key: 'rite', label: 'RITE' },
 ]
 
@@ -195,6 +198,7 @@ const StudentProfilePage = () => {
                 onSaved={(message, severity) => setSnackbar({ message, severity })}
               />
             )}
+            {activeTab === 'interventions' && <InterventionsTab studentId={student.id} />}
             {activeTab === 'rite' && <RiteTab studentId={student.id} />}
           </Box>
         </ContentCard>
@@ -213,6 +217,15 @@ const StudentProfilePage = () => {
             { label: 'Estudiantes', href: '/students' },
             { label: student ? `${student.lastName}, ${student.firstName}` : 'Ficha del alumno' },
           ]}
+          action={
+            student ? (
+              <AddButton
+                label="Registrar intervención"
+                icon={<NoteAddIcon />}
+                onClick={() => navigate(`/interventions/new?studentId=${student.id}`)}
+              />
+            ) : undefined
+          }
         />
 
         {renderContent()}
