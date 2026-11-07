@@ -1,17 +1,19 @@
 // src/routes/AppRouter.tsx
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
-import UsersPage from '@/pages/UsersPage';
-import HomePage from '@/pages/HomePage';
-import LoginPage from '@/pages/LoginPage';
-import AttendanceSummaryPage from '@/pages/AttendanceSummaryPage';
-import DailyAttendancePage from '@/pages/DailyAttendancePage';
-import StudentsPage from '@/pages/StudentsPage';
-import CalificationGridPage from '@/pages/CalificationGridPage';
-import CoursesPage from '@/pages/CoursesPage';
-import StudentProfilePage from '@/pages/StudentProfilePage';
-import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage';
-import IntensificationCalendarPage from '@/pages/IntensificationCalendarPage';
+import UsersPage from '@/pages/UsersPage'
+import HomePage from '@/pages/HomePage'
+import LoginPage from '@/pages/LoginPage'
+import AttendanceSummaryPage from '@/pages/AttendanceSummaryPage'
+import DailyAttendancePage from '@/pages/DailyAttendancePage'
+import StudentsPage from '@/pages/StudentsPage'
+import CalificationGridPage from '@/pages/CalificationGridPage'
+import CoursesPage from '@/pages/CoursesPage'
+import StudentProfilePage from '@/pages/StudentProfilePage'
+import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage'
+import IntensificationCalendarPage from '@/pages/IntensificationCalendarPage'
+import OrganizationalModelPage from '@/pages/OrganizationalModelPage'
+
 const AppRouter = () => {
   return (
     <BrowserRouter>
@@ -24,7 +26,7 @@ const AppRouter = () => {
 
         {/* Cursos */}
         <Route path="/courses" element={<CoursesPage />} />
-{/* Asistencia - Resumen */}
+        {/* Asistencia - Resumen */}
         <Route path="/attendance" element={<AttendanceSummaryPage />} />
 
         {/* Asistencia - Carga diaria */}
@@ -37,27 +39,23 @@ const AppRouter = () => {
         <Route path="/students/:id" element={<StudentProfilePage />} />
 
         {/* Trayectoria académica del alumno */}
-        <Route
-          path="/students/:id/trajectory"
-          element={<StudentTrajectoryPage />}
-        />
+        <Route path="/students/:id/trajectory" element={<StudentTrajectoryPage />} />
 
         {/* Calificaciones */}
-        <Route
-          path="/calification-grid"
-          element={<CalificationGridPage />}
-        />
+        <Route path="/calification-grid" element={<CalificationGridPage />} />
 
         {/* Usuarios */}
         <Route path="/users" element={<UsersPage />} />
 
         <Route path="/intensification-calendar" element={<IntensificationCalendarPage />} />
-        
+
+        <Route path="/organizational-model" element={<OrganizationalModelPage />} />
+
         {/* Ruta por defecto */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
-  );
-};
+  )
+}
 
-export default AppRouter;
+export default AppRouter
