@@ -15,6 +15,7 @@ import { StudentFormDialog } from '@/components/students/StudentFormDialog';
 import { PageHeader } from '@/components/common/PageHeader';
 import ContentCard from '@/components/common/ContentCard';
 import StandardTablePagination from '@/components/common/StandardTablePagination';
+import { PageContainer } from '@/components/common/PageContainer'
 const PAGE_SIZE = 20;
 
 const INITIAL_FILTERS: StudentFiltersState = {
