@@ -113,17 +113,17 @@ export const StudentsPage = () => {
 
   return (
     <MainLayout>
-      <Box className="students-page" sx={{ maxWidth: 1280, mx: 'auto' }}>
+            <PageContainer>
         <PageHeader
-      title="Listado de estudiantes"
-      subtitle="Buscá, filtrá y gestioná los estudiantes de la institución."
-      breadcrumbs={[
-    { label: 'Inicio', href: '/home' },
-    { label: 'Estudiantes', href: '/students' },
-    { label: 'Listado' },
-     ]}
-     action={<AddButton label="Alta estudiante" onClick={() => setCreateOpen(true)} />}
-    />
+          title="Listado de estudiantes"
+          subtitle="Buscá, filtrá y gestioná los estudiantes de la institución."
+          breadcrumbs={[
+            { label: 'Inicio', href: '/home' },
+            { label: 'Estudiantes', href: '/students' },
+            { label: 'Listado' },
+          ]}
+          action={<AddButton label="Alta estudiante" onClick={() => setCreateOpen(true)} />}
+        />
 
         {/* Tarjeta contenedora estándar: filtros, tabla y paginado */}
         <ContentCard>
@@ -177,7 +177,7 @@ export const StudentsPage = () => {
             </>
           )}
         </ContentCard>
-      </Box>
+      </PageContainer>
 
       <DeactivateStudentDialog
         open={dialogOpen}
