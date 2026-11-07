@@ -42,6 +42,7 @@ import type {
   RosterRow,
   SaveGradeInput,
 } from '@/services/grades.service'
+import { formatScore } from '@/utils/grades'
 
 type Mode = 'edit' | 'view'
 type Level = 'low' | 'mid' | 'high' | 'empty'
@@ -841,7 +842,7 @@ export const CalificationGridPage: React.FC = () => {
                           {/* Nota final (calculada, o la de la intensificación si acreditó) */}
                           <TableCell align="center" sx={{ borderLeft: COL_BORDER }}>
                             {gradeReadonly(
-                              finalValue,
+                              finalValue === undefined ? undefined : formatScore(finalValue),
                               gradeLevel(finalValue),
                               `Nota final de ${row.student.lastName}`
                             )}
