@@ -1,5 +1,5 @@
 // src/components/layout/Aside.tsx
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   Box,
   Collapse,
@@ -24,8 +24,9 @@ import logoEscuela from '@/assets/logo.png';
 import { UserIcon } from 'lucide-react';
 import EventRepeatIcon from '@mui/icons-material/EventRepeat';
 import { getSessionUser, ADMIN_ROLES } from '@/services/session';
+import { getSessionUser, ADMIN_ROLES } from '@/services/session'
 
-const drawerWidth = 250;
+const drawerWidth = 250
 
 interface NavItem {
   label: string;
@@ -34,7 +35,7 @@ interface NavItem {
   roles?: string[];
 }
 
-const NAV_ITEMS: NavItem[] = [
+const _ITEMS: NavItem[] = [
   { label: 'Panel', icon: <DashboardIcon />, path: '/home' },
   { label: 'Usuarios', icon: <UserIcon />, path: '/users', roles: ADMIN_ROLES },
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
@@ -43,12 +44,13 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Resumen de asistencias', path: '/attendance', icon: <AssessmentIcon /> },
   { label: 'Calificaciones', icon: <GradingIcon />, path: '/calification-grid' },
   { label: 'Intensificación', icon: <EventRepeatIcon />, path: '/intensification-calendar' },
-];
+  { label: 'Modelo organizativo', icon: <SettingsIcon />, path: '/organizational-model' },
+]
 
 export const Aside: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [open, setOpen] = useState(true);
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [open, setOpen] = useState(true)
 
   const role = getSessionUser()?.role;
   const visibleItems = NAV_ITEMS.filter(
@@ -57,9 +59,9 @@ export const Aside: React.FC = () => {
 
   const handleNavigation = (item: NavItem) => {
     if (item.path) {
-      navigate(item.path);
+      navigate(item.path)
     }
-  };
+  }
 
   return (
     <Drawer
@@ -208,7 +210,7 @@ export const Aside: React.FC = () => {
                     />
                   </ListItemButton>
                 </ListItem>
-              );
+              )
             })}
           </List>
         </Collapse>
@@ -228,7 +230,7 @@ export const Aside: React.FC = () => {
         </Typography>
       </Box>
     </Drawer>
-  );
-};
+  )
+}
 
-export default Aside;
+export default Aside
