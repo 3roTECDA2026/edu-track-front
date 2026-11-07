@@ -30,6 +30,7 @@ import CustomTabs from '@/components/common/CustomTabs'
 import AddButton from '@/components/common/AddButton'
 import { StandardTablePagination } from '@/components/common/StandardTablePagination'
 import { TeacherAssignmentsTab } from '@/components/teacherAssignments/TeacherAssignmentsTab'
+import { canAdminister } from '@/services/session'
 
 // Interfaces de Cursos
 interface CourseSection {
@@ -189,6 +190,7 @@ const toolbarSx = {
 
 export const CoursesPage: React.FC = () => {
   const [currentTab, setCurrentTab] = useState(0)
+  const canEdit = canAdminister()
 
   // Estados de Cursos
   const [courses, setCourses] = useState<CourseSection[]>(initialCourses)
@@ -350,9 +352,11 @@ export const CoursesPage: React.FC = () => {
           {/* PESTAÑA 0: CURSOS Y SECCIONES */}
           {currentTab === 0 && (
             <Box>
+              {canEdit && (
               <Box sx={toolbarSx}>
                 <AddButton label="Nuevo curso" onClick={handleOpenCourseCreate} />
               </Box>
+              )}
 
               <TableContainer>
                 <Table sx={{ minWidth: 650 }}>
@@ -379,6 +383,7 @@ export const CoursesPage: React.FC = () => {
                           {row.preceptor || '— Sin asignar'}
                         </TableCell>
                         <TableCell align="right">
+                          {canEdit && (
                           <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
                             <IconButton
                               size="small"
@@ -395,6 +400,7 @@ export const CoursesPage: React.FC = () => {
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </Stack>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -420,9 +426,11 @@ export const CoursesPage: React.FC = () => {
           {/* PESTAÑA 1: MATERIAS */}
           {currentTab === 1 && (
             <Box>
+              {canEdit && (
               <Box sx={toolbarSx}>
                 <AddButton label="Nueva materia" onClick={handleOpenSubjectCreate} />
               </Box>
+              )}
 
               <TableContainer>
                 <Table sx={{ minWidth: 650 }}>
@@ -456,6 +464,7 @@ export const CoursesPage: React.FC = () => {
                         <TableCell sx={{ color: '#374151' }}>{row.weeklyHours} hs</TableCell>
                         <TableCell sx={{ color: '#374151' }}>{row.years}</TableCell>
                         <TableCell align="right">
+                          {canEdit && (
                           <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
                             <IconButton
                               size="small"
@@ -472,6 +481,7 @@ export const CoursesPage: React.FC = () => {
                               <DeleteIcon fontSize="small" />
                             </IconButton>
                           </Stack>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}
