@@ -159,7 +159,7 @@ export const StudentsPage = () => {
                 loading={loading}
                 onView={(student) => navigate(`/students/${student.id}`)}
                 onEdit={(student) => setEditStudentId(student.id)}
-                onDeactivate={handleOpenDeactivate}
+                onDeactivate={canAdmin ? handleOpenDeactivate : undefined}
               />
 
               {result && (
