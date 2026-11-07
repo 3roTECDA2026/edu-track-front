@@ -51,4 +51,10 @@ export const clearSession = () => {
       /* sin storage disponible */
     }
   }
+}
+export const ADMIN_ROLES = ['ADMINISTRATOR', 'SCHOOL_MANAGEMENT'];
+
+export const canAdminister = (): boolean => {
+  const role = getSessionUser()?.role;
+  return !!role && ADMIN_ROLES.includes(role);
 };

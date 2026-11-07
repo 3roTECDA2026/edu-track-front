@@ -11,6 +11,7 @@ import CoursesPage from '@/pages/CoursesPage';
 import StudentProfilePage from '@/pages/StudentProfilePage';
 import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage';
 import IntensificationCalendarPage from '@/pages/IntensificationCalendarPage';
+import { ADMIN_ROLES } from '@/services/session';
 import ProtectedRoute from '@/routes/ProtectedRoute';
 
 const AppRouter = () => {
@@ -30,9 +31,13 @@ const AppRouter = () => {
           <Route path="/students/:id" element={<StudentProfilePage />} />
           <Route path="/students/:id/trajectory" element={<StudentTrajectoryPage />} />
           <Route path="/calification-grid" element={<CalificationGridPage />} />
-          <Route path="/users" element={<UsersPage />} />
           <Route path="/intensification-calendar" element={<IntensificationCalendarPage />} />
         </Route>
+
+        {/* Solo administración y dirección */}
+        <Route element={<ProtectedRoute roles={ADMIN_ROLES} />}>
+       <Route path="/users" element={<UsersPage />} />
+      </Route>
 
         {/* Ruta por defecto */}
         <Route path="*" element={<Navigate to="/login" replace />} />

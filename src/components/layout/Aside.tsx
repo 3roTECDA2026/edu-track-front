@@ -23,7 +23,7 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import logoEscuela from '@/assets/logo.png';
 import { UserIcon } from 'lucide-react';
 import EventRepeatIcon from '@mui/icons-material/EventRepeat';
-import { getSessionUser } from '@/services/session';
+import { getSessionUser, ADMIN_ROLES } from '@/services/session';
 
 const drawerWidth = 250;
 
@@ -36,7 +36,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Panel', icon: <DashboardIcon />, path: '/home' },
-  { label: 'Usuarios', icon: <UserIcon />, path: '/users', roles: ['ADMINISTRATOR', 'SCHOOL_MANAGEMENT'] },
+  { label: 'Usuarios', icon: <UserIcon />, path: '/users', roles: ADMIN_ROLES },
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
   { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
   { label: 'Carga de asistencia', path: '/attendance/daily', icon: <EditCalendarIcon /> },
