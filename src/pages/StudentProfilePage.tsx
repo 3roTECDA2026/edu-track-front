@@ -18,6 +18,7 @@ import { GradesTab } from '@/components/studentProfile/GradesTab'
 import { ObservationsTab } from '@/components/studentProfile/ObservationsTab'
 import { RiteTab } from '@/components/studentProfile/RiteTab'
 import { FortePlanTab } from '@/components/studentProfile/FortePlanTab'
+import { FortePlanDialog } from '@/components/studentProfile/FortePlanDialog'
 import { useLazyResource } from '@/hooks/useLazyResource'
 import { deactivateStudent } from '@/services/students.service'
 import { getStudentFortePlan } from '@/services/fortePlan.service'
@@ -27,6 +28,7 @@ import {
   getStudentGrades,
   getStudentHistory,
 } from '@/services/studentProfile.service'
+import { currentUser } from '@/utils/currentUser'
 
 type TabKey =
   'personal' | 'enrollment' | 'attendance' | 'grades' | 'observations' | 'rite' | 'forte'
@@ -42,6 +44,9 @@ const TABS: { key: TabKey; label: string }[] = [
 
 // Pestaña del Plan Forte: solo para los alumnos asignados al programa (CRM-089)
 const FORTE_TAB: { key: TabKey; label: string } = { key: 'forte', label: 'Plan Forte' }
+
+// Roles que gestionan el Plan Forte (asignar, editar, finalizar). El back valida igual
+const FORTE_MANAGER_ROLES = ['ADMINISTRATOR', 'SCHOOL_MANAGEMENT', 'EOE_DIRECTIVE']
 
 interface SnackbarState {
   message: string
@@ -59,6 +64,8 @@ const StudentProfilePage = () => {
   const [deactivating, setDeactivating] = useState(false)
   const [snackbar, setSnackbar] = useState<SnackbarState | null>(null)
   const [editOpen, setEditOpen] = useState(false)
+  // Diálogo del Plan Forte: asignar (o volver a asignar) o editar el plan (CRM-089)
+  const [forteDialog, setForteDialog] = useState<'assign' | 'edit' | null>(null)
 
   const studentResource = useLazyResource(id ? `student:${id}` : null, (signal) =>
     getStudentById(id, signal)
@@ -71,6 +78,7 @@ const StudentProfilePage = () => {
     getStudentFortePlan(id, signal)
   )
   const tabs = fortePlan.data ? [...TABS, FORTE_TAB] : TABS
+  const canManageForte = FORTE_MANAGER_ROLES.includes(currentUser().role ?? '')
 
   const history = useLazyResource(
     visitedTabs.includes('enrollment') ? `history:${id}` : null,
@@ -96,6 +104,13 @@ const StudentProfilePage = () => {
     const key = tabs[index].key
     setActiveTab(key)
     setVisitedTabs((prev) => (prev.includes(key) ? prev : [...prev, key]))
+  }
+
+  // Después de asignar, editar o cambiar el estado: se recarga el plan y se muestra su pestaña
+  const handleForteSaved = (message: string, severity: 'success' | 'error' = 'success') => {
+    setSnackbar({ message, severity })
+    fortePlan.reload()
+    setActiveTab('forte')
   }
 
   const handleConfirmDeactivate = async () => {
@@ -167,6 +182,15 @@ const StudentProfilePage = () => {
           onChangeStatus={() => setDialogOpen(true)}
         />
 
+        {/* Asignar al Plan Forte: para los alumnos que nunca estuvieron en el programa (CRM-089) */}
+        {canManageForte && !fortePlan.loading && !fortePlan.data && (
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+            <Button variant="outlined" color="inherit" onClick={() => setForteDialog('assign')}>
+              Asignar al Plan Forte
+            </Button>
+          </Box>
+        )}
+
         {/* Pestañas dentro de la tarjeta estándar */}
         <ContentCard sx={{ mt: 3 }}>
           <CustomTabs
@@ -214,11 +238,10 @@ const StudentProfilePage = () => {
             {activeTab === 'forte' && fortePlan.data && (
               <FortePlanTab
                 plan={fortePlan.data}
-                onSaved={(message, severity) => {
-                  setSnackbar({ message, severity })
-                  // Se recarga el plan para actualizar la fecha del último reporte
-                  fortePlan.reload()
-                }}
+                canManage={canManageForte}
+                onEdit={() => setForteDialog('edit')}
+                onReassign={() => setForteDialog('assign')}
+                onSaved={handleForteSaved}
               />
             )}
           </Box>
@@ -242,6 +265,19 @@ const StudentProfilePage = () => {
 
         {renderContent()}
       </PageContainer>
+
+      {/* Asignar o editar el Plan Forte (CRM-089) */}
+      {student && (
+        <FortePlanDialog
+          open={forteDialog !== null}
+          mode={forteDialog ?? 'assign'}
+          studentId={student.id}
+          studentName={`${student.lastName}, ${student.firstName}`}
+          plan={fortePlan.data ?? null}
+          onClose={() => setForteDialog(null)}
+          onSaved={(message) => handleForteSaved(message)}
+        />
+      )}
 
       <DeactivateStudentDialog
         open={dialogOpen}
