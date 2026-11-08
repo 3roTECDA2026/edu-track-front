@@ -1,18 +1,20 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+// src/routes/AppRouter.tsx
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
-import UsersPage from '@/pages/UsersPage';
-import HomePage from '@/pages/HomePage';
-import LoginPage from '@/pages/LoginPage';
-import AttendanceSummaryPage from '@/pages/AttendanceSummaryPage';
-import DailyAttendancePage from '@/pages/DailyAttendancePage';
-import StudentsPage from '@/pages/StudentsPage';
-import CalificationGridPage from '@/pages/CalificationGridPage';
-import CoursesPage from '@/pages/CoursesPage';
-import StudentProfilePage from '@/pages/StudentProfilePage';
-import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage';
-import IntensificationCalendarPage from '@/pages/IntensificationCalendarPage';
-import { ADMIN_ROLES } from '@/services/session';
-import ProtectedRoute from '@/routes/ProtectedRoute';
+import UsersPage from '@/pages/UsersPage'
+import HomePage from '@/pages/HomePage'
+import LoginPage from '@/pages/LoginPage'
+import AttendanceSummaryPage from '@/pages/AttendanceSummaryPage'
+import DailyAttendancePage from '@/pages/DailyAttendancePage'
+import StudentsPage from '@/pages/StudentsPage'
+import CalificationGridPage from '@/pages/CalificationGridPage'
+import CoursesPage from '@/pages/CoursesPage'
+import StudentProfilePage from '@/pages/StudentProfilePage'
+import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage'
+import IntensificationCalendarPage from '@/pages/IntensificationCalendarPage'
+import OrganizationalModelPage from '@/pages/OrganizationalModelPage'
+import { ADMIN_ROLES } from '@/services/session'
+import ProtectedRoute from '@/routes/ProtectedRoute'
 
 const AppRouter = () => {
   return (
@@ -32,6 +34,7 @@ const AppRouter = () => {
           <Route path="/students/:id/trajectory" element={<StudentTrajectoryPage />} />
           <Route path="/calification-grid" element={<CalificationGridPage />} />
           <Route path="/intensification-calendar" element={<IntensificationCalendarPage />} />
+          <Route path="/organizational-model" element={<OrganizationalModelPage />} />
         </Route>
 
         {/* Solo administración y dirección */}
@@ -43,7 +46,7 @@ const AppRouter = () => {
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
-  );
-};
+  )
+}
 
-export default AppRouter;
+export default AppRouter
