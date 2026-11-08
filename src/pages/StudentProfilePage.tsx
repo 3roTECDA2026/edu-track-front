@@ -17,8 +17,10 @@ import { AttendanceTab } from '@/components/studentProfile/AttendanceTab'
 import { GradesTab } from '@/components/studentProfile/GradesTab'
 import { ObservationsTab } from '@/components/studentProfile/ObservationsTab'
 import { RiteTab } from '@/components/studentProfile/RiteTab'
+import { FortePlanTab } from '@/components/studentProfile/FortePlanTab'
 import { useLazyResource } from '@/hooks/useLazyResource'
 import { deactivateStudent } from '@/services/students.service'
+import { getStudentFortePlan } from '@/services/fortePlan.service'
 import {
   getStudentAttendance,
   getStudentById,
@@ -26,7 +28,8 @@ import {
   getStudentHistory,
 } from '@/services/studentProfile.service'
 
-type TabKey = 'personal' | 'enrollment' | 'attendance' | 'grades' | 'observations' | 'rite'
+type TabKey =
+  'personal' | 'enrollment' | 'attendance' | 'grades' | 'observations' | 'rite' | 'forte'
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'personal', label: 'Datos personales' },
@@ -36,6 +39,9 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'observations', label: 'Observaciones' },
   { key: 'rite', label: 'RITE' },
 ]
+
+// Pestaña del Plan Forte: solo para los alumnos asignados al programa (CRM-089)
+const FORTE_TAB: { key: TabKey; label: string } = { key: 'forte', label: 'Plan Forte' }
 
 interface SnackbarState {
   message: string
@@ -60,6 +66,12 @@ const StudentProfilePage = () => {
   const student = studentResource.data
   const currentYear = student?.currentSection?.year
 
+  // El plan Forte se busca al abrir la ficha, porque decide si se muestra su pestaña (CRM-089)
+  const fortePlan = useLazyResource(id ? `forte-plan:${id}` : null, (signal) =>
+    getStudentFortePlan(id, signal)
+  )
+  const tabs = fortePlan.data ? [...TABS, FORTE_TAB] : TABS
+
   const history = useLazyResource(
     visitedTabs.includes('enrollment') ? `history:${id}` : null,
     (signal) => getStudentHistory(id, signal)
@@ -74,11 +86,14 @@ const StudentProfilePage = () => {
     getStudentGrades(id, signal)
   )
 
-  const activeIndex = TABS.findIndex((tab) => tab.key === activeTab)
+  const activeIndex = Math.max(
+    0,
+    tabs.findIndex((tab) => tab.key === activeTab)
+  )
 
   // CustomTabs trabaja con el índice de la pestaña, por eso acá se traduce a su clave
   const handleTabChange = (_: SyntheticEvent, index: number) => {
-    const key = TABS[index].key
+    const key = tabs[index].key
     setActiveTab(key)
     setVisitedTabs((prev) => (prev.includes(key) ? prev : [...prev, key]))
   }
@@ -155,7 +170,7 @@ const StudentProfilePage = () => {
         {/* Pestañas dentro de la tarjeta estándar */}
         <ContentCard sx={{ mt: 3 }}>
           <CustomTabs
-            tabs={TABS.map((tab) => tab.label)}
+            tabs={tabs.map((tab) => tab.label)}
             value={activeIndex}
             onChange={handleTabChange}
             variant="scrollable"
@@ -196,6 +211,16 @@ const StudentProfilePage = () => {
               />
             )}
             {activeTab === 'rite' && <RiteTab studentId={student.id} />}
+            {activeTab === 'forte' && fortePlan.data && (
+              <FortePlanTab
+                plan={fortePlan.data}
+                onSaved={(message, severity) => {
+                  setSnackbar({ message, severity })
+                  // Se recarga el plan para actualizar la fecha del último reporte
+                  fortePlan.reload()
+                }}
+              />
+            )}
           </Box>
         </ContentCard>
       </>
