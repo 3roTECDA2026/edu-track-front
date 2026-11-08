@@ -190,7 +190,7 @@ const toolbarSx = {
 
 export const CoursesPage: React.FC = () => {
   const [currentTab, setCurrentTab] = useState(0)
-  const canEdit = canAdminister()
+  const canManageStructure = canAdminister()
 
   // Estados de Cursos
   const [courses, setCourses] = useState<CourseSection[]>(initialCourses)
@@ -352,7 +352,7 @@ export const CoursesPage: React.FC = () => {
           {/* PESTAÑA 0: CURSOS Y SECCIONES */}
           {currentTab === 0 && (
             <Box>
-              {canEdit && (
+              {canManageStructure && (
               <Box sx={toolbarSx}>
                 <AddButton label="Nuevo curso" onClick={handleOpenCourseCreate} />
               </Box>
@@ -383,7 +383,7 @@ export const CoursesPage: React.FC = () => {
                           {row.preceptor || '— Sin asignar'}
                         </TableCell>
                         <TableCell align="right">
-                          {canEdit && (
+                          {canManageStructure && (
                           <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
                             <IconButton
                               size="small"
@@ -426,7 +426,7 @@ export const CoursesPage: React.FC = () => {
           {/* PESTAÑA 1: MATERIAS */}
           {currentTab === 1 && (
             <Box>
-              {canEdit && (
+              {canManageStructure && (
               <Box sx={toolbarSx}>
                 <AddButton label="Nueva materia" onClick={handleOpenSubjectCreate} />
               </Box>
@@ -464,7 +464,7 @@ export const CoursesPage: React.FC = () => {
                         <TableCell sx={{ color: '#374151' }}>{row.weeklyHours} hs</TableCell>
                         <TableCell sx={{ color: '#374151' }}>{row.years}</TableCell>
                         <TableCell align="right">
-                          {canEdit && (
+                          {canManageStructure && (
                           <Stack direction="row" spacing={0.5} sx={{ justifyContent: 'flex-end' }}>
                             <IconButton
                               size="small"

@@ -33,7 +33,7 @@ interface SnackbarState {
 
 export const StudentsPage = () => {
   const navigate = useNavigate()
-  const canAdmin = canAdminister()
+  const canManageStudents = canAdminister()
 
   const [filters, setFilters] = useState<StudentFiltersState>(INITIAL_FILTERS)
   // El back pagina desde 1; el paginado común (MUI) cuenta desde 0
@@ -124,7 +124,7 @@ export const StudentsPage = () => {
     { label: 'Estudiantes', href: '/students' },
     { label: 'Listado' },
      ]}
-     action={canAdmin ? <AddButton label="Alta estudiante" onClick={() => setCreateOpen(true)} /> : undefined}
+     action={canManageStudents ? <AddButton label="Alta estudiante" onClick={() => setCreateOpen(true)} /> : undefined}
     />
 
         {/* Tarjeta contenedora estándar: filtros, tabla y paginado */}
@@ -159,7 +159,7 @@ export const StudentsPage = () => {
                 loading={loading}
                 onView={(student) => navigate(`/students/${student.id}`)}
                 onEdit={(student) => setEditStudentId(student.id)}
-                onDeactivate={canAdmin ? handleOpenDeactivate : undefined}
+                onDeactivate={canManageStudents ? handleOpenDeactivate : undefined}
               />
 
               {result && (
