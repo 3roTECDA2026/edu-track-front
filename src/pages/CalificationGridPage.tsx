@@ -249,17 +249,22 @@ export const CalificationGridPage: React.FC = () => {
   const pageRows = roster.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
 
   // Nota final: si acreditó en una intensificación (AA), es la nota de la intensificación (CRM-066).
-  // Si no, el promedio de los dos cuatrimestres, solo si aprobó los dos con 7 o más (E2-RF-05);
-  // en otro caso queda vacía hasta la intensificación.
+  // Si no, con el 2.º cuatrimestre aprobado (7 o más): el promedio de los dos, si también aprobó el
+  // 1.º (E2-RF-05), o la nota con la que recuperó el 1.º durante el 2.º (Anexo 5, inc. 8.b).
+  // Es la misma regla que usa el cierre del ciclo en el back (CRM-052). En otro caso queda vacía.
   function finalScore(row: RosterRow): number | undefined {
     const accredited = (row.intensifications ?? []).find((attempt) => attempt.resultCode === 'AA')
     if (accredited && typeof accredited.score === 'number') return accredited.score
 
     const first = scores[termKey(row.id, 1)]
     const second = scores[termKey(row.id, 2)]
-    if (first === undefined || second === undefined) return undefined
-    if (first < PASSING_SCORE || second < PASSING_SCORE) return undefined
-    return Math.round(((first + second) / 2) * 10) / 10
+    if (second === undefined || second < PASSING_SCORE) return undefined
+    if (first !== undefined && first >= PASSING_SCORE) {
+      return Math.round(((first + second) / 2) * 10) / 10
+    }
+    const recovered = row.grade?.term1IntensificationScore
+    if (typeof recovered === 'number' && recovered >= PASSING_SCORE) return recovered
+    return undefined
   }
 
   function editScore(enrollmentId: string, term: Term, raw: string) {
