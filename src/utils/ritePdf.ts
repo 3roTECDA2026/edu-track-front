@@ -1,6 +1,7 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage, type RGB } from 'pdf-lib'
 
 import templateUrl from '@/assets/rite/RITE_2025_orientada.pdf?url'
+import type { IntensificationPeriod } from '@/services/intensificationSchedule.service'
 import type { RiteDocument, RiteStatus } from '@/services/rite.service'
 import { formatScore } from '@/utils/grades'
 import { intensificationText } from '@/utils/rite'
@@ -34,6 +35,26 @@ const COLUMN_X = {
 }
 const SUBJECT_NAME_X = 21
 const OBSERVATION_X = 201.5
+
+// Página 2, tabla de materias pendientes (MPAA): 4 filas, medidas sobre el formulario.
+const PENDING_ROWS = 4
+const PENDING_FIRST_ROW_TOP = 34.3 // Borde superior de la fila 1 (mm)
+const PENDING_ROW_STEP = 7.6 // Alto de cada fila (mm)
+const PENDING_COLUMN_X: Record<IntensificationPeriod, number> = {
+  MARCH: 144.3,
+  JULY: 156.5,
+  AUGUST: 168.7,
+  DECEMBER_TERM_CLOSE: 180.9,
+  DECEMBER: 193,
+  FEBRUARY_MARCH: 205.2,
+}
+const PENDING_TEXT_COLUMNS = {
+  subjectName: { x: 20.2, width: 45.5 },
+  initialKnowledge: { x: 77.9, width: 59 },
+  closingKnowledge: { x: 227.5, width: 59.3 },
+}
+const PENDING_GRADE_LEVEL_X = 71.8
+const PENDING_FINAL_SCORE_X = 218.8
 
 const BLACK = rgb(0, 0, 0)
 const RED = rgb(0.77, 0.13, 0.12)
@@ -76,6 +97,27 @@ function fitText(text: string, font: PDFFont, size: number, maxWidthPt: number) 
     result = result.slice(0, -1)
   }
   return `${result}…`
+}
+
+// Parte un texto en renglones que entren en el ancho disponible. Si no alcanzan los renglones,
+// el último se recorta con "…".
+function wrapText(text: string, font: PDFFont, size: number, maxWidthPt: number, maxLines: number) {
+  const lines: string[] = []
+  let current = ''
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    const candidate = current ? `${current} ${word}` : word
+    if (!current || font.widthOfTextAtSize(candidate, size) <= maxWidthPt) {
+      current = candidate
+    } else {
+      lines.push(current)
+      current = word
+    }
+  }
+  if (current) lines.push(current)
+  if (lines.length <= maxLines) return lines
+  const kept = lines.slice(0, maxLines)
+  kept[maxLines - 1] = fitText(`${kept[maxLines - 1]} ${lines[maxLines]}…`, font, size, maxWidthPt)
+  return kept
 }
 
 // Escribe un texto en la posición indicada (x e y en mm; y es la línea de base del texto).
@@ -209,8 +251,56 @@ export async function downloadRitePdf(doc: RiteDocument, status: RiteStatus) {
     )
   }
 
+  // ---------- Página 2: materias pendientes (MPAA) ----------
+  // Los RITE firmados antes de CRM-044 no tienen la tabla: queda en blanco.
+  const pendingSubjects = doc.pendingSubjects ?? []
+  pendingSubjects.slice(0, PENDING_ROWS).forEach((pending, index) => {
+    const top = PENDING_FIRST_ROW_TOP + index * PENDING_ROW_STEP
+    const valueY = top + PENDING_ROW_STEP / 2 + 1.2
+    const centered = { align: 'center' as const }
+    const { subjectName, initialKnowledge, closingKnowledge } = PENDING_TEXT_COLUMNS
+
+    drawText(secondPage, fonts, pending.subjectName, subjectName.x, valueY, {
+      maxWidth: subjectName.width,
+    })
+    drawText(secondPage, fonts, `${pending.gradeLevel}°`, PENDING_GRADE_LEVEL_X, valueY, centered)
+    for (const [period, x] of Object.entries(PENDING_COLUMN_X) as [IntensificationPeriod, number][]) {
+      drawText(secondPage, fonts, pending.results[period] ?? '', x, valueY, { ...centered, size: 6.5 })
+    }
+    const finalScore = pending.finalScore === null ? '' : formatScore(pending.finalScore)
+    drawText(secondPage, fonts, finalScore, PENDING_FINAL_SCORE_X, valueY, centered)
+
+    // Saberes al inicio y al cierre: hasta dos renglones dentro del casillero
+    const knowledgeSize = 5.5
+    for (const [text, column] of [
+      [pending.initialPendingKnowledge, initialKnowledge],
+      [pending.closingPendingKnowledge, closingKnowledge],
+    ] as const) {
+      if (!text) continue
+      const lines = wrapText(text, fonts.regular, knowledgeSize, column.width * MM_TO_PT, 2)
+      const firstLineY = lines.length === 1 ? valueY - 0.4 : top + 3.2
+      lines.forEach((line, lineIndex) => {
+        drawText(secondPage, fonts, line, column.x, firstLineY + lineIndex * 2.4, {
+          size: knowledgeSize,
+        })
+      })
+    }
+  })
+
+  // El formulario tiene 4 filas (el máximo de MPAA): si hay más, se avisa en el documento.
+  const omittedPending = (doc.pendingSubjectsTotal ?? pendingSubjects.length) - PENDING_ROWS
+  if (omittedPending > 0) {
+    drawText(
+      secondPage,
+      fonts,
+      `ATENCIÓN: ${omittedPending} materia(s) pendiente(s) no entran en las ${PENDING_ROWS} filas del formulario oficial.`,
+      60,
+      68.4,
+      { size: 6, bold: true, color: RED }
+    )
+  }
+
   // ---------- Página 2: días hábiles e inasistencias ----------
-  // La tabla de materias pendientes (MPAA) queda en blanco: es de la etapa 3.
   const attendance = doc.attendance
   const centered = { align: 'center' as const, size: 8 }
   drawText(secondPage, fonts, String(attendance.term1.schoolDays), 49.1, 111.4, centered)
