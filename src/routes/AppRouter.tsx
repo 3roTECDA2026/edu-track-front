@@ -1,3 +1,5 @@
+import ConflictsPage from '@/pages/ConflictsPage'
+import { ConflictRoleGuard } from '@/components/conflicts/ConflictRoleGuard'
 // src/routes/AppRouter.tsx
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
@@ -50,6 +52,16 @@ const AppRouter = () => {
         <Route path="/intensification-calendar" element={<IntensificationCalendarPage />} />
 
         <Route path="/organizational-model" element={<OrganizationalModelPage />} />
+
+        {/* CRM-091: acceso exclusivo a EOE y Directivos */}
+        <Route
+          path="/conflicts"
+          element={
+            <ConflictRoleGuard>
+              <ConflictsPage />
+            </ConflictRoleGuard>
+          }
+        />
 
         {/* Ruta por defecto */}
         <Route path="*" element={<Navigate to="/login" replace />} />

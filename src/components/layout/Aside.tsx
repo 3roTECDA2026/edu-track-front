@@ -24,6 +24,10 @@ import logoEscuela from '@/assets/logo.png'
 import { UserIcon } from 'lucide-react'
 import EventRepeatIcon from '@mui/icons-material/EventRepeat'
 import SettingsIcon from '@mui/icons-material/Settings'
+import GavelIcon from '@mui/icons-material/Gavel'
+
+import { currentUser } from '@/utils/currentUser'
+import { canAccessConflicts } from '@/components/conflicts/ConflictRoleGuard'
 
 const drawerWidth = 250
 
@@ -37,6 +41,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Panel', icon: <DashboardIcon />, path: '/home' },
   { label: 'Usuarios', icon: <UserIcon />, path: '/users' },
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
+  { label: 'Conflictos', icon: <GavelIcon />, path: '/conflicts' },
   { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
   { label: 'Carga de asistencia', path: '/attendance/daily', icon: <EditCalendarIcon /> },
   { label: 'Resumen de asistencias', path: '/attendance', icon: <AssessmentIcon /> },
@@ -48,6 +53,7 @@ const NAV_ITEMS: NavItem[] = [
 export const Aside: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
+  const { role } = currentUser()
   const [open, setOpen] = useState(true)
 
   const handleNavigation = (item: NavItem) => {
@@ -164,7 +170,7 @@ export const Aside: React.FC = () => {
 
         <Collapse in={open} timeout="auto" unmountOnExit>
           <List disablePadding>
-            {NAV_ITEMS.map((item) => {
+            {NAV_ITEMS.filter((item) => item.path !== '/conflicts' || canAccessConflicts(role)).map((item) => {
               const isActive = item.path === location.pathname
               return (
                 <ListItem key={item.label} disablePadding sx={{ mb: 0.5, px: 0.5 }}>
