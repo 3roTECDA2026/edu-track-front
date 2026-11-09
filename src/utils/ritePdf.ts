@@ -3,6 +3,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage, type RGB }
 import templateUrl from '@/assets/rite/RITE_2025.pdf?url'
 import type { RiteDocument, RiteStatus } from '@/services/rite.service'
 import { formatScore } from '@/utils/grades'
+import { intensificationText } from '@/utils/rite'
 
 // El formulario oficial es A4 apaisado. pdf-lib mide en puntos desde abajo a la izquierda,
 // pero las posiciones de acá están en milímetros desde arriba a la izquierda (como se ve la hoja).
@@ -181,9 +182,12 @@ export async function downloadRitePdf(doc: RiteDocument, status: RiteStatus) {
     drawText(firstPage, fonts, show(subject.term1.score), COLUMN_X.score1, valueY, centered)
     drawText(firstPage, fonts, show(subject.term2?.preliminaryAssessment), COLUMN_X.assessment2, valueY, centered)
     drawText(firstPage, fonts, show(subject.term2?.score), COLUMN_X.score2, valueY, centered)
-    // Intensificación 1° cuatrimestre: el esquema todavía no guarda esa nota.
-    drawText(firstPage, fonts, show(subject.intensification?.december), COLUMN_X.december, valueY, centered)
-    drawText(firstPage, fonts, show(subject.intensification?.february), COLUMN_X.february, valueY, centered)
+    // Nota con la que recuperó el 1° cuatrimestre durante el 2°
+    const term1Intensification = subject.term1IntensificationScore
+    drawText(firstPage, fonts, typeof term1Intensification === 'number' ? formatScore(term1Intensification) : '', COLUMN_X.intensification1, valueY, centered)
+    // Diciembre y febrero: con AA, la nota; con CCA o CSA, el código
+    drawText(firstPage, fonts, intensificationText(subject.intensification?.december), COLUMN_X.december, valueY, centered)
+    drawText(firstPage, fonts, intensificationText(subject.intensification?.february), COLUMN_X.february, valueY, centered)
     // La nota final puede tener decimales (7,5): se imprime con coma
     const finalScore = subject.finalScore === null ? '' : formatScore(subject.finalScore)
     drawText(firstPage, fonts, finalScore, COLUMN_X.finalScore, valueY, centered)

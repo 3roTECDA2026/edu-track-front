@@ -53,6 +53,7 @@ import {
   updateRiteNotes,
   type RiteAttendance,
   type RiteDetail,
+  type RiteIntensificationCell,
   type RiteStatus,
   type RiteTerm,
 } from '@/services/rite.service'
@@ -88,6 +89,7 @@ const SUBJECT_COLUMNS = [
   'Calif. 1° C',
   '2° Val.',
   'Calif. 2° C',
+  'Int. 1° C',
   'Dic.',
   'Feb.',
   'Final',
@@ -177,6 +179,15 @@ const Score = ({ value }: { value: number | null }) => {
       {formatScore(value)}
     </Box>
   )
+}
+
+// Diciembre y febrero: con AA va la nota; con CCA o CSA, el código (Res. 1650/24, Anexo 5).
+const IntensificationResult = ({ cell }: { cell: RiteIntensificationCell | undefined }) => {
+  if (cell === null || cell === undefined) return <>{EMPTY}</>
+  // Los RITE firmados antes de CRM-044 guardaron solo la nota
+  if (typeof cell === 'number') return <Score value={cell} />
+  if (cell.resultCode === 'AA' && cell.score !== null) return <Score value={cell.score} />
+  return <>{cell.resultCode ?? EMPTY}</>
 }
 
 const Field = ({ label, value }: { label: string; value: string }) => (
@@ -289,10 +300,13 @@ const RiteDocumentView = ({
                       <Score value={subject.term2?.score ?? null} />
                     </TableCell>
                     <TableCell align="center" sx={bodyCellSx}>
-                      <Score value={subject.intensification?.december ?? null} />
+                      <Score value={subject.term1IntensificationScore ?? null} />
                     </TableCell>
                     <TableCell align="center" sx={bodyCellSx}>
-                      <Score value={subject.intensification?.february ?? null} />
+                      <IntensificationResult cell={subject.intensification?.december} />
+                    </TableCell>
+                    <TableCell align="center" sx={bodyCellSx}>
+                      <IntensificationResult cell={subject.intensification?.february} />
                     </TableCell>
                     <TableCell align="center" sx={bodyCellSx}>
                       <Score value={subject.finalScore} />
