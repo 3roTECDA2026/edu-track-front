@@ -6,8 +6,11 @@ import { SHIFT_LABELS } from '@/components/students/studentLabels'
 // Traducción de los enums de intensificación a los textos que ve el usuario
 
 export const PERIOD_LABELS: Record<IntensificationPeriod, string> = {
+  MARCH: 'Marzo',
+  JULY: 'Julio',
   AUGUST: 'Agosto',
-  DECEMBER: 'Diciembre',
+  DECEMBER_TERM_CLOSE: 'Diciembre (cierre del cuatrimestre)',
+  DECEMBER: 'Diciembre (después del cierre)',
   FEBRUARY_MARCH: 'Febrero / Marzo',
 }
 
