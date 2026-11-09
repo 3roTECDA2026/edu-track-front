@@ -82,3 +82,43 @@ export async function getConflictCodes(
 
   return response.data
 }
+
+
+// CRM-092: consulta de conflictos y anexos permanentes.
+export interface LegalConflictAttachment {
+  id: string
+  conflictId: string
+  authorId: string
+  content: string
+  date: string
+}
+
+export interface LegalConflictDetail extends LegalConflict {
+  attachments: LegalConflictAttachment[]
+  electronicSignature?: unknown
+}
+
+export async function getLegalConflictDetail(
+  id: string
+): Promise<LegalConflictDetail> {
+  const response = await fetchApi<ConflictResponse<LegalConflictDetail>>(
+    `/api/legal-conflicts/${encodeURIComponent(id)}`,
+    { cache: 'no-store' }
+  )
+  return response.data
+}
+
+export async function createLegalConflictAttachment(
+  id: string,
+  content: string
+): Promise<LegalConflictAttachment> {
+  const response = await fetchApi<ConflictResponse<LegalConflictAttachment>>(
+    `/api/legal-conflicts/${encodeURIComponent(id)}/attachments`,
+    {
+      method: 'POST',
+      cache: 'no-store',
+      body: JSON.stringify({ content }),
+    }
+  )
+  return response.data
+}

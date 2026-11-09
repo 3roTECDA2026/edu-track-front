@@ -15,6 +15,7 @@ import {
   Typography,
 } from '@mui/material'
 
+import ConflictAttachments from '@/components/conflicts/ConflictAttachments'
 import MainLayout from '@/components/layout/MainLayout'
 import { PageContainer } from '@/components/common/PageContainer'
 import { PageHeader } from '@/components/common/PageHeader'
@@ -261,9 +262,9 @@ export default function ConflictsPage() {
                 />
 
                 <Alert severity="warning">
-                  Antes de firmar digitalmente, el registro podrá modificarse
-                  o eliminarse por usuarios autorizados. Una vez firmado, no
-                  podrá editarse ni eliminarse.
+                  El conflicto queda bloqueado desde el momento de su registro.
+                  No podrá editarse ni eliminarse. Los seguimientos posteriores
+                  se incorporan mediante anexos permanentes.
                 </Alert>
 
                 {saveError && <Alert severity="error">{saveError}</Alert>}
@@ -326,6 +327,7 @@ export default function ConflictsPage() {
                       >
                         UUID: {conflict.documentUuid}
                       </Typography>
+                      <ConflictAttachments conflictId={conflict.id} />
                     </Box>
                   ))}
                 </Stack>
@@ -346,8 +348,8 @@ export default function ConflictsPage() {
           <DialogContent>
             <DialogContentText>
               ¿Confirmás que los datos ingresados son correctos?
-              El registro podrá modificarse antes de firmarlo.
-              Una vez firmado digitalmente, no podrá editarse ni eliminarse.
+              El conflicto quedará bloqueado desde el momento de su registro.
+              Una vez registrado, no podrá editarse ni eliminarse.
             </DialogContentText>
           </DialogContent>
           <DialogActions>
