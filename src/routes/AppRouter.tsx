@@ -13,7 +13,7 @@ import StudentProfilePage from '@/pages/StudentProfilePage'
 import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage'
 import IntensificationCalendarPage from '@/pages/IntensificationCalendarPage'
 import OrganizationalModelPage from '@/pages/OrganizationalModelPage'
-import { ADMIN_ROLES } from '@/services/session'
+import { USER_MANAGEMENT_ROLES } from '@/services/session'
 import ProtectedRoute from '@/routes/ProtectedRoute'
 
 const AppRouter = () => {
@@ -38,7 +38,7 @@ const AppRouter = () => {
         </Route>
 
         {/* Solo administración y dirección */}
-        <Route element={<ProtectedRoute roles={ADMIN_ROLES} />}>
+        <Route element={<ProtectedRoute roles={USER_MANAGEMENT_ROLES} />}>
        <Route path="/users" element={<UsersPage />} />
       </Route>
 

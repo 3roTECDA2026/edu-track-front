@@ -53,6 +53,7 @@ export const clearSession = () => {
   }
 }
 export const ADMIN_ROLES = ['ADMINISTRATOR', 'SCHOOL_MANAGEMENT'];
+export const USER_MANAGEMENT_ROLES = ['ADMINISTRATOR']
 
 export const canAdminister = (): boolean => {
   const role = getSessionUser()?.role;
