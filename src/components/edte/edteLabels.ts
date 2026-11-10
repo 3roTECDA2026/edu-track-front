@@ -61,3 +61,14 @@ export const EDTE_VIEWER_ROLES = [...EDTE_MANAGER_ROLES, 'TEACHER', 'PRECEPTOR']
 
 // AAAA-MM-DD → DD/MM/AAAA
 export const formatMeetingDate = (date: string) => date.split('-').reverse().join('/')
+
+// Un enlace solo se muestra como link si es http o https (por si hubiera datos viejos con otro
+// protocolo, como javascript:, que ejecutaría código al hacer clic)
+export const isSafeWebUrl = (value: string | null | undefined): value is string => {
+  if (!value) return false
+  try {
+    return ['http:', 'https:'].includes(new URL(value).protocol)
+  } catch {
+    return false
+  }
+}

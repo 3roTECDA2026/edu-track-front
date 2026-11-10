@@ -35,6 +35,7 @@ import {
   MEETING_PERIOD_LABELS,
   MEETING_STATUS_CONFIG,
   formatMeetingDate,
+  isSafeWebUrl,
   memberRoleLabel,
   pateStatusLabel,
 } from '@/components/edte/edteLabels'
@@ -173,10 +174,12 @@ export const EdteMeetingDetailPage = () => {
               <Field
                 label="Acta"
                 value={
-                  data.minutesUrl ? (
+                  isSafeWebUrl(data.minutesUrl) ? (
                     <Link href={data.minutesUrl} target="_blank" rel="noopener noreferrer">
                       Ver acta
                     </Link>
+                  ) : data.minutesUrl ? (
+                    'Enlace no válido'
                   ) : (
                     'Sin cargar'
                   )

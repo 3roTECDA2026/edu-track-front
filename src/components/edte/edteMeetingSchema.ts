@@ -11,7 +11,16 @@ export const edteMeetingFormSchema = z
     }),
     shift: z.enum(['', 'MORNING', 'AFTERNOON', 'EVENING', 'EXTRA_TIME']),
     considerations: z.string().max(5000, 'Máximo 5000 caracteres'),
-    minutesUrl: z.union([z.literal(''), z.url('La URL del acta no es válida').max(500)]),
+    // Solo http y https, igual que el back: otros protocolos (javascript:, data:) son inseguros
+    minutesUrl: z.union([
+      z.literal(''),
+      z
+        .url({
+          protocol: /^https?$/,
+          error: 'El enlace tiene que ser una dirección web que empiece con http:// o https://',
+        })
+        .max(500),
+    ]),
   })
   .superRefine((data, context) => {
     if (!data.date) return
