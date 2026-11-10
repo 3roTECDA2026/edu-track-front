@@ -15,6 +15,7 @@ import IntensificationCalendarPage from '@/pages/IntensificationCalendarPage'
 import OrganizationalModelPage from '@/pages/OrganizationalModelPage'
 import EdteMeetingsPage from '@/pages/EdteMeetingsPage'
 import EdteMeetingFormPage from '@/pages/EdteMeetingFormPage'
+import EdteMeetingDetailPage from '@/pages/EdteMeetingDetailPage'
 
 const AppRouter = () => {
   return (
@@ -57,6 +58,7 @@ const AppRouter = () => {
         {/* Reuniones del EDTE (CRM-075) */}
         <Route path="/edte-meetings" element={<EdteMeetingsPage />} />
         <Route path="/edte-meetings/new" element={<EdteMeetingFormPage />} />
+        <Route path="/edte-meetings/:id" element={<EdteMeetingDetailPage />} />
         <Route path="/edte-meetings/:id/edit" element={<EdteMeetingFormPage />} />
 
         <Route path="*" element={<Navigate to="/login" replace />} />
