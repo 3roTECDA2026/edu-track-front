@@ -16,6 +16,9 @@ mismos botones y colores.
     verde, ámbar y rojo, con la misma paleta de las valoraciones TEA / TEP / TED
     (`ASSESSMENT_CONFIG` en `profileLabels.ts`). No inventar colores nuevos: si hace falta otro
     semáforo, salir de esa paleta (ver `LEVEL_CONFIG` en `edteDashboard/dashboardLabels.ts`).
+  - **El color nunca va solo:** cada nivel del semáforo lleva también un texto ("Riesgo alto",
+    "Riesgo medio", "Riesgo bajo") y un ícono propio (`LevelBadge`, `levelIcons.ts`), para que se
+    entienda sin distinguir colores. Cualquier semáforo nuevo debe hacer lo mismo.
 - **Tipografía y tamaños:** salen del `theme` (`src/theme/theme.ts`). No escribir
   tamaños de fuente a mano en las pantallas; usar los `variant` de MUI
   (`h4` título de página, `h6` título interno, `body2` datos de tabla).
