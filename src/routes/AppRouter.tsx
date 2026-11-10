@@ -37,7 +37,7 @@ const AppRouter = () => {
           <Route path="/organizational-model" element={<OrganizationalModelPage />} />
         </Route>
 
-        {/* Solo administración y dirección */}
+        {/* Solo administración */}
         <Route element={<ProtectedRoute roles={USER_MANAGEMENT_ROLES} />}>
        <Route path="/users" element={<UsersPage />} />
       </Route>
