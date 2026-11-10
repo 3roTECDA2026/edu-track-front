@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { getSessionUser } from '@/services/session';
+import { getRole, getToken } from '@/services/session';
 
 interface ProtectedRouteProps {
   roles?: string[]; // si no se define, alcanza con tener sesión
