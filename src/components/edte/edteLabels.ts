@@ -56,5 +56,8 @@ export const pateStatusLabel = (status: string) => PATE_STATUS_LABELS[status] ??
 // Quienes cargan, editan y firman las reuniones. El back valida igual los permisos.
 export const EDTE_MANAGER_ROLES = ['ADMINISTRATOR', 'SCHOOL_MANAGEMENT', 'EOE_DIRECTIVE']
 
+// Quienes ven las reuniones: el personal de la escuela (mismos roles que en el back)
+export const EDTE_VIEWER_ROLES = [...EDTE_MANAGER_ROLES, 'TEACHER', 'PRECEPTOR']
+
 // AAAA-MM-DD → DD/MM/AAAA
 export const formatMeetingDate = (date: string) => date.split('-').reverse().join('/')

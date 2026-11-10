@@ -25,6 +25,8 @@ import { UserIcon } from 'lucide-react'
 import EventRepeatIcon from '@mui/icons-material/EventRepeat'
 import SettingsIcon from '@mui/icons-material/Settings'
 import GroupsIcon from '@mui/icons-material/Groups'
+import { getRole, USER_MANAGEMENT_ROLES } from '@/services/session'
+import { EDTE_VIEWER_ROLES } from '@/components/edte/edteLabels'
 
 const drawerWidth = 250
 
@@ -32,11 +34,12 @@ interface NavItem {
   label: string
   icon: React.ReactNode
   path?: string
+  roles?: string[] // si no se define, lo ve cualquier usuario con sesión
 }
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Panel', icon: <DashboardIcon />, path: '/home' },
-  { label: 'Usuarios', icon: <UserIcon />, path: '/users' },
+  { label: 'Usuarios', icon: <UserIcon />, path: '/users', roles: USER_MANAGEMENT_ROLES },
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
   { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
   { label: 'Carga de asistencia', path: '/attendance/daily', icon: <EditCalendarIcon /> },
@@ -44,7 +47,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Calificaciones', icon: <GradingIcon />, path: '/calification-grid' },
   { label: 'Intensificación', icon: <EventRepeatIcon />, path: '/intensification-calendar' },
   { label: 'Modelo organizativo', icon: <SettingsIcon />, path: '/organizational-model' },
-  { label: 'Reuniones del EDTE', icon: <GroupsIcon />, path: '/edte-meetings' },
+  { label: 'Reuniones del EDTE', icon: <GroupsIcon />, path: '/edte-meetings', roles: EDTE_VIEWER_ROLES },
 ]
 
 export const Aside: React.FC = () => {
@@ -52,11 +55,16 @@ export const Aside: React.FC = () => {
   const location = useLocation()
   const [open, setOpen] = useState(true)
 
+  const role = getRole()
+  const visibleItems = NAV_ITEMS.filter(
+    (item) => !item.roles || (role !== undefined && item.roles.includes(role)),
+  )
+
   const handleNavigation = (item: NavItem) => {
     if (item.path) {
-      navigate(item.path)
+      navigate(item.path);
     }
-  }
+  };
 
   return (
     <Drawer
@@ -166,8 +174,8 @@ export const Aside: React.FC = () => {
 
         <Collapse in={open} timeout="auto" unmountOnExit>
           <List disablePadding>
-            {NAV_ITEMS.map((item) => {
-              const isActive = item.path === location.pathname
+            {visibleItems.map((item) => {
+              const isActive = item.path === location.pathname;
               return (
                 <ListItem key={item.label} disablePadding sx={{ mb: 0.5, px: 0.5 }}>
                   <ListItemButton
@@ -205,7 +213,7 @@ export const Aside: React.FC = () => {
                     />
                   </ListItemButton>
                 </ListItem>
-              )
+              );
             })}
           </List>
         </Collapse>
@@ -225,7 +233,7 @@ export const Aside: React.FC = () => {
         </Typography>
       </Box>
     </Drawer>
-  )
-}
+  );
+};
 
-export default Aside
+export default Aside;

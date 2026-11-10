@@ -16,51 +16,46 @@ import OrganizationalModelPage from '@/pages/OrganizationalModelPage'
 import EdteMeetingsPage from '@/pages/EdteMeetingsPage'
 import EdteMeetingFormPage from '@/pages/EdteMeetingFormPage'
 import EdteMeetingDetailPage from '@/pages/EdteMeetingDetailPage'
+import { EDTE_MANAGER_ROLES } from '@/components/edte/edteLabels'
+import { USER_MANAGEMENT_ROLES } from '@/services/session'
+import ProtectedRoute from '@/routes/ProtectedRoute'
 
 const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Login */}
+        {/* Pública */}
         <Route path="/login" element={<LoginPage />} />
 
-        {/* Inicio */}
-        <Route path="/home" element={<HomePage />} />
+        {/* Privadas: requieren sesión */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/courses" element={<CoursesPage />} />
+          <Route path="/attendance" element={<AttendanceSummaryPage />} />
+          <Route path="/attendance/daily" element={<DailyAttendancePage />} />
+          <Route path="/students" element={<StudentsPage />} />
+          <Route path="/students/:id" element={<StudentProfilePage />} />
+          <Route path="/students/:id/trajectory" element={<StudentTrajectoryPage />} />
+          <Route path="/calification-grid" element={<CalificationGridPage />} />
+          <Route path="/intensification-calendar" element={<IntensificationCalendarPage />} />
+          <Route path="/organizational-model" element={<OrganizationalModelPage />} />
+          {/* Reuniones del EDTE (CRM-075): listado y detalle */}
+          <Route path="/edte-meetings" element={<EdteMeetingsPage />} />
+          <Route path="/edte-meetings/:id" element={<EdteMeetingDetailPage />} />
+        </Route>
 
-        {/* Cursos */}
-        <Route path="/courses" element={<CoursesPage />} />
-        {/* Asistencia - Resumen */}
-        <Route path="/attendance" element={<AttendanceSummaryPage />} />
+        {/* Reuniones del EDTE: alta y edición, solo quienes gestionan */}
+        <Route element={<ProtectedRoute roles={EDTE_MANAGER_ROLES} />}>
+          <Route path="/edte-meetings/new" element={<EdteMeetingFormPage />} />
+          <Route path="/edte-meetings/:id/edit" element={<EdteMeetingFormPage />} />
+        </Route>
 
-        {/* Asistencia - Carga diaria */}
-        <Route path="/attendance/daily" element={<DailyAttendancePage />} />
-
-        {/* Alumnos */}
-        <Route path="/students" element={<StudentsPage />} />
-
-        {/* Ficha del alumno */}
-        <Route path="/students/:id" element={<StudentProfilePage />} />
-
-        {/* Trayectoria académica del alumno */}
-        <Route path="/students/:id/trajectory" element={<StudentTrajectoryPage />} />
-
-        {/* Calificaciones */}
-        <Route path="/calification-grid" element={<CalificationGridPage />} />
-
-        {/* Usuarios */}
-        <Route path="/users" element={<UsersPage />} />
-
-        <Route path="/intensification-calendar" element={<IntensificationCalendarPage />} />
-
-        <Route path="/organizational-model" element={<OrganizationalModelPage />} />
+        {/* Solo administración */}
+        <Route element={<ProtectedRoute roles={USER_MANAGEMENT_ROLES} />}>
+       <Route path="/users" element={<UsersPage />} />
+      </Route>
 
         {/* Ruta por defecto */}
-        {/* Reuniones del EDTE (CRM-075) */}
-        <Route path="/edte-meetings" element={<EdteMeetingsPage />} />
-        <Route path="/edte-meetings/new" element={<EdteMeetingFormPage />} />
-        <Route path="/edte-meetings/:id" element={<EdteMeetingDetailPage />} />
-        <Route path="/edte-meetings/:id/edit" element={<EdteMeetingFormPage />} />
-
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
