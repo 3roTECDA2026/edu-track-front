@@ -16,7 +16,7 @@ import OrganizationalModelPage from '@/pages/OrganizationalModelPage'
 import EdteMeetingsPage from '@/pages/EdteMeetingsPage'
 import EdteMeetingFormPage from '@/pages/EdteMeetingFormPage'
 import EdteMeetingDetailPage from '@/pages/EdteMeetingDetailPage'
-import { EDTE_MANAGER_ROLES } from '@/components/edte/edteLabels'
+import { EDTE_MANAGER_ROLES, EDTE_VIEWER_ROLES } from '@/components/edte/edteLabels'
 import { USER_MANAGEMENT_ROLES } from '@/services/session'
 import ProtectedRoute from '@/routes/ProtectedRoute'
 
@@ -39,7 +39,10 @@ const AppRouter = () => {
           <Route path="/calification-grid" element={<CalificationGridPage />} />
           <Route path="/intensification-calendar" element={<IntensificationCalendarPage />} />
           <Route path="/organizational-model" element={<OrganizationalModelPage />} />
-          {/* Reuniones del EDTE (CRM-075): listado y detalle */}
+        </Route>
+
+        {/* Reuniones del EDTE (CRM-075): listado y detalle, solo el personal de la escuela */}
+        <Route element={<ProtectedRoute roles={EDTE_VIEWER_ROLES} />}>
           <Route path="/edte-meetings" element={<EdteMeetingsPage />} />
           <Route path="/edte-meetings/:id" element={<EdteMeetingDetailPage />} />
         </Route>
