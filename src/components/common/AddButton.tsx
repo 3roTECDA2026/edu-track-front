@@ -7,7 +7,8 @@ import AddIcon from '@mui/icons-material/Add';
 
 interface AddButtonProps extends Omit<ButtonProps, 'variant' | 'startIcon'> {
   label: string;
-  onClick: () => void;
+  // Opcional: un botón type="submit" dentro de un <form> se envía solo, sin onClick
+  onClick?: () => void;
   icon?: React.ReactNode;
   sx?: ButtonProps['sx'];
 }
