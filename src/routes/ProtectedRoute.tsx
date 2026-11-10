@@ -1,5 +1,5 @@
 import { Navigate, Outlet } from 'react-router-dom';
-import { getSessionUser, getToken } from '@/services/session';
+import { getSessionUser } from '@/services/session';
 
 interface ProtectedRouteProps {
   roles?: string[]; // si no se define, alcanza con tener sesión
@@ -10,7 +10,7 @@ export const ProtectedRoute = ({ roles }: ProtectedRouteProps) => {
     return <Navigate to="/login" replace />;
   }
   if (roles) {
-    const role = getSessionUser()?.role;
+    const role = getRole();
     if (!role || !roles.includes(role)) {
       return <Navigate to="/home" replace />;
     }
