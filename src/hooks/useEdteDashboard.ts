@@ -32,7 +32,11 @@ export function useEdteDashboard(filters: DashboardFilters): UseEdteDashboardRes
     const controller = new AbortController()
 
     getEdteDashboard(filters, controller.signal)
-      .then((data) => setState({ key: requestKey, data }))
+      .then((data) => {
+        // Si ya llegó otro pedido (o se desmontó), esta respuesta es vieja: se descarta
+        if (controller.signal.aborted) return
+        setState({ key: requestKey, data })
+      })
       .catch((err: unknown) => {
         if (controller.signal.aborted) return
         const forbidden = err instanceof ApiError && err.status === 403
