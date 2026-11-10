@@ -1,12 +1,19 @@
 import { Box, Typography } from '@mui/material'
 
 import { IndicatorCard } from '@/components/edteDashboard/IndicatorCard'
-import { LEVEL_CONFIG, NO_ASSESSMENT } from '@/components/edteDashboard/dashboardLabels'
+import { LEVEL_ICONS } from '@/components/edteDashboard/levelIcons'
+import {
+  LEVEL_CONFIG,
+  NO_ASSESSMENT,
+  earlyWarningHint,
+  referredHint,
+} from '@/components/edteDashboard/dashboardLabels'
 import { ASSESSMENT_CONFIG } from '@/components/studentProfile/profileLabels'
-import type { DashboardIndicators } from '@/services/edteDashboard.service'
+import type { DashboardIndicators, DashboardThresholds } from '@/services/edteDashboard.service'
 
 interface IndicatorCardsProps {
   indicators: DashboardIndicators | undefined
+  thresholds: DashboardThresholds | undefined
   loading: boolean
 }
 
@@ -18,8 +25,10 @@ const gridSx = {
 
 // Tarjetas de indicadores del dashboard del EDTE (CRM-077, criterio 2), con los colores del
 // semáforo. Se actualizan junto con el listado cuando cambian los filtros.
-export const IndicatorCards = ({ indicators, loading }: IndicatorCardsProps) => {
+export const IndicatorCards = ({ indicators, thresholds, loading }: IndicatorCardsProps) => {
   const byAssessment = indicators?.studentsByAssessment
+  const HighIcon = LEVEL_ICONS.HIGH
+  const MediumIcon = LEVEL_ICONS.MEDIUM
 
   return (
     <Box sx={{ display: 'grid', gap: 2 }}>
@@ -27,17 +36,21 @@ export const IndicatorCards = ({ indicators, loading }: IndicatorCardsProps) => 
       <Box sx={gridSx}>
         <IndicatorCard
           label="Derivados al EDTE"
-          hint="5 o más materias pendientes"
+          hint={thresholds && referredHint(thresholds)}
           value={indicators?.referred}
           loading={loading}
+          icon={<HighIcon />}
+          levelText={LEVEL_CONFIG.HIGH.text}
           color={LEVEL_CONFIG.HIGH.color}
           background={LEVEL_CONFIG.HIGH.background}
         />
         <IndicatorCard
           label="Alerta temprana"
-          hint="4 materias pendientes"
+          hint={thresholds && earlyWarningHint(thresholds)}
           value={indicators?.earlyWarning}
           loading={loading}
+          icon={<MediumIcon />}
+          levelText={LEVEL_CONFIG.MEDIUM.text}
           color={LEVEL_CONFIG.MEDIUM.color}
           background={LEVEL_CONFIG.MEDIUM.background}
         />
@@ -46,6 +59,8 @@ export const IndicatorCards = ({ indicators, loading }: IndicatorCardsProps) => 
           hint="Materias con TED (no alumnos)"
           value={indicators?.tedAssessments}
           loading={loading}
+          icon={<HighIcon />}
+          levelText={LEVEL_CONFIG.HIGH.text}
           color={LEVEL_CONFIG.HIGH.color}
           background={LEVEL_CONFIG.HIGH.background}
         />

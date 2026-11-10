@@ -13,15 +13,17 @@ import {
   Typography,
 } from '@mui/material'
 
-import { LEVEL_CONFIG, pateStatusLabel } from '@/components/edteDashboard/dashboardLabels'
+import { LevelBadge } from '@/components/edteDashboard/LevelBadge'
+import { levelDescription, pateStatusLabel } from '@/components/edteDashboard/dashboardLabels'
 import { StandardTablePagination } from '@/components/common/StandardTablePagination'
 import { SHIFT_LABELS } from '@/components/students/studentLabels'
 import { SoftBadge } from '@/components/studentProfile/SoftBadge'
 import { ASSESSMENT_CONFIG } from '@/components/studentProfile/profileLabels'
-import type { DashboardStudent } from '@/services/edteDashboard.service'
+import type { DashboardStudent, DashboardThresholds } from '@/services/edteDashboard.service'
 
 interface ComplexTrajectoriesTableProps {
   students: DashboardStudent[] | undefined
+  thresholds: DashboardThresholds | undefined
   loading: boolean
 }
 
@@ -30,7 +32,11 @@ const CENTERED = ['TED', 'MPAA']
 
 // Listado de alumnos con trayectorias complejas (CRM-077, criterio 4): 4 o más materias
 // pendientes, alguna TED en el cuatrimestre o PATE en curso. Ordenado de rojo a verde.
-export const ComplexTrajectoriesTable = ({ students, loading }: ComplexTrajectoriesTableProps) => {
+export const ComplexTrajectoriesTable = ({
+  students,
+  thresholds,
+  loading,
+}: ComplexTrajectoriesTableProps) => {
   const navigate = useNavigate()
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
@@ -85,16 +91,13 @@ export const ComplexTrajectoriesTable = ({ students, loading }: ComplexTrajector
               </TableRow>
             ) : (
               pageRows.map((student) => {
-                const level = LEVEL_CONFIG[student.level]
                 const assessment = student.assessment ? ASSESSMENT_CONFIG[student.assessment] : null
                 return (
                   <TableRow key={student.id} hover>
                     <TableCell>
-                      <SoftBadge
-                        label={level.label}
-                        color={level.color}
-                        background={level.background}
-                        title={level.description}
+                      <LevelBadge
+                        level={student.level}
+                        description={thresholds && levelDescription(student.level, thresholds)}
                       />
                     </TableCell>
                     <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>

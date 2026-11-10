@@ -32,9 +32,19 @@ export interface DashboardStudent {
   pate: { id: string; status: string } | null
 }
 
+// Umbrales del semáforo, tal como los informa el back (los define él): el front arma sus textos
+// con estos números y no los repite
+export interface DashboardThresholds {
+  earlyWarningPending: number // MPAA que disparan la alerta temprana
+  referredPending: number // MPAA con las que se deriva al EDTE
+  mediumTedCount: number // Materias con TED que disparan la alerta
+  highTedCount: number // Materias con TED que son riesgo alto
+}
+
 export interface EdteDashboard {
   academicYear: number
   term: DashboardTerm
+  thresholds: DashboardThresholds
   indicators: DashboardIndicators
   students: DashboardStudent[]
 }

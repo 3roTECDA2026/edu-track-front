@@ -57,7 +57,11 @@ export const EdteDashboardPage = () => {
             <ContentCard>
               <DashboardFilters filters={filters} sections={sectionOptions} onChange={setFilters} />
               <Box sx={{ p: 2 }}>
-                <IndicatorCards indicators={data?.indicators} loading={loading} />
+                <IndicatorCards
+                  indicators={data?.indicators}
+                  thresholds={data?.thresholds}
+                  loading={loading}
+                />
                 <Typography
                   variant="caption"
                   sx={{ display: 'block', mt: 2, color: 'text.secondary' }}
@@ -68,7 +72,11 @@ export const EdteDashboardPage = () => {
             </ContentCard>
 
             <ContentCard>
-              <ComplexTrajectoriesTable students={data?.students} loading={loading} />
+              <ComplexTrajectoriesTable
+                students={data?.students}
+                thresholds={data?.thresholds}
+                loading={loading}
+              />
             </ContentCard>
           </Stack>
         )}
