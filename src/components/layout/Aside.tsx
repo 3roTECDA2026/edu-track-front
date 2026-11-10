@@ -24,7 +24,7 @@ import logoEscuela from '@/assets/logo.png'
 import { UserIcon } from 'lucide-react'
 import EventRepeatIcon from '@mui/icons-material/EventRepeat'
 import SettingsIcon from '@mui/icons-material/Settings'
-import { getSessionUser, USER_MANAGEMENT_ROLES } from '@/services/session'
+import { getRole, USER_MANAGEMENT_ROLES } from '@/services/session'
 
 const drawerWidth = 250
 
@@ -52,7 +52,7 @@ export const Aside: React.FC = () => {
   const location = useLocation()
   const [open, setOpen] = useState(true)
 
-  const role = getSessionUser()?.role
+  const role = getRole()
   const visibleItems = NAV_ITEMS.filter(
     (item) => !item.roles || (role !== undefined && item.roles.includes(role)),
   )
