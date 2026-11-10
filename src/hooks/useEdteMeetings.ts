@@ -29,7 +29,11 @@ export function useEdteMeetings(filters: ListEdteMeetingsFilters): UseEdteMeetin
     const controller = new AbortController()
 
     listEdteMeetings(filters, controller.signal)
-      .then((data) => setState({ key: requestKey, data }))
+      .then((data) => {
+        // Si ya llegó otro pedido (o se desmontó), esta respuesta es vieja: se descarta
+        if (controller.signal.aborted) return
+        setState({ key: requestKey, data })
+      })
       .catch((err: unknown) => {
         if (controller.signal.aborted) return
         const message = err instanceof Error ? err.message : 'Error inesperado'
