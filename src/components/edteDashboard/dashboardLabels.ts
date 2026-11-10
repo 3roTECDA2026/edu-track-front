@@ -45,3 +45,17 @@ export const DASHBOARD_TERM_LABELS: Record<DashboardTerm, string> = {
 export const EDTE_DASHBOARD_ROLES = ['EOE_DIRECTIVE', 'SCHOOL_MANAGEMENT']
 
 export const GRADE_FILTER_OPTIONS = [1, 2, 3, 4, 5, 6, 7]
+
+// Estado del PATE en el listado. Incluye los valores de hoy y los que suma CRM-078.
+// CRM-075 tiene el mismo texto en `edte/edteLabels.ts` (pateStatusLabel): cuando esté en develop,
+// se usa ese y se borra este.
+const PATE_STATUS_LABELS: Record<string, string> = {
+  ACTIVE: 'En curso',
+  UNDER_FOLLOW_UP: 'En curso',
+  FINISHED: 'Cerrado',
+  DRAFT: 'Borrador',
+  IN_PROGRESS: 'En curso',
+  CLOSED: 'Cerrado',
+}
+
+export const pateStatusLabel = (status: string) => PATE_STATUS_LABELS[status] ?? status
