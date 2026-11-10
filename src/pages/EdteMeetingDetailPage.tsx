@@ -17,6 +17,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
 } from '@mui/material'
 import DrawIcon from '@mui/icons-material/Draw'
@@ -35,6 +36,7 @@ import {
   MEETING_PERIOD_LABELS,
   MEETING_STATUS_CONFIG,
   formatMeetingDate,
+  getSignBlockedReason,
   isSafeWebUrl,
   memberRoleLabel,
   pateStatusLabel,
@@ -56,8 +58,6 @@ const Field = ({ label, value }: { label: string; value: React.ReactNode }) => (
 
 const headSx = { backgroundColor: '#fafafa' }
 
-// Detalle de una reunión del EDTE (CRM-075): datos, integrantes, alumnos tratados con acceso a
-// su ficha y a su PATE, y la acción de marcarla como firmada.
 export const EdteMeetingDetailPage = () => {
   const { id = '' } = useParams()
   const navigate = useNavigate()
@@ -72,6 +72,7 @@ export const EdteMeetingDetailPage = () => {
 
   const data = meeting.data
   const isDraft = data?.status === 'DRAFT'
+  const signBlockedReason = data ? getSignBlockedReason(data.minutesUrl, data.date) : null
 
   const handleSign = async () => {
     setSigning(true)
@@ -141,17 +142,27 @@ export const EdteMeetingDetailPage = () => {
                 >
                   Editar
                 </Button>
-                <AddButton
-                  label="Marcar como firmada"
-                  icon={<DrawIcon />}
-                  onClick={() => setConfirmSign(true)}
-                />
+                {/* El botón deshabilitado no muestra tooltip: se envuelve en un span */}
+                <Tooltip title={signBlockedReason ?? ''} disableHoverListener={!signBlockedReason}>
+                  <span>
+                    <AddButton
+                      label="Marcar como firmada"
+                      icon={<DrawIcon />}
+                      disabled={Boolean(signBlockedReason)}
+                      onClick={() => setConfirmSign(true)}
+                    />
+                  </span>
+                </Tooltip>
               </Stack>
             ) : undefined
           }
         />
 
         <Stack spacing={3}>
+          {canManage && isDraft && signBlockedReason && (
+            <Alert severity="info">{signBlockedReason}</Alert>
+          )}
+
           {/* Datos de la reunión */}
           <ContentCard sx={{ p: 3 }}>
             <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', mb: 2 }}>

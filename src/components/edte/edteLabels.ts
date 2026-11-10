@@ -72,3 +72,24 @@ export const isSafeWebUrl = (value: string | null | undefined): value is string 
     return false
   }
 }
+
+// Fecha de hoy en formato AAAA-MM-DD, con la hora local
+const todayIso = () => {
+  const now = new Date()
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10)
+}
+
+// Por qué todavía no se puede marcar como firmada una reunión (mismas reglas que el back): hace
+// falta el enlace al acta, que sea una dirección web válida, y que la reunión ya haya ocurrido.
+// Devuelve null si se puede firmar.
+export function getSignBlockedReason(
+  minutesUrl: string | null | undefined,
+  date: string,
+  today: string = todayIso()
+): string | null {
+  if (!isSafeWebUrl(minutesUrl)) {
+    return 'Para marcarla como firmada, cargá primero un enlace válido al acta (desde "Editar").'
+  }
+  if (date > today) return 'La reunión todavía no ocurrió: no se puede marcar como firmada.'
+  return null
+}
