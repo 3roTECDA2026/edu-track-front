@@ -36,6 +36,20 @@ export const getSessionUser = (): SessionUser | null => {
   }
 };
 
+// Rol del usuario: sale del token (JWT) y, si no se puede leer, del usuario guardado
+export const getRole = (): string | undefined => {
+  const token = getToken();
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+      if (typeof payload.role === 'string') return payload.role;
+    } catch {
+      /* token ilegible: se usa el usuario guardado */
+    }
+  }
+  return getSessionUser()?.role;
+};
+
 export const getRoleLabel = (role?: string): string =>
   (role && ROLE_LABELS[role]) || role || '';
 
@@ -56,6 +70,6 @@ export const ADMIN_ROLES = ['ADMINISTRATOR', 'SCHOOL_MANAGEMENT'];
 export const USER_MANAGEMENT_ROLES = ['ADMINISTRATOR']
 
 export const canAdminister = (): boolean => {
-  const role = getSessionUser()?.role;
+  const role = getRole();
   return !!role && ADMIN_ROLES.includes(role);
 };
