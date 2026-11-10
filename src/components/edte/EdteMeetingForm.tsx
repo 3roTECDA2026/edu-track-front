@@ -33,6 +33,7 @@ import {
 } from '@/components/edte/edteLabels'
 import {
   edteMeetingFormSchema,
+  meetingDateHint,
   type EdteMeetingFormValues,
 } from '@/components/edte/edteMeetingSchema'
 import {
@@ -204,7 +205,7 @@ export const EdteMeetingForm = ({ meeting }: EdteMeetingFormProps) => {
                   size="small"
                   label="Fecha"
                   error={Boolean(errors.date)}
-                  helperText={errors.date?.message ?? ' '}
+                  helperText={errors.date?.message ?? meetingDateHint(period, year)}
                   slotProps={{ inputLabel: { shrink: true } }}
                 />
               )}
