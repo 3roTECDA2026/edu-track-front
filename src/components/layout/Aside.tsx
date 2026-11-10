@@ -24,6 +24,7 @@ import logoEscuela from '@/assets/logo.png'
 import { UserIcon } from 'lucide-react'
 import EventRepeatIcon from '@mui/icons-material/EventRepeat'
 import SettingsIcon from '@mui/icons-material/Settings'
+import GroupsIcon from '@mui/icons-material/Groups'
 
 const drawerWidth = 250
 
@@ -43,6 +44,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Calificaciones', icon: <GradingIcon />, path: '/calification-grid' },
   { label: 'Intensificación', icon: <EventRepeatIcon />, path: '/intensification-calendar' },
   { label: 'Modelo organizativo', icon: <SettingsIcon />, path: '/organizational-model' },
+  { label: 'Reuniones del EDTE', icon: <GroupsIcon />, path: '/edte-meetings' },
 ]
 
 export const Aside: React.FC = () => {

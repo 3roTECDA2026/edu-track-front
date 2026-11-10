@@ -13,6 +13,7 @@ import StudentProfilePage from '@/pages/StudentProfilePage'
 import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage'
 import IntensificationCalendarPage from '@/pages/IntensificationCalendarPage'
 import OrganizationalModelPage from '@/pages/OrganizationalModelPage'
+import EdteMeetingsPage from '@/pages/EdteMeetingsPage'
 
 const AppRouter = () => {
   return (
@@ -52,6 +53,9 @@ const AppRouter = () => {
         <Route path="/organizational-model" element={<OrganizationalModelPage />} />
 
         {/* Ruta por defecto */}
+        {/* Reuniones del EDTE (CRM-075) */}
+        <Route path="/edte-meetings" element={<EdteMeetingsPage />} />
+
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
