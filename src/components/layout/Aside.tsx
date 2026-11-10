@@ -24,6 +24,8 @@ import logoEscuela from '@/assets/logo.png'
 import { UserIcon } from 'lucide-react'
 import EventRepeatIcon from '@mui/icons-material/EventRepeat'
 import SettingsIcon from '@mui/icons-material/Settings'
+import InsightsIcon from '@mui/icons-material/Insights'
+import { EDTE_DASHBOARD_ROLES } from '@/components/edteDashboard/dashboardLabels'
 import { getRole, USER_MANAGEMENT_ROLES } from '@/services/session'
 
 const drawerWidth = 250
@@ -45,6 +47,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Calificaciones', icon: <GradingIcon />, path: '/calification-grid' },
   { label: 'Intensificación', icon: <EventRepeatIcon />, path: '/intensification-calendar' },
   { label: 'Modelo organizativo', icon: <SettingsIcon />, path: '/organizational-model' },
+  { label: 'Dashboard del EDTE', icon: <InsightsIcon />, path: '/edte-dashboard', roles: EDTE_DASHBOARD_ROLES },
 ]
 
 export const Aside: React.FC = () => {

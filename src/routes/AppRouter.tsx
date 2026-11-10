@@ -13,6 +13,8 @@ import StudentProfilePage from '@/pages/StudentProfilePage'
 import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage'
 import IntensificationCalendarPage from '@/pages/IntensificationCalendarPage'
 import OrganizationalModelPage from '@/pages/OrganizationalModelPage'
+import EdteDashboardPage from '@/pages/EdteDashboardPage'
+import { EDTE_DASHBOARD_ROLES } from '@/components/edteDashboard/dashboardLabels'
 import { USER_MANAGEMENT_ROLES } from '@/services/session'
 import ProtectedRoute from '@/routes/ProtectedRoute'
 
@@ -35,6 +37,11 @@ const AppRouter = () => {
           <Route path="/calification-grid" element={<CalificationGridPage />} />
           <Route path="/intensification-calendar" element={<IntensificationCalendarPage />} />
           <Route path="/organizational-model" element={<OrganizationalModelPage />} />
+        </Route>
+
+        {/* Dashboard del EDTE (CRM-077): EOE y dirección */}
+        <Route element={<ProtectedRoute roles={EDTE_DASHBOARD_ROLES} />}>
+          <Route path="/edte-dashboard" element={<EdteDashboardPage />} />
         </Route>
 
         {/* Solo administración */}
