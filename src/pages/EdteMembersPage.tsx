@@ -1,4 +1,4 @@
-import { Box, Button, Dialog, DialogContent, DialogTitle, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@mui/material'
+import { Box, Button, Dialog, DialogContent, DialogTitle, FormControl, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@mui/material'
 import MainLayout from '@/components/layout/MainLayout'
 import PageHeader from '@/components/common/PageHeader'
 import { ContentCard } from '@/components/common/ContentCard'
@@ -9,6 +9,7 @@ export default function EdteMembersPage() {
   const { members, loading } = useEdteMembers()
   const [open, setOpen] = useState(false)
   const [userName, setUserName] = useState('')
+  const [role, setRole] = useState('')
   return (
     <MainLayout>
       <Box sx={{ maxWidth: 1200, mx: 'auto', p: 1 }}>
@@ -50,6 +51,15 @@ export default function EdteMembersPage() {
         <DialogTitle>Nuevo integrante</DialogTitle>
         <DialogContent>
           <TextField label="Usuario" value={userName} onChange={(e) => setUserName(e.target.value)} fullWidth sx={{ mt: 1 }} />
+          <FormControl fullWidth sx={{ mt: 2 }}>
+            <InputLabel>Rol</InputLabel>
+            <Select value={role} label="Rol" onChange={(e) => setRole(e.target.value)}>
+              <MenuItem value="DOCENTE">Docente</MenuItem>
+              <MenuItem value="PRECEPTOR">Preceptor</MenuItem>
+              <MenuItem value="ORIENTADOR">Orientador</MenuItem>
+              <MenuItem value="DIRECTIVO">Directivo</MenuItem>
+            </Select>
+          </FormControl>
         </DialogContent>
       </Dialog>
     </MainLayout>
