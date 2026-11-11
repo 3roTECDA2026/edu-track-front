@@ -240,6 +240,7 @@ const StudentProfilePage = () => {
                 loading={grades.loading}
                 error={grades.error}
                 onRetry={grades.reload}
+                homeSection={student.currentSection}
               />
             )}
             {activeTab === 'observations' && (

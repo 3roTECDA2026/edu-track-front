@@ -26,6 +26,7 @@ interface GradesTabProps {
   loading: boolean;
   error: string | undefined;
   onRetry: () => void;
+  homeSection: { grade: number; division: string } | null; // sección de matrícula del alumno
 }
 
 const COLUMNS = ['Materia', 'Valoración 1° C', 'Nota 1° C', 'Valoración 2° C', 'Nota 2° C', 'Nota final', 'Estado'];
@@ -47,7 +48,7 @@ const Score = ({ value }: { value: number | null }) => {
   );
 };
 
-export const GradesTab = ({ grades, loading, error, onRetry }: GradesTabProps) => {
+export const GradesTab = ({ grades, loading, error, onRetry, homeSection }: GradesTabProps) => {
   if (loading && !grades) return <TabLoading />;
   if (error) return <TabError message={error} onRetry={onRetry} />;
   if (!grades || grades.length === 0) {
@@ -112,6 +113,17 @@ export const GradesTab = ({ grades, loading, error, onRetry }: GradesTabProps) =
               <TableRow key={grade.id} hover>
                 <TableCell sx={{ ...bodyCellSx, fontWeight: 700, color: COLORS.ink }}>
                   {grade.enrollment.subject.name}
+                  {homeSection &&
+                    (grade.enrollment.classSection.grade !== homeSection.grade ||
+                      grade.enrollment.classSection.division !== homeSection.division) && (
+                      <Typography
+                        variant="caption"
+                        sx={{ display: 'block', color: 'text.secondary', fontWeight: 600 }}
+                      >
+                        Cursa en: {grade.enrollment.classSection.grade}°
+                        {grade.enrollment.classSection.division}
+                      </Typography>
+                    )}
                 </TableCell>
                 <TableCell align="center" sx={bodyCellSx}>
                   <AssessmentBadge value={grade.preliminaryAssessment1} />
