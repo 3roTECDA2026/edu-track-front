@@ -1,4 +1,4 @@
-import { Box, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material'
+import { Box, Button, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material'
 import MainLayout from '@/components/layout/MainLayout'
 import PageHeader from '@/components/common/PageHeader'
 import { ContentCard } from '@/components/common/ContentCard'
@@ -10,6 +10,9 @@ export default function EdteMembersPage() {
     <MainLayout>
       <Box sx={{ maxWidth: 1200, mx: 'auto', p: 1 }}>
         <PageHeader title="Integrantes del EDTE" subtitle="Gestión de integrantes." breadcrumbs={[{ label: 'Inicio', href: '/home' }, { label: 'EDTE' }, { label: 'Integrantes' }]} />
+        <Box sx={{ mb: 2 }}>
+          <Button variant="contained">Nuevo integrante</Button>
+        </Box>
         <ContentCard>
           <Table size="small">
             <TableHead>
