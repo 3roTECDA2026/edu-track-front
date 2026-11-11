@@ -24,9 +24,7 @@ import logoEscuela from '@/assets/logo.png'
 import { UserIcon } from 'lucide-react'
 import EventRepeatIcon from '@mui/icons-material/EventRepeat'
 import SettingsIcon from '@mui/icons-material/Settings'
-import GavelIcon from '@mui/icons-material/Gavel'
 import { getRole, USER_MANAGEMENT_ROLES } from '@/services/session'
-import { CONFLICT_ALLOWED_ROLES } from '@/components/conflicts/ConflictRoleGuard'
 
 const drawerWidth = 250
 
@@ -41,7 +39,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Panel', icon: <DashboardIcon />, path: '/home' },
   { label: 'Usuarios', icon: <UserIcon />, path: '/users', roles: USER_MANAGEMENT_ROLES },
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
-  { label: 'Conflictos', icon: <GavelIcon />, path: '/conflicts', roles: CONFLICT_ALLOWED_ROLES },
   { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
   { label: 'Carga de asistencia', path: '/attendance/daily', icon: <EditCalendarIcon /> },
   { label: 'Resumen de asistencias', path: '/attendance', icon: <AssessmentIcon /> },
@@ -57,14 +54,14 @@ export const Aside: React.FC = () => {
 
   const role = getRole()
   const visibleItems = NAV_ITEMS.filter(
-    (item) => !item.roles || (role !== undefined && item.roles.includes(role))
+    (item) => !item.roles || (role !== undefined && item.roles.includes(role)),
   )
 
   const handleNavigation = (item: NavItem) => {
     if (item.path) {
-      navigate(item.path)
+      navigate(item.path);
     }
-  }
+  };
 
   return (
     <Drawer
@@ -175,7 +172,7 @@ export const Aside: React.FC = () => {
         <Collapse in={open} timeout="auto" unmountOnExit>
           <List disablePadding>
             {visibleItems.map((item) => {
-              const isActive = item.path === location.pathname
+              const isActive = item.path === location.pathname;
               return (
                 <ListItem key={item.label} disablePadding sx={{ mb: 0.5, px: 0.5 }}>
                   <ListItemButton
@@ -213,7 +210,7 @@ export const Aside: React.FC = () => {
                     />
                   </ListItemButton>
                 </ListItem>
-              )
+              );
             })}
           </List>
         </Collapse>
@@ -233,7 +230,7 @@ export const Aside: React.FC = () => {
         </Typography>
       </Box>
     </Drawer>
-  )
-}
+  );
+};
 
-export default Aside
+export default Aside;
