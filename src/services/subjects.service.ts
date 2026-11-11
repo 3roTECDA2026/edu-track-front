@@ -4,6 +4,10 @@ export interface SubjectOption {
   id: string;
   name: string;
   gradeLevel: number;
+  // El back también devuelve estos datos; los usa la pestaña de Materias
+  code?: string;
+  hoursPerWeek?: number;
+  area?: string;
 }
 
 
