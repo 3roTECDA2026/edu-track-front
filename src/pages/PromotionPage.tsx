@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAcademicYears } from '@/hooks/useAcademicYears'
-import { Box, Button, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material'
+import { Alert, Box, Button, Table, TableBody, TableCell, TableHead, TableRow } from '@mui/material'
 import MainLayout from '@/components/layout/MainLayout'
 import PageHeader from '@/components/common/PageHeader'
 import { ContentCard } from '@/components/common/ContentCard'
@@ -10,7 +10,6 @@ interface Decision {
   id: string
   studentId: string
   student?: { firstName?: string; lastName?: string }
-  studentName?: string
   pendingCount: number
   outcome: 'PROMOTED' | 'REFERRED_TO_EDTE'
 }
@@ -24,14 +23,13 @@ export default function PromotionPage() {
   const run = async () => {
     if (!confirm('¿Ejecutar el motor de promoción?')) return
     const activeYear = academicYears.find((y) => y.active) ?? academicYears.find((y) => y.year === selectedYear)
-    const userRaw = (typeof window !== 'undefined' ? (sessionStorage.getItem('user') || localStorage.getItem('user')) : null)
-    const user = userRaw ? JSON.parse(userRaw) : null
+    if (!activeYear) { setError('No hay ciclo activo'); return }
     setLoading(true)
     setError(null)
     try {
       const data = await fetchApi<{ decisions: Decision[] }>('/api/promotion/run', {
         method: 'POST',
-        body: JSON.stringify({ academicYearId: activeYear?.id ?? '', executedById: user?.id ?? '' }),
+        body: JSON.stringify({ academicYearId: activeYear.id }),
       })
       setResults(data.decisions ?? [])
     } catch (e) {
@@ -46,10 +44,10 @@ export default function PromotionPage() {
       <Box sx={{ maxWidth: 1200, mx: 'auto', p: 1 }}>
         <PageHeader title="Motor de promoción" subtitle="Ejecutá el motor y revisá los resultados." breadcrumbs={[{ label: 'Inicio', href: '/home' }, { label: 'Promoción' }]} />
         <ContentCard sx={{ p: 2, mb: 2 }}>
-          <Button variant="contained" onClick={run} disabled={loading}>
+          <Button variant="contained" onClick={run} disabled={loading || !academicYears.some((y) => y.active || y.year === selectedYear)}>
             {loading ? 'Ejecutando...' : 'Ejecutar motor de promoción'}
           </Button>
-          {error && <Typography color="error" sx={{ mt: 1 }}>{error}</Typography>}
+          {error && <Alert severity="error" sx={{ mt: 1 }}>{error}</Alert>}
         </ContentCard>
         <ContentCard>
           <Table size="small">
@@ -63,7 +61,7 @@ export default function PromotionPage() {
             <TableBody>
               {results.map((r) => (
                 <TableRow key={r.id}>
-                  <TableCell>{r.studentName ?? ([r.student?.firstName, r.student?.lastName].filter(Boolean).join(' ') || r.studentId)}</TableCell>
+                  <TableCell>{[r.student?.lastName, r.student?.firstName].filter(Boolean).join(', ') || r.studentId}</TableCell>
                   <TableCell align="center">{r.pendingCount}</TableCell>
                   <TableCell>{r.outcome === 'PROMOTED' ? 'Promueve' : 'Derivado al EDTE'}</TableCell>
                 </TableRow>
