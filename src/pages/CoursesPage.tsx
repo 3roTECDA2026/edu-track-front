@@ -9,6 +9,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Typography,
 } from '@mui/material'
 
 import MainLayout from '@/components/layout/MainLayout'
@@ -21,6 +22,14 @@ import { SHIFT_LABELS } from '@/components/students/studentLabels'
 import { TeacherAssignmentsTab } from '@/components/teacherAssignments/TeacherAssignmentsTab'
 import { useClassSections } from '@/hooks/useClassSections'
 import { useSubjects } from '@/hooks/useSubjects'
+
+// Orden de los turnos en la tabla: la misma división puede existir en dos turnos
+const SHIFT_ORDER: Record<string, number> = {
+  MORNING: 0,
+  AFTERNOON: 1,
+  EVENING: 2,
+  EXTRA_TIME: 3,
+}
 
 // Fila de estado (cargando, error o vacío) que ocupa todo el ancho de la tabla
 const StatusRow = ({
@@ -49,11 +58,12 @@ const StatusRow = ({
   </TableRow>
 )
 
-// Estructura institucional: cursos y materias reales de la base, y la asignación docente
+// Estructura institucional: cursos del ciclo activo y materias reales de la base, y la
+// asignación docente
 export const CoursesPage: React.FC = () => {
   const [currentTab, setCurrentTab] = useState(0)
 
-  // Cursos y secciones (GET /api/class-sections)
+  // Cursos y secciones del ciclo lectivo activo (GET /api/class-sections)
   const { sections, loading: loadingSections, error: sectionsError } = useClassSections()
   const [coursePage, setCoursePage] = useState(0)
   const [courseRowsPerPage, setCourseRowsPerPage] = useState(10)
@@ -63,20 +73,34 @@ export const CoursesPage: React.FC = () => {
   const [subjectPage, setSubjectPage] = useState(0)
   const [subjectRowsPerPage, setSubjectRowsPerPage] = useState(10)
 
-  // Cursos ordenados: el ciclo más reciente primero, después por año y sección
+  // Cursos ordenados por año, sección y turno
   const sortedSections = useMemo(
     () =>
       [...sections].sort(
-        (a, b) => b.year - a.year || a.grade - b.grade || a.division.localeCompare(b.division)
+        (a, b) =>
+          a.grade - b.grade ||
+          a.division.localeCompare(b.division) ||
+          (SHIFT_ORDER[a.shift] ?? 9) - (SHIFT_ORDER[b.shift] ?? 9)
       ),
     [sections]
+  )
+  // Ciclo lectivo de los cursos que se muestran (el activo)
+  const activeYear = sections[0]?.year
+
+  // Materias ordenadas por año y nombre
+  const sortedSubjects = useMemo(
+    () =>
+      [...subjects].sort(
+        (a, b) => a.gradeLevel - b.gradeLevel || a.name.localeCompare(b.name, 'es')
+      ),
+    [subjects]
   )
 
   const paginatedCourses = sortedSections.slice(
     coursePage * courseRowsPerPage,
     coursePage * courseRowsPerPage + courseRowsPerPage
   )
-  const paginatedSubjects = subjects.slice(
+  const paginatedSubjects = sortedSubjects.slice(
     subjectPage * subjectRowsPerPage,
     subjectPage * subjectRowsPerPage + subjectRowsPerPage
   )
@@ -86,7 +110,7 @@ export const CoursesPage: React.FC = () => {
       <PageContainer>
         <PageHeader
           title="Estructura institucional"
-          subtitle="Cursos, secciones y materias de la institución."
+          subtitle="Cursos y secciones del ciclo lectivo activo, y materias de la institución."
           breadcrumbs={[
             { label: 'Inicio', href: '/home' },
             { label: 'Configuración' },
@@ -102,14 +126,26 @@ export const CoursesPage: React.FC = () => {
             onChange={(_, next) => setCurrentTab(next)}
           />
 
-          {/* PESTAÑA 0: CURSOS Y SECCIONES */}
+          {/* PESTAÑA 0: CURSOS Y SECCIONES (del ciclo activo) */}
           {currentTab === 0 && (
             <Box>
+              {activeYear && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: 'text.secondary',
+                    px: 2,
+                    py: 1.5,
+                    borderBottom: '1px solid #e5e7eb',
+                  }}
+                >
+                  Ciclo lectivo {activeYear}
+                </Typography>
+              )}
               <TableContainer>
                 <Table size="small" sx={{ minWidth: 650 }}>
                   <TableHead sx={{ backgroundColor: '#fafafa' }}>
                     <TableRow>
-                      <TableCell>Ciclo lectivo</TableCell>
                       <TableCell>Año</TableCell>
                       <TableCell>Sección</TableCell>
                       <TableCell>Turno</TableCell>
@@ -118,15 +154,14 @@ export const CoursesPage: React.FC = () => {
                   <TableBody>
                     {loadingSections || sectionsError || sortedSections.length === 0 ? (
                       <StatusRow
-                        colSpan={4}
+                        colSpan={3}
                         loading={loadingSections}
                         error={sectionsError}
-                        empty="Todavía no hay cursos cargados."
+                        empty="Todavía no hay cursos cargados en el ciclo lectivo activo."
                       />
                     ) : (
                       paginatedCourses.map((row) => (
                         <TableRow key={row.id} hover>
-                          <TableCell sx={{ color: 'text.secondary' }}>{row.year}</TableCell>
                           <TableCell sx={{ fontWeight: 600, color: 'text.primary' }}>
                             {row.grade}° año
                           </TableCell>
@@ -171,7 +206,7 @@ export const CoursesPage: React.FC = () => {
                     </TableRow>
                   </TableHead>
                   <TableBody>
-                    {loadingSubjects || subjectsError || subjects.length === 0 ? (
+                    {loadingSubjects || subjectsError || sortedSubjects.length === 0 ? (
                       <StatusRow
                         colSpan={5}
                         loading={loadingSubjects}
@@ -200,7 +235,7 @@ export const CoursesPage: React.FC = () => {
               </TableContainer>
 
               <StandardTablePagination
-                count={subjects.length}
+                count={sortedSubjects.length}
                 page={subjectPage}
                 rowsPerPage={subjectRowsPerPage}
                 onPageChange={setSubjectPage}

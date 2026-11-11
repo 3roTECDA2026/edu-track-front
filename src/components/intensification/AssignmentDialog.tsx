@@ -16,7 +16,13 @@ import {
   Typography,
 } from '@mui/material'
 
-import { MODEL_LABELS, sectionLabel } from '@/components/intensification/intensificationLabels'
+import {
+  MODEL_LABELS,
+  MODELS_BY_OPTION,
+  OPTION_LABELS,
+  sectionLabel,
+} from '@/components/intensification/intensificationLabels'
+import { useInstitutionalConfig } from '@/hooks/useInstitutionalConfig'
 import type { AttendanceSection } from '@/services/attendance.service'
 import {
   intensificationService,
@@ -55,6 +61,18 @@ export const AssignmentDialog = ({
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Opción organizativa de la escuela (CRM-065): define qué modelos se pueden elegir.
+  // Sin opción elegida (o si no se pudo leer), se ofrecen los 4 modelos.
+  const { config, loading: loadingConfig, error: configError } = useInstitutionalConfig()
+  const optionModels = config ? MODELS_BY_OPTION[config.organizationalModel] : null
+  const isOutsideOption = (key: IntensificationModel) =>
+    optionModels !== null && !optionModels.includes(key)
+  // Al cambiar una asignación vieja, su modelo actual se sigue ofreciendo aunque haya quedado
+  // afuera de la opción, para poder mantenerlo (por ejemplo, para cambiar solo la sección)
+  const modelChoices = (Object.keys(MODEL_LABELS) as IntensificationModel[]).filter(
+    (key) => !isOutsideOption(key) || (mode === 'edit' && assignment?.model === key)
+  )
 
   // Al abrir: en "cambiar", se cargan el modelo y la sección actuales; en "asignar", los candidatos
   useEffect(() => {
@@ -113,6 +131,7 @@ export const AssignmentDialog = ({
   const allSelected = candidates.length > 0 && selected.size === candidates.length
   const canSave =
     !saving &&
+    modelChoices.includes(model) &&
     (mode === 'edit' || selected.size > 0) &&
     (!needsLocation || (Boolean(validTargetId) && !mixedShifts && !withoutCourse))
 
@@ -236,7 +255,7 @@ export const AssignmentDialog = ({
               </Box>
             ))}
 
-          {/* Modelo de intensificación (E3-RF-06) */}
+          {/* Modelo de intensificación (E3-RF-06), según la opción de la escuela */}
           <TextField
             select
             label="Modelo"
@@ -244,12 +263,33 @@ export const AssignmentDialog = ({
             value={model}
             onChange={(event) => changeModel(event.target.value as IntensificationModel)}
           >
-            {(Object.keys(MODEL_LABELS) as IntensificationModel[]).map((key) => (
+            {modelChoices.map((key) => (
               <MenuItem key={key} value={key}>
                 {MODEL_LABELS[key]}
+                {isOutsideOption(key) && config
+                  ? ` (fuera de la opción ${OPTION_LABELS[config.organizationalModel]})`
+                  : ''}
               </MenuItem>
             ))}
           </TextField>
+
+          {/* Aviso según la opción organizativa de la escuela */}
+          {!loadingConfig && config && (
+            <Typography variant="caption" sx={{ color: 'text.secondary', mt: -1 }}>
+              La escuela tiene la opción {OPTION_LABELS[config.organizationalModel]}: se muestran
+              solo sus modelos.
+            </Typography>
+          )}
+          {!loadingConfig && !config && !configError && (
+            <Alert severity="info">
+              La escuela todavía no eligió su opción organizativa: se muestran los 4 modelos.
+            </Alert>
+          )}
+          {!loadingConfig && configError && (
+            <Alert severity="warning">
+              No se pudo leer la opción organizativa de la escuela: se muestran los 4 modelos.
+            </Alert>
+          )}
 
           {/* Dónde intensifica, solo en los modelos 2 y 3 (E3-RF-07) */}
           {needsLocation && mixedShifts && (

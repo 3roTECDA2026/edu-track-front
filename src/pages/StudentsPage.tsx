@@ -15,6 +15,7 @@ import { StudentFormDialog } from '@/components/students/StudentFormDialog';
 import { PageHeader } from '@/components/common/PageHeader';
 import ContentCard from '@/components/common/ContentCard';
 import StandardTablePagination from '@/components/common/StandardTablePagination';
+import { canAdminister } from '@/services/session'
 const PAGE_SIZE = 20;
 
 const INITIAL_FILTERS: StudentFiltersState = {
@@ -32,6 +33,7 @@ interface SnackbarState {
 
 export const StudentsPage = () => {
   const navigate = useNavigate()
+  const canManageStudents = canAdminister()
 
   const [filters, setFilters] = useState<StudentFiltersState>(INITIAL_FILTERS)
   // El back pagina desde 1; el paginado común (MUI) cuenta desde 0
@@ -122,7 +124,7 @@ export const StudentsPage = () => {
     { label: 'Estudiantes', href: '/students' },
     { label: 'Listado' },
      ]}
-     action={<AddButton label="Alta estudiante" onClick={() => setCreateOpen(true)} />}
+     action={canManageStudents ? <AddButton label="Alta estudiante" onClick={() => setCreateOpen(true)} /> : undefined}
     />
 
         {/* Tarjeta contenedora estándar: filtros, tabla y paginado */}
@@ -157,7 +159,7 @@ export const StudentsPage = () => {
                 loading={loading}
                 onView={(student) => navigate(`/students/${student.id}`)}
                 onEdit={(student) => setEditStudentId(student.id)}
-                onDeactivate={handleOpenDeactivate}
+                onDeactivate={canManageStudents ? handleOpenDeactivate : undefined}
               />
 
               {result && (
