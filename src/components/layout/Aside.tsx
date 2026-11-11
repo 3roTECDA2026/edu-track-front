@@ -25,6 +25,8 @@ import { UserIcon } from 'lucide-react'
 import EventRepeatIcon from '@mui/icons-material/EventRepeat'
 import SettingsIcon from '@mui/icons-material/Settings'
 import { getRole, USER_MANAGEMENT_ROLES } from '@/services/session'
+import AssignmentIndOutlined from '@mui/icons-material/AssignmentIndOutlined'
+import { EDTE_REFERRALS_ROLES } from '@/components/edteReferrals/referralLabels'
 
 const drawerWidth = 250
 
@@ -45,6 +47,12 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Calificaciones', icon: <GradingIcon />, path: '/calification-grid' },
   { label: 'Intensificación', icon: <EventRepeatIcon />, path: '/intensification-calendar' },
   { label: 'Modelo organizativo', icon: <SettingsIcon />, path: '/organizational-model' },
+  {
+    label: 'Derivados al EDTE',
+    icon: <AssignmentIndOutlined />,
+    path: '/edte-referrals',
+    roles: EDTE_REFERRALS_ROLES,
+  },
 ]
 
 export const Aside: React.FC = () => {
