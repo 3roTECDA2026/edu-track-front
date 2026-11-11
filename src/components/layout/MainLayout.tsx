@@ -4,7 +4,7 @@ import { Box } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { Aside } from '@/components/layout/Aside';
 import { Header } from '@/components/Header';
-
+import { clearSession, getSessionUser, getDisplayName, getRoleLabel } from '@/services/session';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -12,13 +12,12 @@ interface MainLayoutProps {
 
 export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
+  const sessionUser = getSessionUser();
 
-  // Función para cerrar sesión
   const handleLogout = () => {
-    // Si utilizas localStorage/tokens, puedes limpiarlos aquí:
-    // localStorage.removeItem('token');
-    navigate('/login');
-  };
+  clearSession();
+  navigate('/login', { replace: true });
+};
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh' }}>
@@ -27,9 +26,13 @@ export const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
 
       {/* Contenido Principal en Blanco y Negro */}
       <Box sx={{ flexGrow: 1, backgroundColor: '#ffffff', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-        <Header 
-          onLogout={handleLogout} 
-          user={{ name: 'Admin', role: 'Director', avatarUrl: '' }} 
+        <Header
+          onLogout={handleLogout}
+          user={
+            sessionUser
+              ? { name: getDisplayName(sessionUser), role: getRoleLabel(sessionUser.role), avatarUrl: '' }
+              : null
+          }
         />
 
         {/* Área de trabajo en blanco con texto negro */}
