@@ -1,4 +1,4 @@
-import { Box, Button, Dialog, DialogContent, DialogTitle, FormControl, InputLabel, MenuItem, Select, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@mui/material'
+import { Box, Button, Dialog, DialogContent, DialogTitle, FormControl, FormControlLabel, InputLabel, MenuItem, Select, Switch, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@mui/material'
 import MainLayout from '@/components/layout/MainLayout'
 import PageHeader from '@/components/common/PageHeader'
 import { ContentCard } from '@/components/common/ContentCard'
@@ -10,6 +10,7 @@ export default function EdteMembersPage() {
   const [open, setOpen] = useState(false)
   const [userName, setUserName] = useState('')
   const [role, setRole] = useState('')
+  const [active, setActive] = useState(true)
   return (
     <MainLayout>
       <Box sx={{ maxWidth: 1200, mx: 'auto', p: 1 }}>
@@ -60,6 +61,7 @@ export default function EdteMembersPage() {
               <MenuItem value="DIRECTIVO">Directivo</MenuItem>
             </Select>
           </FormControl>
+          <FormControlLabel control={<Switch checked={active} onChange={(e) => setActive(e.target.checked)} />} label="Activo" sx={{ mt: 2 }} />
         </DialogContent>
       </Dialog>
     </MainLayout>
