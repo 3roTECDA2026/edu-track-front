@@ -36,6 +36,10 @@ const AppRouter = () => {
           <Route path="/calification-grid" element={<CalificationGridPage />} />
           <Route path="/intensification-calendar" element={<IntensificationCalendarPage />} />
           <Route path="/organizational-model" element={<OrganizationalModelPage />} />
+        </Route>
+
+        {/* EDTE: requiere rol directivo/EOE/admin */}
+        <Route element={<ProtectedRoute roles={['ADMINISTRATOR', 'SCHOOL_MANAGEMENT', 'EOE_DIRECTIVE']} />}>
           <Route path="/edte-members" element={<EdteMembersPage />} />
         </Route>
 

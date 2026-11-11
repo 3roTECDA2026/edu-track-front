@@ -334,6 +334,6 @@ export interface UserOption {
 }
 
 export async function searchUsers(query: string): Promise<UserOption[]> {
-  const res = await fetchApi<{ data: UserOption[] }>(`/api/users?search=${encodeURIComponent(query)}`)
-  return res.data ?? []
+  const res = await fetchApi<{ data: { items: UserOption[] } }>(`/api/users?search=${encodeURIComponent(query)}`)
+  return res.data?.items ?? []
 }
