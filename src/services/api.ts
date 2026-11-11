@@ -31,19 +31,13 @@ function getAuthToken(): string | null {
 export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const token = getAuthToken();
 
-  const headers = new Headers(options.headers);
-
-  if (!headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json');
-  }
-
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
-
   const config: RequestInit = {
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
     ...options,
-    headers,
   };
 
   const baseUrl = API_URL.replace(/\/+$/, '');
