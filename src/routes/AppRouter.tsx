@@ -12,6 +12,7 @@ import CoursesPage from '@/pages/CoursesPage'
 import StudentProfilePage from '@/pages/StudentProfilePage'
 import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage'
 import IntensificationCalendarPage from '@/pages/IntensificationCalendarPage'
+import EdteMembersPage from '@/pages/EdteMembersPage'
 import OrganizationalModelPage from '@/pages/OrganizationalModelPage'
 import { USER_MANAGEMENT_ROLES } from '@/services/session'
 import ProtectedRoute from '@/routes/ProtectedRoute'
@@ -35,6 +36,7 @@ const AppRouter = () => {
           <Route path="/calification-grid" element={<CalificationGridPage />} />
           <Route path="/intensification-calendar" element={<IntensificationCalendarPage />} />
           <Route path="/organizational-model" element={<OrganizationalModelPage />} />
+          <Route path="/edte-members" element={<EdteMembersPage />} />
         </Route>
 
         {/* Solo administración */}
