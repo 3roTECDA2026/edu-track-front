@@ -1,5 +1,5 @@
 // src/pages/StudentProfilePage.tsx
-import { useState, type SyntheticEvent } from 'react'
+import { useEffect, useState, type SyntheticEvent } from 'react'
 import { Alert, Box, Button, Skeleton, Snackbar } from '@mui/material'
 import { useNavigate, useParams } from 'react-router-dom'
 
@@ -22,6 +22,7 @@ import { FortePlanDialog } from '@/components/studentProfile/FortePlanDialog'
 import { useLazyResource } from '@/hooks/useLazyResource'
 import { deactivateStudent } from '@/services/students.service'
 import { getStudentFortePlan } from '@/services/fortePlan.service'
+import { canManageTrajectories } from '@/services/session'
 import {
   getStudentAttendance,
   getStudentById,
@@ -45,9 +46,6 @@ const TABS: { key: TabKey; label: string }[] = [
 // Pestaña del Plan Forte: solo para los alumnos asignados al programa (CRM-089)
 const FORTE_TAB: { key: TabKey; label: string } = { key: 'forte', label: 'Plan Forte' }
 
-// Roles que gestionan el Plan Forte (asignar, editar, finalizar). El back valida igual
-const FORTE_MANAGER_ROLES = ['ADMINISTRATOR', 'SCHOOL_MANAGEMENT', 'EOE_DIRECTIVE']
-
 interface SnackbarState {
   message: string
   severity: 'success' | 'error' | 'info'
@@ -66,6 +64,8 @@ const StudentProfilePage = () => {
   const [editOpen, setEditOpen] = useState(false)
   // Diálogo del Plan Forte: asignar (o volver a asignar) o editar el plan (CRM-089)
   const [forteDialog, setForteDialog] = useState<'assign' | 'edit' | null>(null)
+  // Después de asignar, se abre la pestaña del Plan Forte recién cuando llega el plan
+  const [openForteWhenLoaded, setOpenForteWhenLoaded] = useState(false)
 
   const studentResource = useLazyResource(id ? `student:${id}` : null, (signal) =>
     getStudentById(id, signal)
@@ -73,12 +73,18 @@ const StudentProfilePage = () => {
   const student = studentResource.data
   const currentYear = student?.currentSection?.year
 
-  // El plan Forte se busca al abrir la ficha, porque decide si se muestra su pestaña (CRM-089)
+  // El plan Forte se busca al abrir la ficha, porque decide si se muestra su pestaña (CRM-089).
+  // data: el plan; null: no tiene plan; undefined: todavía no llegó o el pedido falló
   const fortePlan = useLazyResource(id ? `forte-plan:${id}` : null, (signal) =>
     getStudentFortePlan(id, signal)
   )
   const tabs = fortePlan.data ? [...TABS, FORTE_TAB] : TABS
-  const canManageForte = FORTE_MANAGER_ROLES.includes(currentUser().role ?? '')
+  const canManageForte = canManageTrajectories()
+  // Los reportes los cargan quien gestiona o el responsable del plan (igual que el back)
+  const canLoadForteReports =
+    canManageForte ||
+    (fortePlan.data?.responsible?.id !== undefined &&
+      fortePlan.data.responsible.id === currentUser().userId)
 
   const history = useLazyResource(
     visitedTabs.includes('enrollment') ? `history:${id}` : null,
@@ -93,6 +99,14 @@ const StudentProfilePage = () => {
   const grades = useLazyResource(visitedTabs.includes('grades') ? `grades:${id}` : null, (signal) =>
     getStudentGrades(id, signal)
   )
+
+  // Cuando llega el plan recién asignado, se abre su pestaña
+  useEffect(() => {
+    if (openForteWhenLoaded && fortePlan.data) {
+      setActiveTab('forte')
+      setOpenForteWhenLoaded(false)
+    }
+  }, [openForteWhenLoaded, fortePlan.data])
 
   const activeIndex = Math.max(
     0,
@@ -110,7 +124,7 @@ const StudentProfilePage = () => {
   const handleForteSaved = (message: string, severity: 'success' | 'error' = 'success') => {
     setSnackbar({ message, severity })
     fortePlan.reload()
-    setActiveTab('forte')
+    setOpenForteWhenLoaded(true)
   }
 
   const handleConfirmDeactivate = async () => {
@@ -182,8 +196,9 @@ const StudentProfilePage = () => {
           onChangeStatus={() => setDialogOpen(true)}
         />
 
-        {/* Asignar al Plan Forte: para los alumnos que nunca estuvieron en el programa (CRM-089) */}
-        {canManageForte && !fortePlan.loading && !fortePlan.data && (
+        {/* Asignar al Plan Forte: solo si el alumno de verdad no tiene plan (data === null).
+            Si el pedido falló, data es undefined y el botón no aparece (CRM-089) */}
+        {canManageForte && fortePlan.data === null && (
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
             <Button variant="outlined" color="inherit" onClick={() => setForteDialog('assign')}>
               Asignar al Plan Forte
@@ -239,6 +254,7 @@ const StudentProfilePage = () => {
               <FortePlanTab
                 plan={fortePlan.data}
                 canManage={canManageForte}
+                canLoadReports={canLoadForteReports}
                 onEdit={() => setForteDialog('edit')}
                 onReassign={() => setForteDialog('assign')}
                 onSaved={handleForteSaved}

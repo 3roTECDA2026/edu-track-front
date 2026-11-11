@@ -56,6 +56,8 @@ interface FortePlanTabProps {
   plan: FortePlan
   // Dirección, EOE/directivos y administración: editan, finalizan, dan de baja y reasignan
   canManage: boolean
+  // Quién puede cargar reportes: quien gestiona o el responsable del plan (igual que el back)
+  canLoadReports: boolean
   onEdit: () => void
   onReassign: () => void
   onSaved: (message: string, severity: 'success' | 'error') => void
@@ -66,6 +68,7 @@ interface FortePlanTabProps {
 export const FortePlanTab = ({
   plan,
   canManage,
+  canLoadReports,
   onEdit,
   onReassign,
   onSaved,
@@ -177,8 +180,12 @@ export const FortePlanTab = ({
         <Field label="Objetivos pedagógicos" value={plan.pedagogicalGoals} />
       </Paper>
 
-      {/* Formulario de reporte: solo mientras el alumno está activo en el programa */}
-      {active ? (
+      {/* Formulario de reporte: solo con el plan activo, y para quien gestiona o el responsable */}
+      {active && !canLoadReports ? (
+        <Alert severity="info">
+          Solo el responsable del plan o la dirección pueden cargar reportes de evolución.
+        </Alert>
+      ) : active ? (
         <Paper variant="outlined" sx={{ ...cardSx, p: 2.5 }}>
           <Typography variant="h6" sx={{ mb: 2 }}>
             Nuevo reporte de evolución
