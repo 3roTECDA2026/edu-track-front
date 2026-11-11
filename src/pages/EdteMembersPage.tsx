@@ -52,6 +52,7 @@ export default function EdteMembersPage() {
       <Dialog open={open} onClose={() => setOpen(false)}>
         <DialogTitle>Nuevo integrante</DialogTitle>
         <DialogContent>
+          <TextField label="Buscar usuario" value={query} onChange={(e) => setQuery(e.target.value)} fullWidth sx={{ mt: 1 }} />
           <TextField label="Usuario" value={userName} onChange={(e) => setUserName(e.target.value)} fullWidth sx={{ mt: 1 }} />
           <FormControl fullWidth sx={{ mt: 2 }}>
             <InputLabel>Rol</InputLabel>
