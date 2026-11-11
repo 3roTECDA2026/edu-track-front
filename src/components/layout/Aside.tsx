@@ -25,8 +25,7 @@ import { UserIcon } from 'lucide-react'
 import EventRepeatIcon from '@mui/icons-material/EventRepeat'
 import SettingsIcon from '@mui/icons-material/Settings'
 import GavelIcon from '@mui/icons-material/Gavel'
-
-import { currentUser } from '@/utils/currentUser'
+import { getRole, USER_MANAGEMENT_ROLES } from '@/services/session'
 import { canAccessConflicts } from '@/components/conflicts/ConflictRoleGuard'
 
 const drawerWidth = 250
@@ -35,11 +34,12 @@ interface NavItem {
   label: string
   icon: React.ReactNode
   path?: string
+  roles?: string[] // si no se define, lo ve cualquier usuario con sesión
 }
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Panel', icon: <DashboardIcon />, path: '/home' },
-  { label: 'Usuarios', icon: <UserIcon />, path: '/users' },
+  { label: 'Usuarios', icon: <UserIcon />, path: '/users', roles: USER_MANAGEMENT_ROLES },
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
   { label: 'Conflictos', icon: <GavelIcon />, path: '/conflicts' },
   { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
@@ -53,8 +53,13 @@ const NAV_ITEMS: NavItem[] = [
 export const Aside: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { role } = currentUser()
+
   const [open, setOpen] = useState(true)
+
+  const role = getRole()
+  const visibleItems = NAV_ITEMS.filter(
+    (item) => !item.roles || (role !== undefined && item.roles.includes(role))
+  )
 
   const handleNavigation = (item: NavItem) => {
     if (item.path) {
@@ -170,47 +175,49 @@ export const Aside: React.FC = () => {
 
         <Collapse in={open} timeout="auto" unmountOnExit>
           <List disablePadding>
-            {NAV_ITEMS.filter((item) => item.path !== '/conflicts' || canAccessConflicts(role)).map((item) => {
-              const isActive = item.path === location.pathname
-              return (
-                <ListItem key={item.label} disablePadding sx={{ mb: 0.5, px: 0.5 }}>
-                  <ListItemButton
-                    onClick={() => handleNavigation(item)}
-                    sx={{
-                      borderRadius: '10px',
-                      px: 1.5,
-                      py: 0.9,
-                      backgroundColor: isActive ? '#e5e7eb' : 'transparent',
-                      '&:hover': {
-                        backgroundColor: isActive ? '#e5e7eb' : '#e5e7eb',
-                      },
-                    }}
-                  >
-                    <ListItemIcon
+            {visibleItems
+              .filter((item) => item.path !== '/conflicts' || canAccessConflicts(role ?? null))
+              .map((item) => {
+                const isActive = item.path === location.pathname
+                return (
+                  <ListItem key={item.label} disablePadding sx={{ mb: 0.5, px: 0.5 }}>
+                    <ListItemButton
+                      onClick={() => handleNavigation(item)}
                       sx={{
-                        minWidth: 36,
-                        color: isActive ? '#111827' : '#4b5563',
+                        borderRadius: '10px',
+                        px: 1.5,
+                        py: 0.9,
+                        backgroundColor: isActive ? '#e5e7eb' : 'transparent',
+                        '&:hover': {
+                          backgroundColor: isActive ? '#e5e7eb' : '#e5e7eb',
+                        },
                       }}
                     >
-                      {item.icon}
-                    </ListItemIcon>
-                    <ListItemText
-                      primary={
-                        <Typography
-                          sx={{
-                            fontSize: '0.9rem',
-                            fontWeight: isActive ? 'bold' : 500,
-                            color: isActive ? '#111827' : '#374151',
-                          }}
-                        >
-                          {item.label}
-                        </Typography>
-                      }
-                    />
-                  </ListItemButton>
-                </ListItem>
-              )
-            })}
+                      <ListItemIcon
+                        sx={{
+                          minWidth: 36,
+                          color: isActive ? '#111827' : '#4b5563',
+                        }}
+                      >
+                        {item.icon}
+                      </ListItemIcon>
+                      <ListItemText
+                        primary={
+                          <Typography
+                            sx={{
+                              fontSize: '0.9rem',
+                              fontWeight: isActive ? 'bold' : 500,
+                              color: isActive ? '#111827' : '#374151',
+                            }}
+                          >
+                            {item.label}
+                          </Typography>
+                        }
+                      />
+                    </ListItemButton>
+                  </ListItem>
+                )
+              })}
           </List>
         </Collapse>
       </List>

@@ -105,6 +105,7 @@ export const IntensificationAttendanceTab = ({
 }: IntensificationAttendanceTabProps) => {
   const user = useMemo(currentUser, [])
   const isTeacher = user.role === 'TEACHER'
+  const isPreceptor = user.role === 'PRECEPTOR'
 
   const [scheduleId, setScheduleId] = useState('')
   const [subjectId, setSubjectId] = useState('')
@@ -158,9 +159,9 @@ export const IntensificationAttendanceTab = ({
     setMarks(loaded)
   }, [students])
 
-  // La dirección y la administración cargan a todos; un docente, solo a sus alumnos
+  // La dirección, la administración y la preceptoría cargan a todos; un docente, solo a sus alumnos
   const canMark = (item: IntensificationAttendanceStudent) =>
-    canEdit || (isTeacher && item.responsibleTeacherId === user.userId)
+  canEdit || isPreceptor || (isTeacher && item.responsibleTeacherId === user.userId)
   const editable = students.filter(canMark)
 
   // Hay algo para guardar si cambió alguna fila que el usuario puede cargar
