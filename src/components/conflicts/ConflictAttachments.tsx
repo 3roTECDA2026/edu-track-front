@@ -22,21 +22,16 @@ import {
 function dateLabel(value: string | undefined) {
   if (!value) return 'Fecha no disponible'
   const date = new Date(value)
-  return Number.isNaN(date.getTime())
-    ? 'Fecha no disponible'
-    : date.toLocaleString('es-AR')
+  return Number.isNaN(date.getTime()) ? 'Fecha no disponible' : date.toLocaleString('es-AR')
 }
 
-export default function ConflictAttachments({
-  conflictId,
-}: {
-  conflictId: string
-}) {
+export default function ConflictAttachments({ conflictId }: { conflictId: string }) {
   const [open, setOpen] = useState(false)
   const [detail, setDetail] = useState<LegalConflictDetail | null>(null)
   const [content, setContent] = useState('')
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
@@ -54,11 +49,7 @@ export default function ConflictAttachments({
       })
       .catch((err: unknown) => {
         if (active) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : 'No se pudo consultar el conflicto.'
-          )
+          setError(err instanceof Error ? err.message : 'No se pudo consultar el conflicto.')
         }
       })
       .finally(() => {
@@ -74,6 +65,7 @@ export default function ConflictAttachments({
     const text = content.trim()
     if (!text || saving) return
 
+    setConfirmOpen(false)
     setSaving(true)
     setError('')
     setSuccess('')
@@ -84,15 +76,9 @@ export default function ConflictAttachments({
       const updated = await getLegalConflictDetail(conflictId)
       setDetail(updated)
       setContent('')
-      setSuccess(
-        'Anexo registrado correctamente. No podrá modificarse ni eliminarse.'
-      )
+      setSuccess('Anexo registrado correctamente. No podrá modificarse ni eliminarse.')
     } catch (err: unknown) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'No se pudo guardar el anexo.'
-      )
+      setError(err instanceof Error ? err.message : 'No se pudo guardar el anexo.')
     } finally {
       setSaving(false)
     }
@@ -164,9 +150,7 @@ export default function ConflictAttachments({
               {detail.attachments?.length ? (
                 [...detail.attachments]
                   .sort(
-                    (a, b) =>
-                      (a.date ?? '').localeCompare(b.date ?? '') ||
-                      a.id.localeCompare(b.id)
+                    (a, b) => (a.date ?? '').localeCompare(b.date ?? '') || a.id.localeCompare(b.id)
                   )
                   .map((attachment) => (
                     <Box
@@ -178,10 +162,7 @@ export default function ConflictAttachments({
                         p: 2,
                       }}
                     >
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                      >
+                      <Typography variant="caption" color="text.secondary">
                         {dateLabel(attachment.date)}
                         {' · Autor: '}
                         {attachment.authorId}
@@ -199,9 +180,7 @@ export default function ConflictAttachments({
                     </Box>
                   ))
               ) : (
-                <Typography color="text.secondary">
-                  Todavía no hay anexos registrados.
-                </Typography>
+                <Typography color="text.secondary">Todavía no hay anexos registrados.</Typography>
               )}
 
               <Divider />
@@ -225,11 +204,11 @@ export default function ConflictAttachments({
                 Una vez guardado, este anexo no podrá editarse ni eliminarse.
               </Alert>
 
-              <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+              <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <Button
                   variant="contained"
                   disabled={!content.trim() || saving}
-                  onClick={save}
+                  onClick={() => setConfirmOpen(true)}
                 >
                   {saving ? 'Guardando...' : 'Guardar anexo'}
                 </Button>
@@ -239,11 +218,40 @@ export default function ConflictAttachments({
         </DialogContent>
 
         <DialogActions>
-          <Button
-            onClick={() => setOpen(false)}
-            disabled={saving}
-          >
+          <Button onClick={() => setOpen(false)} disabled={saving}>
             Cerrar
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={confirmOpen}
+        onClose={() => {
+          if (!saving) setConfirmOpen(false)
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Confirmar registro del anexo</DialogTitle>
+
+        <DialogContent>
+          <Typography>
+            ¿Confirmás que querés registrar este anexo? Una vez guardado, no podrá modificarse ni
+            eliminarse.
+          </Typography>
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={() => setConfirmOpen(false)} disabled={saving}>
+            Cancelar
+          </Button>
+
+          <Button
+            variant="contained"
+            onClick={() => void save()}
+            disabled={saving || !content.trim()}
+          >
+            {saving ? 'Guardando...' : 'Confirmar y guardar'}
           </Button>
         </DialogActions>
       </Dialog>

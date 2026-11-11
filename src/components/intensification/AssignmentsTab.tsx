@@ -100,6 +100,7 @@ export const AssignmentsTab = ({
 }: AssignmentsTabProps) => {
   const user = useMemo(currentUser, [])
   const isTeacher = user.role === 'TEACHER'
+  const isPreceptor = user.role === 'PRECEPTOR'
 
   const [scheduleId, setScheduleId] = useState('')
   const [subjectId, setSubjectId] = useState('')
@@ -156,14 +157,14 @@ export const AssignmentsTab = ({
   const currentPage = Math.min(page, lastPage)
   const pageItems = items.slice(currentPage * rowsPerPage, (currentPage + 1) * rowsPerPage)
 
-  // La columna de acciones la ven la dirección, la administración y los docentes
-  const showActions = canEdit || isTeacher
+  // La columna de acciones la ven la dirección, la administración, los docentes y la preceptoría
+  const showActions = canEdit || isTeacher || isPreceptor
 
-  // Cargar resultado: la dirección y la administración, o el docente responsable de esa fila.
+  // Cargar resultado: la dirección, la administración y la preceptoría, o el docente responsable de esa fila.
   // Con AA la materia ya quedó acreditada y el resultado no se cambia.
   const canLoadResult = (item: IntensificationAssignment) =>
-    item.resultCode !== 'AA' &&
-    (canEdit || (isTeacher && item.responsibleTeacher?.id === user.userId))
+  item.resultCode !== 'AA' &&
+  (canEdit || isPreceptor || (isTeacher && item.responsibleTeacher?.id === user.userId))
 
   function refresh(message: string) {
     onMessage(message, 'success')

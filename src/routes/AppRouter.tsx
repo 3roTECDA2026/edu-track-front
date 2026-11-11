@@ -1,6 +1,6 @@
-import ConflictsPage from '@/pages/ConflictsPage'
-import { ConflictRoleGuard } from '@/components/conflicts/ConflictRoleGuard'
 // src/routes/AppRouter.tsx
+import ConflictsPage from '@/pages/ConflictsPage'
+import { CONFLICT_ALLOWED_ROLES } from '@/components/conflicts/ConflictRoleGuard'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 import UsersPage from '@/pages/UsersPage'
@@ -15,53 +15,39 @@ import StudentProfilePage from '@/pages/StudentProfilePage'
 import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage'
 import IntensificationCalendarPage from '@/pages/IntensificationCalendarPage'
 import OrganizationalModelPage from '@/pages/OrganizationalModelPage'
+import { USER_MANAGEMENT_ROLES } from '@/services/session'
+import ProtectedRoute from '@/routes/ProtectedRoute'
 
 const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Login */}
+        {/* Pública */}
         <Route path="/login" element={<LoginPage />} />
 
-        {/* Inicio */}
-        <Route path="/home" element={<HomePage />} />
+        {/* Privadas: requieren sesión */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/courses" element={<CoursesPage />} />
+          <Route path="/attendance" element={<AttendanceSummaryPage />} />
+          <Route path="/attendance/daily" element={<DailyAttendancePage />} />
+          <Route path="/students" element={<StudentsPage />} />
+          <Route path="/students/:id" element={<StudentProfilePage />} />
+          <Route path="/students/:id/trajectory" element={<StudentTrajectoryPage />} />
+          <Route path="/calification-grid" element={<CalificationGridPage />} />
+          <Route path="/intensification-calendar" element={<IntensificationCalendarPage />} />
+          <Route path="/organizational-model" element={<OrganizationalModelPage />} />
+        </Route>
 
-        {/* Cursos */}
-        <Route path="/courses" element={<CoursesPage />} />
-        {/* Asistencia - Resumen */}
-        <Route path="/attendance" element={<AttendanceSummaryPage />} />
+        {/* Solo administración */}
+        <Route element={<ProtectedRoute roles={USER_MANAGEMENT_ROLES} />}>
+          <Route path="/users" element={<UsersPage />} />
+        </Route>
 
-        {/* Asistencia - Carga diaria */}
-        <Route path="/attendance/daily" element={<DailyAttendancePage />} />
-
-        {/* Alumnos */}
-        <Route path="/students" element={<StudentsPage />} />
-
-        {/* Ficha del alumno */}
-        <Route path="/students/:id" element={<StudentProfilePage />} />
-
-        {/* Trayectoria académica del alumno */}
-        <Route path="/students/:id/trajectory" element={<StudentTrajectoryPage />} />
-
-        {/* Calificaciones */}
-        <Route path="/calification-grid" element={<CalificationGridPage />} />
-
-        {/* Usuarios */}
-        <Route path="/users" element={<UsersPage />} />
-
-        <Route path="/intensification-calendar" element={<IntensificationCalendarPage />} />
-
-        <Route path="/organizational-model" element={<OrganizationalModelPage />} />
-
-        {/* CRM-091: acceso exclusivo a EOE y Directivos */}
-        <Route
-          path="/conflicts"
-          element={
-            <ConflictRoleGuard>
-              <ConflictsPage />
-            </ConflictRoleGuard>
-          }
-        />
+        {/* CRM-091/092: acceso exclusivo a EOE y Directivos */}
+        <Route element={<ProtectedRoute roles={CONFLICT_ALLOWED_ROLES} />}>
+          <Route path="/conflicts" element={<ConflictsPage />} />
+        </Route>
 
         {/* Ruta por defecto */}
         <Route path="*" element={<Navigate to="/login" replace />} />

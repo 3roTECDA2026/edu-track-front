@@ -25,9 +25,8 @@ import { UserIcon } from 'lucide-react'
 import EventRepeatIcon from '@mui/icons-material/EventRepeat'
 import SettingsIcon from '@mui/icons-material/Settings'
 import GavelIcon from '@mui/icons-material/Gavel'
-
-import { currentUser } from '@/utils/currentUser'
-import { canAccessConflicts } from '@/components/conflicts/ConflictRoleGuard'
+import { getRole, USER_MANAGEMENT_ROLES } from '@/services/session'
+import { CONFLICT_ALLOWED_ROLES } from '@/components/conflicts/ConflictRoleGuard'
 
 const drawerWidth = 250
 
@@ -35,13 +34,14 @@ interface NavItem {
   label: string
   icon: React.ReactNode
   path?: string
+  roles?: string[] // si no se define, lo ve cualquier usuario con sesión
 }
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Panel', icon: <DashboardIcon />, path: '/home' },
-  { label: 'Usuarios', icon: <UserIcon />, path: '/users' },
+  { label: 'Usuarios', icon: <UserIcon />, path: '/users', roles: USER_MANAGEMENT_ROLES },
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
-  { label: 'Conflictos', icon: <GavelIcon />, path: '/conflicts' },
+  { label: 'Conflictos', icon: <GavelIcon />, path: '/conflicts', roles: CONFLICT_ALLOWED_ROLES },
   { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
   { label: 'Carga de asistencia', path: '/attendance/daily', icon: <EditCalendarIcon /> },
   { label: 'Resumen de asistencias', path: '/attendance', icon: <AssessmentIcon /> },
@@ -53,8 +53,12 @@ const NAV_ITEMS: NavItem[] = [
 export const Aside: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { role } = currentUser()
   const [open, setOpen] = useState(true)
+
+  const role = getRole()
+  const visibleItems = NAV_ITEMS.filter(
+    (item) => !item.roles || (role !== undefined && item.roles.includes(role))
+  )
 
   const handleNavigation = (item: NavItem) => {
     if (item.path) {
@@ -170,7 +174,7 @@ export const Aside: React.FC = () => {
 
         <Collapse in={open} timeout="auto" unmountOnExit>
           <List disablePadding>
-            {NAV_ITEMS.filter((item) => item.path !== '/conflicts' || canAccessConflicts(role)).map((item) => {
+            {visibleItems.map((item) => {
               const isActive = item.path === location.pathname
               return (
                 <ListItem key={item.label} disablePadding sx={{ mb: 0.5, px: 0.5 }}>
