@@ -11,6 +11,7 @@ export default function EdteMembersPage() {
   const [userName, setUserName] = useState('')
   const [role, setRole] = useState('')
   const [active, setActive] = useState(true)
+  const [query, setQuery] = useState('')
   return (
     <MainLayout>
       <Box sx={{ maxWidth: 1200, mx: 'auto', p: 1 }}>
