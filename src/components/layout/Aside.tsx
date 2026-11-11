@@ -1,5 +1,5 @@
 // src/components/layout/Aside.tsx
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import {
   Box,
   Collapse,
@@ -10,43 +10,55 @@ import {
   ListItemIcon,
   ListItemText,
   Typography,
-} from '@mui/material';
-import PeopleIcon from '@mui/icons-material/People';
-import SchoolIcon from '@mui/icons-material/School';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import GradingIcon from '@mui/icons-material/Grading';
-import DashboardIcon from '@mui/icons-material/Dashboard';
-import { useLocation, useNavigate } from 'react-router-dom';
-import EditCalendarIcon from '@mui/icons-material/EditCalendar';
-import AssessmentIcon from '@mui/icons-material/Assessment';
-import logoEscuela from '@/assets/logo.png';
-import { UserIcon } from 'lucide-react';
-import EventRepeatIcon from '@mui/icons-material/EventRepeat';
+} from '@mui/material'
+import PeopleIcon from '@mui/icons-material/People'
+import SchoolIcon from '@mui/icons-material/School'
+import ExpandLessIcon from '@mui/icons-material/ExpandLess'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import GradingIcon from '@mui/icons-material/Grading'
+import DashboardIcon from '@mui/icons-material/Dashboard'
+import { useLocation, useNavigate } from 'react-router-dom'
+import EditCalendarIcon from '@mui/icons-material/EditCalendar'
+import AssessmentIcon from '@mui/icons-material/Assessment'
+import logoEscuela from '@/assets/logo.png'
+import { UserIcon } from 'lucide-react'
+import EventRepeatIcon from '@mui/icons-material/EventRepeat'
+import SettingsIcon from '@mui/icons-material/Settings'
+import GroupsIcon from '@mui/icons-material/Groups'
+import { getRole, USER_MANAGEMENT_ROLES } from '@/services/session'
+import { EDTE_VIEWER_ROLES } from '@/components/edte/edteLabels'
 
-const drawerWidth = 250;
+const drawerWidth = 250
 
 interface NavItem {
-  label: string;
-  icon: React.ReactNode;
-  path?: string;
+  label: string
+  icon: React.ReactNode
+  path?: string
+  roles?: string[] // si no se define, lo ve cualquier usuario con sesión
 }
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Panel', icon: <DashboardIcon />, path: '/home' },
-  { label: 'Usuarios', icon: <UserIcon />, path: '/users' },
+  { label: 'Usuarios', icon: <UserIcon />, path: '/users', roles: USER_MANAGEMENT_ROLES },
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
   { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
   { label: 'Carga de asistencia', path: '/attendance/daily', icon: <EditCalendarIcon /> },
   { label: 'Resumen de asistencias', path: '/attendance', icon: <AssessmentIcon /> },
   { label: 'Calificaciones', icon: <GradingIcon />, path: '/calification-grid' },
   { label: 'Intensificación', icon: <EventRepeatIcon />, path: '/intensification-calendar' },
-];
+  { label: 'Modelo organizativo', icon: <SettingsIcon />, path: '/organizational-model' },
+  { label: 'Reuniones del EDTE', icon: <GroupsIcon />, path: '/edte-meetings', roles: EDTE_VIEWER_ROLES },
+]
 
 export const Aside: React.FC = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const [open, setOpen] = useState(true);
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [open, setOpen] = useState(true)
+
+  const role = getRole()
+  const visibleItems = NAV_ITEMS.filter(
+    (item) => !item.roles || (role !== undefined && item.roles.includes(role)),
+  )
 
   const handleNavigation = (item: NavItem) => {
     if (item.path) {
@@ -162,7 +174,7 @@ export const Aside: React.FC = () => {
 
         <Collapse in={open} timeout="auto" unmountOnExit>
           <List disablePadding>
-            {NAV_ITEMS.map((item) => {
+            {visibleItems.map((item) => {
               const isActive = item.path === location.pathname;
               return (
                 <ListItem key={item.label} disablePadding sx={{ mb: 0.5, px: 0.5 }}>

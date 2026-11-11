@@ -1,65 +1,54 @@
 // src/routes/AppRouter.tsx
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
-import UsersPage from '@/pages/UsersPage';
-import HomePage from '@/pages/HomePage';
-import LoginPage from '@/pages/LoginPage';
-import AttendanceSummaryPage from '@/pages/AttendanceSummaryPage';
-import DailyAttendancePage from '@/pages/DailyAttendancePage';
-import StudentsPage from '@/pages/StudentsPage';
-import CalificationGridPage from '@/pages/CalificationGridPage';
-import CoursesPage from '@/pages/CoursesPage';
-import StudentProfilePage from '@/pages/StudentProfilePage';
-import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage';
-import IntensificationCalendarPage from '@/pages/IntensificationCalendarPage';
-import InterventionFormPage from '@/pages/InterventionFormPage';
+import UsersPage from '@/pages/UsersPage'
+import HomePage from '@/pages/HomePage'
+import LoginPage from '@/pages/LoginPage'
+import AttendanceSummaryPage from '@/pages/AttendanceSummaryPage'
+import DailyAttendancePage from '@/pages/DailyAttendancePage'
+import StudentsPage from '@/pages/StudentsPage'
+import CalificationGridPage from '@/pages/CalificationGridPage'
+import CoursesPage from '@/pages/CoursesPage'
+import StudentProfilePage from '@/pages/StudentProfilePage'
+import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage'
+import IntensificationCalendarPage from '@/pages/IntensificationCalendarPage'
+import OrganizationalModelPage from '@/pages/OrganizationalModelPage'
+import InterventionFormPage from '@/pages/InterventionFormPage'
+import { USER_MANAGEMENT_ROLES } from '@/services/session'
+import ProtectedRoute from '@/routes/ProtectedRoute'
 
 const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Login */}
+        {/* Pública */}
         <Route path="/login" element={<LoginPage />} />
 
-        {/* Inicio */}
-        <Route path="/home" element={<HomePage />} />
+        {/* Privadas: requieren sesión */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/home" element={<HomePage />} />
+          <Route path="/courses" element={<CoursesPage />} />
+          <Route path="/attendance" element={<AttendanceSummaryPage />} />
+          <Route path="/attendance/daily" element={<DailyAttendancePage />} />
+          <Route path="/students" element={<StudentsPage />} />
+          <Route path="/students/:id" element={<StudentProfilePage />} />
+          <Route path="/students/:id/trajectory" element={<StudentTrajectoryPage />} />
+          <Route path="/calification-grid" element={<CalificationGridPage />} />
+          <Route path="/intensification-calendar" element={<IntensificationCalendarPage />} />
+          <Route path="/organizational-model" element={<OrganizationalModelPage />} />
+          <Route path="/interventions/new" element={<InterventionFormPage />} />
+        </Route>
 
-        {/* Cursos */}
-        <Route path="/courses" element={<CoursesPage />} />
-        {/* Asistencia - Resumen */}
-        <Route path="/attendance" element={<AttendanceSummaryPage />} />
+        {/* Solo administración */}
+        <Route element={<ProtectedRoute roles={USER_MANAGEMENT_ROLES} />}>
+          <Route path="/users" element={<UsersPage />} />
+        </Route>
 
-        {/* Asistencia - Carga diaria */}
-        <Route path="/attendance/daily" element={<DailyAttendancePage />} />
-
-        {/* Alumnos */}
-        <Route path="/students" element={<StudentsPage />} />
-
-        {/* Ficha del alumno */}
-        <Route path="/students/:id" element={<StudentProfilePage />} />
-
-        {/* Trayectoria académica del alumno */}
-        <Route
-          path="/students/:id/trajectory"
-          element={<StudentTrajectoryPage />}
-        />
-
-        {/* Calificaciones */}
-        <Route
-          path="/calification-grid"
-          element={<CalificationGridPage />}
-        />
-
-        {/* Usuarios */}
-        <Route path="/users" element={<UsersPage />} />
-        <Route path="/interventions/new" element={<InterventionFormPage />} />
-        <Route path="/intensification-calendar" element={<IntensificationCalendarPage />} />
-        
         {/* Ruta por defecto */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>
-  );
-};
+  )
+}
 
-export default AppRouter;
+export default AppRouter

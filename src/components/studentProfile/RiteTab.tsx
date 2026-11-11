@@ -56,6 +56,7 @@ import {
   type RiteStatus,
   type RiteTerm,
 } from '@/services/rite.service'
+import { formatScore } from '@/utils/grades'
 import { downloadRitePdf } from '@/utils/ritePdf'
 
 // Los tres RITE de un ciclo lectivo: 1° y 2° cuatrimestre, y el posterior a la intensificación (E2-RF-12).
@@ -173,7 +174,7 @@ const Score = ({ value }: { value: number | null }) => {
       component="span"
       sx={{ fontWeight: failing ? 700 : 500, color: failing ? COLORS.danger : 'inherit' }}
     >
-      {value}
+      {formatScore(value)}
     </Box>
   )
 }
