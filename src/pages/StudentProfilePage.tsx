@@ -17,8 +17,10 @@ import { AttendanceTab } from '@/components/studentProfile/AttendanceTab'
 import { GradesTab } from '@/components/studentProfile/GradesTab'
 import { ObservationsTab } from '@/components/studentProfile/ObservationsTab'
 import { RiteTab } from '@/components/studentProfile/RiteTab'
+import { PendingSubjectsTab } from '@/components/studentProfile/PendingSubjectsTab'
 import { useLazyResource } from '@/hooks/useLazyResource'
 import { deactivateStudent } from '@/services/students.service'
+import { getRole } from '@/services/session'
 import {
   getStudentAttendance,
   getStudentById,
@@ -26,16 +28,19 @@ import {
   getStudentHistory,
 } from '@/services/studentProfile.service'
 
-type TabKey = 'personal' | 'enrollment' | 'attendance' | 'grades' | 'observations' | 'rite'
+type TabKey =
+  'personal' | 'enrollment' | 'attendance' | 'grades' | 'pending' | 'observations' | 'rite'
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'personal', label: 'Datos personales' },
   { key: 'enrollment', label: 'Inscripción' },
   { key: 'attendance', label: 'Asistencia' },
   { key: 'grades', label: 'Calificaciones' },
+  { key: 'pending', label: 'Materias pendientes' },
   { key: 'observations', label: 'Observaciones' },
   { key: 'rite', label: 'RITE' },
 ]
+const PENDING_KNOWLEDGE_ROLES = ['ADMINISTRATOR', 'SCHOOL_MANAGEMENT', 'EOE_DIRECTIVE', 'TEACHER']
 
 interface SnackbarState {
   message: string
@@ -74,11 +79,13 @@ const StudentProfilePage = () => {
     getStudentGrades(id, signal)
   )
 
-  const activeIndex = TABS.findIndex((tab) => tab.key === activeTab)
+  const canSeePending = PENDING_KNOWLEDGE_ROLES.includes(getRole() ?? '')
+  const tabs = canSeePending ? TABS : TABS.filter((tab) => tab.key !== 'pending')
+  const activeIndex = tabs.findIndex((tab) => tab.key === activeTab)
 
   // CustomTabs trabaja con el índice de la pestaña, por eso acá se traduce a su clave
   const handleTabChange = (_: SyntheticEvent, index: number) => {
-    const key = TABS[index].key
+    const key = tabs[index].key
     setActiveTab(key)
     setVisitedTabs((prev) => (prev.includes(key) ? prev : [...prev, key]))
   }
@@ -155,7 +162,7 @@ const StudentProfilePage = () => {
         {/* Pestañas dentro de la tarjeta estándar */}
         <ContentCard sx={{ mt: 3 }}>
           <CustomTabs
-            tabs={TABS.map((tab) => tab.label)}
+            tabs={tabs.map((tab) => tab.label)}
             value={activeIndex}
             onChange={handleTabChange}
             variant="scrollable"
@@ -186,6 +193,13 @@ const StudentProfilePage = () => {
                 loading={grades.loading}
                 error={grades.error}
                 onRetry={grades.reload}
+              />
+            )}
+            {activeTab === 'pending' && (
+              <PendingSubjectsTab
+                key={student.id}
+                studentId={student.id}
+                onSaved={(message, severity) => setSnackbar({ message, severity })}
               />
             )}
             {activeTab === 'observations' && (
