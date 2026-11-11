@@ -15,6 +15,7 @@ import {
   Typography,
 } from '@mui/material'
 
+import AddButton from '@/components/common/AddButton'
 import ConflictAttachments from '@/components/conflicts/ConflictAttachments'
 import MainLayout from '@/components/layout/MainLayout'
 import { PageContainer } from '@/components/common/PageContainer'
@@ -37,9 +38,7 @@ const studentLabel = (student: StudentListItem) =>
 function formatDate(value: string | null) {
   if (!value) return 'Sin fecha'
   const date = new Date(value)
-  return Number.isNaN(date.getTime())
-    ? 'Fecha inválida'
-    : date.toLocaleString('es-AR')
+  return Number.isNaN(date.getTime()) ? 'Fecha inválida' : date.toLocaleString('es-AR')
 }
 
 export default function ConflictsPage() {
@@ -82,9 +81,7 @@ export default function ConflictsPage() {
       .catch((error: unknown) => {
         if (!controller.signal.aborted) {
           setCodesError(
-            error instanceof Error
-              ? error.message
-              : 'No se pudieron cargar los códigos.'
+            error instanceof Error ? error.message : 'No se pudieron cargar los códigos.'
           )
         }
       })
@@ -126,15 +123,26 @@ export default function ConflictsPage() {
     return () => controller.abort()
   }, [student, reloadKey])
 
+  const occurrenceTimestamp = occurrenceDate ? new Date(occurrenceDate).getTime() : NaN
+
+  const validOccurrenceDate =
+    Number.isFinite(occurrenceTimestamp) && occurrenceTimestamp <= Date.now()
+
   const canSubmit =
     Boolean(student) &&
     Boolean(conflictCode.trim()) &&
-    Boolean(occurrenceDate) &&
+    validOccurrenceDate &&
     Boolean(detailedReport.trim()) &&
     !saving
 
   const handleSave = async () => {
     if (!student || !canSubmit) return
+
+    if (!Number.isFinite(occurrenceTimestamp) || occurrenceTimestamp > Date.now()) {
+      setSaveError('La fecha del suceso no puede ser futura.')
+      setConfirmOpen(false)
+      return
+    }
 
     setSaving(true)
     setSaveError('')
@@ -155,11 +163,7 @@ export default function ConflictsPage() {
       setSuccess('El conflicto se registró correctamente.')
       setReloadKey((value) => value + 1)
     } catch (error) {
-      setSaveError(
-        error instanceof Error
-          ? error.message
-          : 'No se pudo registrar el conflicto.'
-      )
+      setSaveError(error instanceof Error ? error.message : 'No se pudo registrar el conflicto.')
       setConfirmOpen(false)
     } finally {
       setSaving(false)
@@ -172,10 +176,7 @@ export default function ConflictsPage() {
         <PageHeader
           title="Registro de conflictos"
           subtitle="Registro y consulta de situaciones de alta complejidad."
-          breadcrumbs={[
-            { label: 'Inicio', href: '/home' },
-            { label: 'Conflictos' },
-          ]}
+          breadcrumbs={[{ label: 'Inicio', href: '/home' }, { label: 'Conflictos' }]}
         />
 
         <Stack spacing={3}>
@@ -191,9 +192,7 @@ export default function ConflictsPage() {
                   value={student}
                   loading={loadingStudents}
                   filterOptions={(options) => options}
-                  isOptionEqualToValue={(option, value) =>
-                    option.id === value.id
-                  }
+                  isOptionEqualToValue={(option, value) => option.id === value.id}
                   getOptionLabel={studentLabel}
                   onChange={(_, value) => {
                     setStudent(value)
@@ -245,7 +244,20 @@ export default function ConflictsPage() {
                   onChange={(event) => setOccurrenceDate(event.target.value)}
                   slotProps={{
                     inputLabel: { shrink: true },
+                    htmlInput: {
+                      max: (() => {
+                        const now = new Date()
+                        const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000)
+                        return local.toISOString().slice(0, 16)
+                      })(),
+                    },
                   }}
+                  error={Boolean(occurrenceDate) && !validOccurrenceDate}
+                  helperText={
+                    occurrenceDate && !validOccurrenceDate
+                      ? 'La fecha del suceso no puede ser futura.'
+                      : undefined
+                  }
                   required
                   fullWidth
                 />
@@ -262,22 +274,20 @@ export default function ConflictsPage() {
                 />
 
                 <Alert severity="warning">
-                  El conflicto queda bloqueado desde el momento de su registro.
-                  No podrá editarse ni eliminarse. Los seguimientos posteriores
-                  se incorporan mediante anexos permanentes.
+                  El conflicto queda bloqueado desde el momento de su registro. No podrá editarse ni
+                  eliminarse. Los seguimientos posteriores se incorporan mediante anexos
+                  permanentes.
                 </Alert>
 
                 {saveError && <Alert severity="error">{saveError}</Alert>}
                 {success && <Alert severity="success">{success}</Alert>}
 
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <Button
-                    variant="contained"
+                  <AddButton
+                    label="Guardar conflicto"
                     disabled={!canSubmit}
                     onClick={() => setConfirmOpen(true)}
-                  >
-                    Guardar conflicto
-                  </Button>
+                  />
                 </Box>
               </Stack>
             </Box>
@@ -317,14 +327,9 @@ export default function ConflictsPage() {
                         Código: {conflict.conflictCode}
                       </Typography>
                       <Typography variant="body2">
-                        Fecha: {formatDate(
-                          conflict.occurrenceDate ?? conflict.registeredAt
-                        )}
+                        Fecha: {formatDate(conflict.occurrenceDate ?? conflict.registeredAt)}
                       </Typography>
-                      <Typography
-                        variant="body2"
-                        sx={{ overflowWrap: 'anywhere' }}
-                      >
+                      <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>
                         UUID: {conflict.documentUuid}
                       </Typography>
                       <ConflictAttachments conflictId={conflict.id} />
@@ -347,23 +352,15 @@ export default function ConflictsPage() {
           <DialogTitle>Confirmar registro de conflicto</DialogTitle>
           <DialogContent>
             <DialogContentText>
-              ¿Confirmás que los datos ingresados son correctos?
-              El conflicto quedará bloqueado desde el momento de su registro.
-              Una vez registrado, no podrá editarse ni eliminarse.
+              ¿Confirmás que los datos ingresados son correctos? El conflicto quedará bloqueado
+              desde el momento de su registro. Una vez registrado, no podrá editarse ni eliminarse.
             </DialogContentText>
           </DialogContent>
           <DialogActions>
-            <Button
-              onClick={() => setConfirmOpen(false)}
-              disabled={saving}
-            >
+            <Button onClick={() => setConfirmOpen(false)} disabled={saving}>
               Cancelar
             </Button>
-            <Button
-              variant="contained"
-              onClick={handleSave}
-              disabled={saving || !canSubmit}
-            >
+            <Button variant="contained" onClick={handleSave} disabled={saving || !canSubmit}>
               {saving ? 'Guardando...' : 'Confirmar'}
             </Button>
           </DialogActions>

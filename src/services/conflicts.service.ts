@@ -23,20 +23,15 @@ interface ConflictResponse<T> {
   data: T
 }
 
-export async function createLegalConflict(
-  input: CreateLegalConflictInput
-): Promise<LegalConflict> {
-  const response = await fetchApi<ConflictResponse<LegalConflict>>(
-    '/api/legal-conflicts',
-    {
-      method: 'POST',
-      cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-store',
-      },
-      body: JSON.stringify(input),
-    }
-  )
+export async function createLegalConflict(input: CreateLegalConflictInput): Promise<LegalConflict> {
+  const response = await fetchApi<ConflictResponse<LegalConflict>>('/api/legal-conflicts', {
+    method: 'POST',
+    cache: 'no-store',
+    headers: {
+      'Cache-Control': 'no-store',
+    },
+    body: JSON.stringify(input),
+  })
 
   return response.data
 }
@@ -59,36 +54,33 @@ export async function getStudentLegalConflicts(
   return response.data
 }
 
-
 // CRM-091: catálogo normalizado de conflictos
 export interface ConflictCode {
   code: string
   description: string
 }
 
-export async function getConflictCodes(
-  signal?: AbortSignal
-): Promise<ConflictCode[]> {
-  const response = await fetchApi<ConflictResponse<ConflictCode[]>>(
-    '/api/legal-conflicts/codes',
-    {
-      signal,
-      cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-store',
-      },
-    }
-  )
+export async function getConflictCodes(signal?: AbortSignal): Promise<ConflictCode[]> {
+  const response = await fetchApi<ConflictResponse<ConflictCode[]>>('/api/legal-conflicts/codes', {
+    signal,
+    cache: 'no-store',
+    headers: {
+      'Cache-Control': 'no-store',
+    },
+  })
 
   return response.data
 }
-
 
 // CRM-092: consulta de conflictos y anexos permanentes.
 export interface LegalConflictAttachment {
   id: string
   conflictId: string
   authorId: string
+  author?: {
+    firstName: string
+    lastName: string
+  } | null
   content: string
   date: string
 }
@@ -98,9 +90,7 @@ export interface LegalConflictDetail extends LegalConflict {
   electronicSignature?: unknown
 }
 
-export async function getLegalConflictDetail(
-  id: string
-): Promise<LegalConflictDetail> {
+export async function getLegalConflictDetail(id: string): Promise<LegalConflictDetail> {
   const response = await fetchApi<ConflictResponse<LegalConflictDetail>>(
     `/api/legal-conflicts/${encodeURIComponent(id)}`,
     { cache: 'no-store' }

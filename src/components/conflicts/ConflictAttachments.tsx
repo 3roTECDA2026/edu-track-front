@@ -13,6 +13,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
+import AddButton from '@/components/common/AddButton'
 import {
   createLegalConflictAttachment,
   getLegalConflictDetail,
@@ -165,7 +166,9 @@ export default function ConflictAttachments({ conflictId }: { conflictId: string
                       <Typography variant="caption" color="text.secondary">
                         {dateLabel(attachment.date)}
                         {' · Autor: '}
-                        {attachment.authorId}
+                        {attachment.author
+                          ? `${attachment.author.firstName} ${attachment.author.lastName}`
+                          : 'Autor no disponible'}
                       </Typography>
 
                       <Typography
@@ -205,13 +208,11 @@ export default function ConflictAttachments({ conflictId }: { conflictId: string
               </Alert>
 
               <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                <Button
-                  variant="contained"
+                <AddButton
+                  label={saving ? 'Guardando...' : 'Guardar anexo'}
                   disabled={!content.trim() || saving}
                   onClick={() => setConfirmOpen(true)}
-                >
-                  {saving ? 'Guardando...' : 'Guardar anexo'}
-                </Button>
+                />
               </Box>
             </Stack>
           )}
