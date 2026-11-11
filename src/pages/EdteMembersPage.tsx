@@ -2,8 +2,10 @@ import { Box, Table, TableBody, TableCell, TableHead, TableRow, Typography } fro
 import MainLayout from '@/components/layout/MainLayout'
 import PageHeader from '@/components/common/PageHeader'
 import { ContentCard } from '@/components/common/ContentCard'
+import { useEdteMembers } from '@/hooks/useEdteMembers'
 
 export default function EdteMembersPage() {
+  const { members, loading } = useEdteMembers()
   return (
     <MainLayout>
       <Box sx={{ maxWidth: 1200, mx: 'auto', p: 1 }}>
@@ -19,11 +21,21 @@ export default function EdteMembersPage() {
               </TableRow>
             </TableHead>
             <TableBody>
-              <TableRow>
-                <TableCell colSpan={4}>
-                  <Typography variant="body2">Sin integrantes cargados.</Typography>
-                </TableCell>
-              </TableRow>
+              {members.map((m) => (
+                <TableRow key={m.id}>
+                  <TableCell>{m.user ? `${m.user.lastName ?? ''}, ${m.user.firstName ?? ''}` : m.userId}</TableCell>
+                  <TableCell>{m.roleInTeam}</TableCell>
+                  <TableCell>{m.active ? 'Activo' : 'Inactivo'}</TableCell>
+                  <TableCell>—</TableCell>
+                </TableRow>
+              ))}
+              {members.length === 0 && !loading && (
+                <TableRow>
+                  <TableCell colSpan={4}>
+                    <Typography variant="body2">Sin integrantes cargados.</Typography>
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </ContentCard>
