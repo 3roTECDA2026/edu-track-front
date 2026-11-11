@@ -1,4 +1,4 @@
-import { Box, Button, Dialog, DialogContent, DialogTitle, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material'
+import { Box, Button, Dialog, DialogContent, DialogTitle, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@mui/material'
 import MainLayout from '@/components/layout/MainLayout'
 import PageHeader from '@/components/common/PageHeader'
 import { ContentCard } from '@/components/common/ContentCard'
@@ -8,6 +8,7 @@ import { useState } from 'react'
 export default function EdteMembersPage() {
   const { members, loading } = useEdteMembers()
   const [open, setOpen] = useState(false)
+  const [userName, setUserName] = useState('')
   return (
     <MainLayout>
       <Box sx={{ maxWidth: 1200, mx: 'auto', p: 1 }}>
@@ -47,7 +48,9 @@ export default function EdteMembersPage() {
       </Box>
       <Dialog open={open} onClose={() => setOpen(false)}>
         <DialogTitle>Nuevo integrante</DialogTitle>
-        <DialogContent />
+        <DialogContent>
+          <TextField label="Usuario" value={userName} onChange={(e) => setUserName(e.target.value)} fullWidth sx={{ mt: 1 }} />
+        </DialogContent>
       </Dialog>
     </MainLayout>
   )
