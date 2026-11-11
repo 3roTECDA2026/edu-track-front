@@ -259,9 +259,8 @@ export const CalificationGridPage: React.FC = () => {
     const first = scores[termKey(row.id, 1)]
     const second = scores[termKey(row.id, 2)]
     if (second === undefined || second < PASSING_SCORE) return undefined
-    if (first !== undefined && first >= PASSING_SCORE) {
-      return Math.round(((first + second) / 2) * 10) / 10
-    }
+    // Promedio sin redondear (7 y 8 → 7,5), igual que el back
+    if (first !== undefined && first >= PASSING_SCORE) return (first + second) / 2
     const recovered = row.grade?.term1IntensificationScore
     if (typeof recovered === 'number' && recovered >= PASSING_SCORE) return recovered
     return undefined
