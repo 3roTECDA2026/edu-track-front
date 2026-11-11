@@ -21,6 +21,8 @@ export interface RosterGrade {
   preliminaryAssessment2: PreliminaryAssessment | null
   term1Score: number | null
   term2Score: number | null
+  // Nota con la que recuperó el 1.º cuatrimestre durante el 2.º (CRM-052)
+  term1IntensificationScore: number | null
   finalScore: number | null
   subjectStatus: string
   term1Closed: boolean

@@ -2,6 +2,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage, type RGB }
 
 import templateUrl from '@/assets/rite/RITE_2025.pdf?url'
 import type { RiteDocument, RiteStatus } from '@/services/rite.service'
+import { formatScore } from '@/utils/grades'
 
 // El formulario oficial es A4 apaisado. pdf-lib mide en puntos desde abajo a la izquierda,
 // pero las posiciones de acá están en milímetros desde arriba a la izquierda (como se ve la hoja).
@@ -183,7 +184,9 @@ export async function downloadRitePdf(doc: RiteDocument, status: RiteStatus) {
     // Intensificación 1° cuatrimestre: el esquema todavía no guarda esa nota.
     drawText(firstPage, fonts, show(subject.intensification?.december), COLUMN_X.december, valueY, centered)
     drawText(firstPage, fonts, show(subject.intensification?.february), COLUMN_X.february, valueY, centered)
-    drawText(firstPage, fonts, show(subject.finalScore), COLUMN_X.finalScore, valueY, centered)
+    // La nota final puede tener decimales (7,5): se imprime con coma
+    const finalScore = subject.finalScore === null ? '' : formatScore(subject.finalScore)
+    drawText(firstPage, fonts, finalScore, COLUMN_X.finalScore, valueY, centered)
 
     // Observaciones: al lado de "1º C:" y "2º C:", que ya están impresos en el formulario.
     // Si son muy largas, se recortan con "…" para que no se salgan del casillero.
