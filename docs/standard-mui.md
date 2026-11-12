@@ -117,6 +117,20 @@ Props: `onClick`, `label?` (texto del tooltip y accesibilidad; por defecto "Edit
 
 ---
 
+### `RepeatMark`
+Marca "R" de materia recursada (como en el RITE), en blanco y negro. Va junto al nombre del alumno
+en la grilla o junto al de la materia en la ficha.
+
+```tsx
+import { RepeatMark } from '@/components/common/RepeatMark'
+
+{row.courseType === 'REPEAT' && <RepeatMark />}
+```
+
+Props: `sx?` (se mezcla con el estilo por defecto).
+
+---
+
 ### `StandardTablePagination`
 Paginado de tablas, con textos en castellano y opciones iguales para todos.
 
