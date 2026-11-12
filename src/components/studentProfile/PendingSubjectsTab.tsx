@@ -1,10 +1,20 @@
 import { useState } from 'react'
-import { Box, Button, CircularProgress, Paper, Stack, TextField, Typography } from '@mui/material'
+import {
+  Box,
+  Button,
+  Chip,
+  CircularProgress,
+  Paper,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material'
 import AssignmentLateIcon from '@mui/icons-material/AssignmentLate'
+import CheckIcon from '@mui/icons-material/Check'
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty'
 import SaveIcon from '@mui/icons-material/Save'
 
 import { cardSx } from '@/components/studentProfile/profileStyles'
-import { SoftBadge } from '@/components/studentProfile/SoftBadge'
 import { TabEmpty, TabError, TabLoading } from '@/components/studentProfile/TabStates'
 import { useLazyResource } from '@/hooks/useLazyResource'
 import {
@@ -16,12 +26,35 @@ import {
 
 const MAX_LENGTH = 2000
 
+// Estado de la MPAA en blanco y negro (CRM-097): se distingue por el texto, el ícono y la forma
+// (contorno o relleno), sin depender del color
 const STATUS_CONFIG: Record<
   PendingSubjectStatus,
-  { label: string; color: string; background: string }
+  { label: string; icon: React.ReactElement; variant: 'outlined' | 'filled' }
 > = {
-  PENDING: { label: 'Pendiente', color: '#92400e', background: '#fef3c7' },
-  ACCREDITED: { label: 'Acreditada', color: '#15803d', background: '#dcfce7' },
+  PENDING: { label: 'Pendiente', icon: <HourglassEmptyIcon />, variant: 'outlined' },
+  ACCREDITED: { label: 'Acreditada', icon: <CheckIcon />, variant: 'filled' },
+}
+
+const StatusChip = ({ status }: { status: PendingSubjectStatus }) => {
+  const config = STATUS_CONFIG[status]
+  return (
+    <Chip
+      size="small"
+      label={config.label}
+      icon={config.icon}
+      variant={config.variant}
+      sx={{
+        borderRadius: '4px',
+        fontWeight: 600,
+        borderColor: 'primary.main',
+        ...(config.variant === 'filled'
+          ? { bgcolor: 'primary.main', color: 'primary.contrastText' }
+          : { color: 'primary.main' }),
+        '& .MuiChip-icon': { color: 'inherit', fontSize: 16 },
+      }}
+    />
+  )
 }
 
 interface PendingSubjectCardProps {
@@ -38,7 +71,6 @@ const PendingSubjectCard = ({ item, onSaved, onUpdated }: PendingSubjectCardProp
   const [closing, setClosing] = useState(savedClosing)
   const [saving, setSaving] = useState(false)
 
-  const status = STATUS_CONFIG[item.status]
   // Una MPAA acreditada ya no tiene saberes por completar
   const readOnly = item.status === 'ACCREDITED'
   const hasChanges = initial !== savedInitial || closing !== savedClosing
@@ -68,7 +100,7 @@ const PendingSubjectCard = ({ item, onSaved, onUpdated }: PendingSubjectCardProp
         sx={{ alignItems: 'center', mb: 0.5, flexWrap: 'wrap', rowGap: 1 }}
       >
         <Typography variant="h6">{item.subject.name}</Typography>
-        <SoftBadge label={status.label} color={status.color} background={status.background} />
+        <StatusChip status={item.status} />
       </Stack>
       <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
         {item.gradeLevel ?? item.subject.gradeLevel}° año · Quedó pendiente en el ciclo{' '}
