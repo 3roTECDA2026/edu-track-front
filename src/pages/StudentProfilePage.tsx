@@ -92,7 +92,7 @@ const StudentProfilePage = () => {
   const fortePlan = useLazyResource(id ? `forte-plan:${id}` : null, (signal) =>
     getStudentFortePlan(id, signal)
   )
-   const allTabs = fortePlan.data ? [...TABS, FORTE_TAB] : TABS
+  const allTabs = fortePlan.data ? [...TABS, FORTE_TAB] : TABS
   // La pestaña de materias pendientes solo se muestra a los roles que el back deja consultarla
   const canSeePending = PENDING_KNOWLEDGE_ROLES.includes(getRole() ?? '')
   const tabs = canSeePending ? allTabs : allTabs.filter((tab) => tab.key !== 'pending')
@@ -113,10 +113,11 @@ const StudentProfilePage = () => {
       : null,
     (signal) => getStudentAttendance(id, currentYear, signal)
   )
-  
 
-  const tabs = canSeePending ? TABS : TABS.filter((tab) => tab.key !== 'pending')
-  const activeIndex = tabs.findIndex((tab) => tab.key === activeTab)
+  const grades = useLazyResource(visitedTabs.includes('grades') ? `grades:${id}` : null, (signal) =>
+    getStudentGrades(id, signal)
+  )
+
   // Cuando llega el plan recién asignado, se abre su pestaña
   useEffect(() => {
     if (openForteWhenLoaded && fortePlan.data) {
