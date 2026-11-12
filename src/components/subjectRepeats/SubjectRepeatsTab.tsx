@@ -179,14 +179,17 @@ export const SubjectRepeatsTab = ({
 
       {renderList()}
 
-      <SubjectRepeatDialog
-        open={dialog !== null}
-        studentId={studentId}
-        studentName={studentName}
-        repeat={dialog === 'new' ? null : dialog}
-        onClose={() => setDialog(null)}
-        onSaved={handleSaved}
-      />
+      {dialog !== null && (
+        <SubjectRepeatDialog
+          key={dialog === 'new' ? 'new' : dialog.id}
+          open
+          studentId={studentId}
+          studentName={studentName}
+          repeat={dialog === 'new' ? null : dialog}
+          onClose={() => setDialog(null)}
+          onSaved={handleSaved}
+        />
+      )}
 
       {/* Confirmación para quitar: mientras se procesa, no se cierra */}
       <Dialog

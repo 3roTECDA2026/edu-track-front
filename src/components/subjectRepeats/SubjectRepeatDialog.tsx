@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   Alert,
   Button,
@@ -47,17 +47,12 @@ export const SubjectRepeatDialog = ({
   const options = useLazyResource(open ? `repeat-options:${studentId}` : null, (signal) =>
     getRepeatOptions(studentId, signal)
   )
-  const [pendingSubjectId, setPendingSubjectId] = useState('')
-  const [classSectionId, setClassSectionId] = useState('')
+  // El padre monta el diálogo al abrirlo (con una key por recursado), así el estado arranca
+  // con los datos del recursado sin tener que reiniciarlo en un efecto
+  const [pendingSubjectId, setPendingSubjectId] = useState(repeat?.pendingSubject?.id ?? '')
+  const [classSectionId, setClassSectionId] = useState(repeat?.classSection.id ?? '')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!open) return
-    setPendingSubjectId(repeat?.pendingSubject?.id ?? '')
-    setClassSectionId(repeat?.classSection.id ?? '')
-    setError(null)
-  }, [open, repeat])
 
   const allOptions = options.data?.options ?? []
   const selected = allOptions.find((option) => option.pendingSubjectId === pendingSubjectId)
