@@ -55,8 +55,9 @@ export const AttemptsHistory = ({ pendingSubjectId }: AttemptsHistoryProps) => {
   const [open, setOpen] = useState(false)
   const [requested, setRequested] = useState(false)
 
-  const attempts = useLazyResource(requested ? `pending-attempts:${pendingSubjectId}` : null, (signal) =>
-    getPendingSubjectAttempts(pendingSubjectId, signal)
+  const attempts = useLazyResource(
+    requested ? `pending-attempts:${pendingSubjectId}` : null,
+    (signal) => getPendingSubjectAttempts(pendingSubjectId, signal)
   )
 
   function handleToggle() {
