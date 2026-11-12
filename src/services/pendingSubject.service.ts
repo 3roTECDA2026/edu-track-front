@@ -1,4 +1,6 @@
 import { fetchApi } from '@/services/api'
+import type { IntensificationModel, ResultCode } from '@/services/intensification.service'
+import type { IntensificationPeriod } from '@/services/intensificationSchedule.service'
 
 // Saberes pendientes de las MPAA (E3-RF-02, CRM-053)
 
@@ -43,6 +45,28 @@ export async function updatePendingKnowledge(id: string, input: UpdatePendingKno
   const response = await fetchApi<ApiResponse<PendingSubject>>(`${BASE}/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(input),
+  })
+  return response.data
+}
+
+// Un intento de intensificación de una MPAA (E3-RF-03, CRM-054)
+export interface PendingSubjectAttempt {
+  id: string
+  period: IntensificationPeriod
+  // Ciclo al que pertenece: febrero/marzo de 2026 es del ciclo 2025. Null en intentos viejos sin calendario
+  cycleYear: number | null
+  startDate: string | null
+  endDate: string | null
+  model: IntensificationModel
+  // Null mientras el docente no cargó el resultado
+  resultCode: ResultCode | null
+  score: number | null
+}
+
+// Los intentos de la MPAA, del más viejo al más nuevo
+export async function getPendingSubjectAttempts(id: string, signal?: AbortSignal) {
+  const response = await fetchApi<ApiResponse<PendingSubjectAttempt[]>>(`${BASE}/${id}/attempts`, {
+    signal,
   })
   return response.data
 }
