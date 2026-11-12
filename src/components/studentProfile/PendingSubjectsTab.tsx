@@ -1,19 +1,11 @@
 import { useState } from 'react'
-import {
-  Box,
-  Button,
-  Chip,
-  CircularProgress,
-  Paper,
-  Stack,
-  TextField,
-  Typography,
-} from '@mui/material'
+import { Box, Button, Chip, Paper, Stack, TextField, Typography } from '@mui/material'
 import AssignmentLateIcon from '@mui/icons-material/AssignmentLate'
 import CheckIcon from '@mui/icons-material/Check'
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty'
 import SaveIcon from '@mui/icons-material/Save'
 
+import { AddButton } from '@/components/common/AddButton'
 import { cardSx } from '@/components/studentProfile/profileStyles'
 import { TabEmpty, TabError, TabLoading } from '@/components/studentProfile/TabStates'
 import { useLazyResource } from '@/hooks/useLazyResource'
@@ -140,15 +132,12 @@ const PendingSubjectCard = ({ item, onSaved, onUpdated }: PendingSubjectCardProp
           >
             Descartar
           </Button>
-          <Button
-            variant="contained"
-            disableElevation
-            startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <SaveIcon />}
+          <AddButton
+            label={saving ? 'Guardando...' : 'Guardar'}
+            icon={<SaveIcon />}
             disabled={!hasChanges || saving}
             onClick={() => void handleSave()}
-          >
-            {saving ? 'Guardando...' : 'Guardar'}
-          </Button>
+          />
         </Box>
       )}
     </Paper>
