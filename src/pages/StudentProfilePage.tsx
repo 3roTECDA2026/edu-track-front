@@ -19,6 +19,8 @@ import { ObservationsTab } from '@/components/studentProfile/ObservationsTab'
 import { RiteTab } from '@/components/studentProfile/RiteTab'
 import { FortePlanTab } from '@/components/studentProfile/FortePlanTab'
 import { FortePlanDialog } from '@/components/studentProfile/FortePlanDialog'
+import { SubjectRepeatsTab } from '@/components/subjectRepeats/SubjectRepeatsTab'
+import { canManageSubjectRepeats } from '@/components/subjectRepeats/subjectRepeatLabels'
 import { useLazyResource } from '@/hooks/useLazyResource'
 import { deactivateStudent } from '@/services/students.service'
 import { getStudentFortePlan } from '@/services/fortePlan.service'
@@ -32,13 +34,22 @@ import {
 import { currentUser } from '@/utils/currentUser'
 
 type TabKey =
-  'personal' | 'enrollment' | 'attendance' | 'grades' | 'observations' | 'rite' | 'forte'
+  | 'personal'
+  | 'enrollment'
+  | 'attendance'
+  | 'grades'
+  | 'repeats'
+  | 'observations'
+  | 'rite'
+  | 'forte'
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'personal', label: 'Datos personales' },
   { key: 'enrollment', label: 'Inscripción' },
   { key: 'attendance', label: 'Asistencia' },
   { key: 'grades', label: 'Calificaciones' },
+  // Materias que recursa (CRM-082)
+  { key: 'repeats', label: 'Recursados' },
   { key: 'observations', label: 'Observaciones' },
   { key: 'rite', label: 'RITE' },
 ]
@@ -240,6 +251,13 @@ const StudentProfilePage = () => {
                 loading={grades.loading}
                 error={grades.error}
                 onRetry={grades.reload}
+              />
+            )}
+            {activeTab === 'repeats' && (
+              <SubjectRepeatsTab
+                studentId={student.id}
+                studentName={`${student.lastName}, ${student.firstName}`}
+                canManage={canManageSubjectRepeats()}
               />
             )}
             {activeTab === 'observations' && (
