@@ -41,6 +41,7 @@ import {
 } from '@/components/studentProfile/profileLabels'
 import { SHIFT_LABELS } from '@/components/students/studentLabels'
 import { useLazyResource } from '@/hooks/useLazyResource'
+import type { IntensificationPeriod } from '@/services/intensificationSchedule.service'
 import type { PreliminaryAssessment } from '@/services/studentProfile.service'
 import { getStudentHistory } from '@/services/studentProfile.service'
 import {
@@ -53,6 +54,7 @@ import {
   updateRiteNotes,
   type RiteAttendance,
   type RiteDetail,
+  type RiteIntensificationCell,
   type RiteStatus,
   type RiteTerm,
 } from '@/services/rite.service'
@@ -88,10 +90,21 @@ const SUBJECT_COLUMNS = [
   'Calif. 1° C',
   '2° Val.',
   'Calif. 2° C',
+  'Int. 1° C',
   'Dic.',
   'Feb.',
   'Final',
   'Observaciones',
+]
+
+// Tabla de materias pendientes (MPAA): los seis períodos del ciclo, en orden (Anexo 2)
+const PENDING_PERIOD_COLUMNS: { period: IntensificationPeriod; label: string }[] = [
+  { period: 'MARCH', label: 'Mar.' },
+  { period: 'JULY', label: 'Jul.' },
+  { period: 'AUGUST', label: 'Ago.' },
+  { period: 'DECEMBER_TERM_CLOSE', label: 'Dic. 1' },
+  { period: 'DECEMBER', label: 'Dic. 2' },
+  { period: 'FEBRUARY_MARCH', label: 'Feb.' },
 ]
 
 interface MessageState {
@@ -179,6 +192,15 @@ const Score = ({ value }: { value: number | null }) => {
   )
 }
 
+// Diciembre y febrero: con AA va la nota; con CCA o CSA, el código (Res. 1650/24, Anexo 5).
+const IntensificationResult = ({ cell }: { cell: RiteIntensificationCell | undefined }) => {
+  if (cell === null || cell === undefined) return <>{EMPTY}</>
+  // Los RITE firmados antes de CRM-044 guardaron solo la nota
+  if (typeof cell === 'number') return <Score value={cell} />
+  if (cell.resultCode === 'AA' && cell.score !== null) return <Score value={cell.score} />
+  return <>{cell.resultCode ?? EMPTY}</>
+}
+
 const Field = ({ label, value }: { label: string; value: string }) => (
   <Box>
     <Typography sx={{ ...labelSx, mb: 0.25 }}>{label}</Typography>
@@ -187,6 +209,85 @@ const Field = ({ label, value }: { label: string; value: string }) => (
     </Typography>
   </Box>
 )
+
+// Materias pendientes de ciclos anteriores (MPAA), como en la página 2 del formulario (CRM-044).
+const PendingSubjectsCard = ({ doc }: { doc: RiteDetail['document'] }) => {
+  const pendingSubjects = doc.pendingSubjects
+  const omitted = (doc.pendingSubjectsTotal ?? 0) - (pendingSubjects?.length ?? 0)
+
+  return (
+    <Paper variant="outlined" sx={{ ...cardSx, overflow: 'hidden' }}>
+      <Typography variant="h6" sx={{ px: 2.5, pt: 2.5, pb: 1.5 }}>
+        Materias pendientes de aprobación y acreditación
+      </Typography>
+      {omitted > 0 && (
+        <Alert severity="warning" sx={{ mx: 2.5, mb: 1.5 }}>
+          El estudiante tiene {doc.pendingSubjectsTotal} materias pendientes y el formulario oficial
+          tiene lugar para 4: {omitted} no se muestran.
+        </Alert>
+      )}
+      {!pendingSubjects ? (
+        // Los RITE firmados antes de CRM-044 guardaron la copia fija sin esta tabla
+        <Typography variant="body2" sx={{ color: 'text.secondary', px: 2.5, pb: 2.5 }}>
+          Este RITE se firmó antes de que se incorporara la tabla de materias pendientes.
+        </Typography>
+      ) : pendingSubjects.length === 0 ? (
+        <Typography variant="body2" sx={{ color: 'text.secondary', px: 2.5, pb: 2.5 }}>
+          El estudiante no tiene materias pendientes de ciclos anteriores.
+        </Typography>
+      ) : (
+        <TableContainer sx={{ overflowX: 'auto' }}>
+          <Table sx={{ minWidth: 1000 }}>
+            <TableHead>
+              <TableRow>
+                <TableCell sx={headerCellSx}>Materia</TableCell>
+                <TableCell align="center" sx={headerCellSx}>
+                  Año
+                </TableCell>
+                <TableCell sx={headerCellSx}>Saberes pendientes al inicio</TableCell>
+                {PENDING_PERIOD_COLUMNS.map((column) => (
+                  <TableCell key={column.period} align="center" sx={headerCellSx}>
+                    {column.label}
+                  </TableCell>
+                ))}
+                <TableCell align="center" sx={headerCellSx}>
+                  Final
+                </TableCell>
+                <TableCell sx={headerCellSx}>Saberes pendientes al cierre</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {pendingSubjects.map((pending) => (
+                <TableRow key={`${pending.subjectName}-${pending.originYear}`} hover>
+                  <TableCell sx={{ ...bodyCellSx, fontWeight: 700, color: COLORS.ink }}>
+                    {pending.subjectName}
+                  </TableCell>
+                  <TableCell align="center" sx={bodyCellSx}>
+                    {pending.gradeLevel}°
+                  </TableCell>
+                  <TableCell sx={{ ...bodyCellSx, minWidth: 180 }}>
+                    {pending.initialPendingKnowledge || EMPTY}
+                  </TableCell>
+                  {PENDING_PERIOD_COLUMNS.map((column) => (
+                    <TableCell key={column.period} align="center" sx={bodyCellSx}>
+                      {pending.results[column.period] ?? EMPTY}
+                    </TableCell>
+                  ))}
+                  <TableCell align="center" sx={bodyCellSx}>
+                    <Score value={pending.finalScore} />
+                  </TableCell>
+                  <TableCell sx={{ ...bodyCellSx, minWidth: 180 }}>
+                    {pending.closingPendingKnowledge || EMPTY}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+    </Paper>
+  )
+}
 
 interface RiteDocumentViewProps {
   detail: RiteDetail
@@ -289,10 +390,13 @@ const RiteDocumentView = ({
                       <Score value={subject.term2?.score ?? null} />
                     </TableCell>
                     <TableCell align="center" sx={bodyCellSx}>
-                      <Score value={subject.intensification?.december ?? null} />
+                      <Score value={subject.term1IntensificationScore ?? null} />
                     </TableCell>
                     <TableCell align="center" sx={bodyCellSx}>
-                      <Score value={subject.intensification?.february ?? null} />
+                      <IntensificationResult cell={subject.intensification?.december} />
+                    </TableCell>
+                    <TableCell align="center" sx={bodyCellSx}>
+                      <IntensificationResult cell={subject.intensification?.february} />
                     </TableCell>
                     <TableCell align="center" sx={bodyCellSx}>
                       <Score value={subject.finalScore} />
@@ -312,6 +416,8 @@ const RiteDocumentView = ({
           </TableContainer>
         )}
       </Paper>
+
+      <PendingSubjectsCard doc={doc} />
 
       <Box
         sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' } }}
