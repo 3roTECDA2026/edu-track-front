@@ -25,6 +25,8 @@ import { UserIcon } from 'lucide-react'
 import EventRepeatIcon from '@mui/icons-material/EventRepeat'
 import SettingsIcon from '@mui/icons-material/Settings'
 import GroupsIcon from '@mui/icons-material/Groups'
+import InsightsIcon from '@mui/icons-material/Insights'
+import { EDTE_DASHBOARD_ROLES } from '@/components/edteDashboard/dashboardLabels'
 import { getRole, USER_MANAGEMENT_ROLES } from '@/services/session'
 import { EDTE_VIEWER_ROLES } from '@/components/edte/edteLabels'
 
@@ -48,6 +50,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Intensificación', icon: <EventRepeatIcon />, path: '/intensification-calendar' },
   { label: 'Modelo organizativo', icon: <SettingsIcon />, path: '/organizational-model' },
   { label: 'Reuniones del EDTE', icon: <GroupsIcon />, path: '/edte-meetings', roles: EDTE_VIEWER_ROLES },
+  { label: 'Dashboard del EDTE', icon: <InsightsIcon />, path: '/edte-dashboard', roles: EDTE_DASHBOARD_ROLES },
 ]
 
 export const Aside: React.FC = () => {
