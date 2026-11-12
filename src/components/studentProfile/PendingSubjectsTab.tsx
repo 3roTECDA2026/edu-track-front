@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Box, Button, Chip, Paper, Stack, TextField, Typography } from '@mui/material'
 import AssignmentLateIcon from '@mui/icons-material/AssignmentLate'
 import CheckIcon from '@mui/icons-material/Check'
@@ -53,10 +53,17 @@ interface PendingSubjectCardProps {
   item: PendingSubject
   onSaved: (message: string, severity: 'success' | 'error') => void
   onUpdated: () => void
+  // Avisa si la tarjeta tiene cambios sin guardar (CRM-097)
+  onDirtyChange: (id: string, dirty: boolean) => void
 }
 
 // Una MPAA con sus dos textos: los saberes pendientes al inicio y al cierre del ciclo
-const PendingSubjectCard = ({ item, onSaved, onUpdated }: PendingSubjectCardProps) => {
+const PendingSubjectCard = ({
+  item,
+  onSaved,
+  onUpdated,
+  onDirtyChange,
+}: PendingSubjectCardProps) => {
   const savedInitial = item.initialPendingKnowledge ?? ''
   const savedClosing = item.closingPendingKnowledge ?? ''
   const [initial, setInitial] = useState(savedInitial)
@@ -66,6 +73,12 @@ const PendingSubjectCard = ({ item, onSaved, onUpdated }: PendingSubjectCardProp
   // Una MPAA acreditada ya no tiene saberes por completar
   const readOnly = item.status === 'ACCREDITED'
   const hasChanges = initial !== savedInitial || closing !== savedClosing
+
+  // Informa a la pestaña cuando cambia; al desmontarse (por ejemplo, al guardar) queda sin cambios
+  useEffect(() => {
+    onDirtyChange(item.id, hasChanges)
+    return () => onDirtyChange(item.id, false)
+  }, [item.id, hasChanges, onDirtyChange])
 
   async function handleSave() {
     setSaving(true)
@@ -147,13 +160,39 @@ const PendingSubjectCard = ({ item, onSaved, onUpdated }: PendingSubjectCardProp
 interface PendingSubjectsTabProps {
   studentId: string
   onSaved: (message: string, severity: 'success' | 'error') => void
+  // Avisa a la ficha si alguna tarjeta tiene cambios sin guardar, para no perderlos al cambiar
+  // de pestaña (CRM-097)
+  onDirtyChange?: (dirty: boolean) => void
 }
 
 // Materias pendientes del alumno (E3-RF-02, CRM-053): saberes pendientes por cada MPAA
-export const PendingSubjectsTab = ({ studentId, onSaved }: PendingSubjectsTabProps) => {
+export const PendingSubjectsTab = ({
+  studentId,
+  onSaved,
+  onDirtyChange,
+}: PendingSubjectsTabProps) => {
   const pendings = useLazyResource(`pending-subjects:${studentId}`, (signal) =>
     getStudentPendingSubjects(studentId, signal)
   )
+  // Tarjetas con cambios sin guardar
+  const [dirtyIds, setDirtyIds] = useState<ReadonlySet<string>>(new Set())
+
+  const handleCardDirty = useCallback((id: string, dirty: boolean) => {
+    setDirtyIds((prev) => {
+      if (prev.has(id) === dirty) return prev
+      const next = new Set(prev)
+      if (dirty) next.add(id)
+      else next.delete(id)
+      return next
+    })
+  }, [])
+
+  const hasDirty = dirtyIds.size > 0
+  useEffect(() => {
+    onDirtyChange?.(hasDirty)
+  }, [hasDirty, onDirtyChange])
+  // Al salir de la pestaña ya no quedan cambios pendientes
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange])
 
   if (pendings.loading && !pendings.data) return <TabLoading />
   if (pendings.error) return <TabError message={pendings.error} onRetry={pendings.reload} />
@@ -176,6 +215,7 @@ export const PendingSubjectsTab = ({ studentId, onSaved }: PendingSubjectsTabPro
           item={item}
           onSaved={onSaved}
           onUpdated={pendings.reload}
+          onDirtyChange={handleCardDirty}
         />
       ))}
     </Box>

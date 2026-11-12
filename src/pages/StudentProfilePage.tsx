@@ -1,6 +1,17 @@
 // src/pages/StudentProfilePage.tsx
-import { useEffect, useState, type SyntheticEvent } from 'react'
-import { Alert, Box, Button, Skeleton, Snackbar } from '@mui/material'
+import { useCallback, useEffect, useState, type SyntheticEvent } from 'react'
+import {
+  Alert,
+  Box,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Skeleton,
+  Snackbar,
+  Typography,
+} from '@mui/material'
 import NoteAddIcon from '@mui/icons-material/NoteAdd'
 import { useNavigate, useParams } from 'react-router-dom'
 import { MainLayout } from '@/components/layout/MainLayout'
@@ -75,6 +86,10 @@ const StudentProfilePage = () => {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [deactivating, setDeactivating] = useState(false)
   const [snackbar, setSnackbar] = useState<SnackbarState | null>(null)
+  // Cambios sin guardar en "Materias pendientes" y la pestaña a la que se quiere ir (CRM-097)
+  const [pendingDirty, setPendingDirty] = useState(false)
+  const [leaveTo, setLeaveTo] = useState<TabKey | null>(null)
+  const handlePendingDirtyChange = useCallback((dirty: boolean) => setPendingDirty(dirty), [])
   const [editOpen, setEditOpen] = useState(false)
   // Diálogo del Plan Forte: asignar (o volver a asignar) o editar el plan (CRM-089)
   const [forteDialog, setForteDialog] = useState<'assign' | 'edit' | null>(null)
@@ -132,10 +147,27 @@ const StudentProfilePage = () => {
   )
 
   // CustomTabs trabaja con el índice de la pestaña, por eso acá se traduce a su clave
-  const handleTabChange = (_: SyntheticEvent, index: number) => {
-    const key = tabs[index].key
+  const goToTab = (key: TabKey) => {
     setActiveTab(key)
     setVisitedTabs((prev) => (prev.includes(key) ? prev : [...prev, key]))
+  }
+
+  const handleTabChange = (_: SyntheticEvent, index: number) => {
+    const key = tabs[index].key
+    // Con cambios sin guardar en "Materias pendientes", se pregunta antes de salir (CRM-097)
+    if (activeTab === 'pending' && pendingDirty && key !== 'pending') {
+      setLeaveTo(key)
+      return
+    }
+    goToTab(key)
+  }
+
+  // Salir de "Materias pendientes" descartando lo que no se guardó
+  const handleLeaveWithoutSaving = () => {
+    if (!leaveTo) return
+    setPendingDirty(false)
+    goToTab(leaveTo)
+    setLeaveTo(null)
   }
 
   // Después de asignar, editar o cambiar el estado: se recarga el plan y se muestra su pestaña
@@ -265,6 +297,7 @@ const StudentProfilePage = () => {
                 key={student.id}
                 studentId={student.id}
                 onSaved={(message, severity) => setSnackbar({ message, severity })}
+                onDirtyChange={handlePendingDirtyChange}
               />
             )}
             {activeTab === 'observations' && (
@@ -288,6 +321,29 @@ const StudentProfilePage = () => {
             )}
           </Box>
         </ContentCard>
+
+        {/* Aviso de cambios sin guardar al salir de "Materias pendientes" (CRM-097) */}
+        <Dialog open={leaveTo !== null} onClose={() => setLeaveTo(null)} maxWidth="xs" fullWidth>
+          <DialogTitle sx={{ fontWeight: 700 }}>Tenés cambios sin guardar</DialogTitle>
+          <DialogContent>
+            <Typography variant="body2">
+              Hay saberes pendientes que todavía no guardaste. Si salís de la pestaña, se pierden.
+            </Typography>
+          </DialogContent>
+          <DialogActions sx={{ px: 3, pb: 2 }}>
+            <Button onClick={() => setLeaveTo(null)} color="inherit">
+              Seguir editando
+            </Button>
+            <Button
+              variant="contained"
+              color="error"
+              disableElevation
+              onClick={handleLeaveWithoutSaving}
+            >
+              Salir sin guardar
+            </Button>
+          </DialogActions>
+        </Dialog>
       </>
     )
   }
