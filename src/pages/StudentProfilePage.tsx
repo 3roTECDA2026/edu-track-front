@@ -1,11 +1,12 @@
 // src/pages/StudentProfilePage.tsx
-import { useState, type SyntheticEvent } from 'react'
+import { useEffect, useState, type SyntheticEvent } from 'react'
 import { Alert, Box, Button, Skeleton, Snackbar } from '@mui/material'
+import NoteAddIcon from '@mui/icons-material/NoteAdd'
 import { useNavigate, useParams } from 'react-router-dom'
-
 import { MainLayout } from '@/components/layout/MainLayout'
 import { PageContainer } from '@/components/common/PageContainer'
 import { PageHeader } from '@/components/common/PageHeader'
+import { AddButton } from '@/components/common/AddButton'
 import { ContentCard } from '@/components/common/ContentCard'
 import { CustomTabs } from '@/components/common/CustomTabs'
 import { DeactivateStudentDialog } from '@/components/students/DeactivateStudentDialog'
@@ -18,18 +19,31 @@ import { GradesTab } from '@/components/studentProfile/GradesTab'
 import { ObservationsTab } from '@/components/studentProfile/ObservationsTab'
 import { RiteTab } from '@/components/studentProfile/RiteTab'
 import { PendingSubjectsTab } from '@/components/studentProfile/PendingSubjectsTab'
+import { getRole, canManageTrajectories } from '@/services/session'
+import { InterventionsTab } from '@/components/studentProfile/InterventionsTab'
+import { FortePlanTab } from '@/components/studentProfile/FortePlanTab'
+import { FortePlanDialog } from '@/components/studentProfile/FortePlanDialog'
 import { useLazyResource } from '@/hooks/useLazyResource'
 import { deactivateStudent } from '@/services/students.service'
-import { getRole } from '@/services/session'
+import { getStudentFortePlan } from '@/services/fortePlan.service'
 import {
   getStudentAttendance,
   getStudentById,
   getStudentGrades,
   getStudentHistory,
 } from '@/services/studentProfile.service'
+import { currentUser } from '@/utils/currentUser'
 
 type TabKey =
-  'personal' | 'enrollment' | 'attendance' | 'grades' | 'pending' | 'observations' | 'rite'
+  | 'personal'
+  | 'enrollment'
+  | 'attendance'
+  | 'grades'
+  | 'pending'
+  | 'observations'
+  | 'interventions'
+  | 'rite'
+  | 'forte'
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'personal', label: 'Datos personales' },
@@ -38,9 +52,13 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'grades', label: 'Calificaciones' },
   { key: 'pending', label: 'Materias pendientes' },
   { key: 'observations', label: 'Observaciones' },
+  { key: 'interventions', label: 'Intervenciones' },
   { key: 'rite', label: 'RITE' },
 ]
 const PENDING_KNOWLEDGE_ROLES = ['ADMINISTRATOR', 'SCHOOL_MANAGEMENT', 'EOE_DIRECTIVE', 'TEACHER']
+
+// Pestaña del Plan Forte: solo para los alumnos asignados al programa (CRM-089)
+const FORTE_TAB: { key: TabKey; label: string } = { key: 'forte', label: 'Plan Forte' }
 
 interface SnackbarState {
   message: string
@@ -58,12 +76,32 @@ const StudentProfilePage = () => {
   const [deactivating, setDeactivating] = useState(false)
   const [snackbar, setSnackbar] = useState<SnackbarState | null>(null)
   const [editOpen, setEditOpen] = useState(false)
+  // Diálogo del Plan Forte: asignar (o volver a asignar) o editar el plan (CRM-089)
+  const [forteDialog, setForteDialog] = useState<'assign' | 'edit' | null>(null)
+  // Después de asignar, se abre la pestaña del Plan Forte recién cuando llega el plan
+  const [openForteWhenLoaded, setOpenForteWhenLoaded] = useState(false)
 
   const studentResource = useLazyResource(id ? `student:${id}` : null, (signal) =>
     getStudentById(id, signal)
   )
   const student = studentResource.data
   const currentYear = student?.currentSection?.year
+
+  // El plan Forte se busca al abrir la ficha, porque decide si se muestra su pestaña (CRM-089).
+  // data: el plan; null: no tiene plan; undefined: todavía no llegó o el pedido falló
+  const fortePlan = useLazyResource(id ? `forte-plan:${id}` : null, (signal) =>
+    getStudentFortePlan(id, signal)
+  )
+   const allTabs = fortePlan.data ? [...TABS, FORTE_TAB] : TABS
+  // La pestaña de materias pendientes solo se muestra a los roles que el back deja consultarla
+  const canSeePending = PENDING_KNOWLEDGE_ROLES.includes(getRole() ?? '')
+  const tabs = canSeePending ? allTabs : allTabs.filter((tab) => tab.key !== 'pending')
+  const canManageForte = canManageTrajectories()
+  // Los reportes los cargan quien gestiona o el responsable del plan (igual que el back)
+  const canLoadForteReports =
+    canManageForte ||
+    (fortePlan.data?.responsible?.id !== undefined &&
+      fortePlan.data.responsible.id === currentUser().userId)
 
   const history = useLazyResource(
     visitedTabs.includes('enrollment') ? `history:${id}` : null,
@@ -75,19 +113,35 @@ const StudentProfilePage = () => {
       : null,
     (signal) => getStudentAttendance(id, currentYear, signal)
   )
-  const grades = useLazyResource(visitedTabs.includes('grades') ? `grades:${id}` : null, (signal) =>
-    getStudentGrades(id, signal)
-  )
+  
 
-  const canSeePending = PENDING_KNOWLEDGE_ROLES.includes(getRole() ?? '')
   const tabs = canSeePending ? TABS : TABS.filter((tab) => tab.key !== 'pending')
   const activeIndex = tabs.findIndex((tab) => tab.key === activeTab)
+  // Cuando llega el plan recién asignado, se abre su pestaña
+  useEffect(() => {
+    if (openForteWhenLoaded && fortePlan.data) {
+      setActiveTab('forte')
+      setOpenForteWhenLoaded(false)
+    }
+  }, [openForteWhenLoaded, fortePlan.data])
+
+  const activeIndex = Math.max(
+    0,
+    tabs.findIndex((tab) => tab.key === activeTab)
+  )
 
   // CustomTabs trabaja con el índice de la pestaña, por eso acá se traduce a su clave
   const handleTabChange = (_: SyntheticEvent, index: number) => {
     const key = tabs[index].key
     setActiveTab(key)
     setVisitedTabs((prev) => (prev.includes(key) ? prev : [...prev, key]))
+  }
+
+  // Después de asignar, editar o cambiar el estado: se recarga el plan y se muestra su pestaña
+  const handleForteSaved = (message: string, severity: 'success' | 'error' = 'success') => {
+    setSnackbar({ message, severity })
+    fortePlan.reload()
+    setOpenForteWhenLoaded(true)
   }
 
   const handleConfirmDeactivate = async () => {
@@ -159,6 +213,16 @@ const StudentProfilePage = () => {
           onChangeStatus={() => setDialogOpen(true)}
         />
 
+        {/* Asignar al Plan Forte: solo si el alumno de verdad no tiene plan (data === null).
+            Si el pedido falló, data es undefined y el botón no aparece (CRM-089) */}
+        {canManageForte && fortePlan.data === null && (
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+            <Button variant="outlined" color="inherit" onClick={() => setForteDialog('assign')}>
+              Asignar al Plan Forte
+            </Button>
+          </Box>
+        )}
+
         {/* Pestañas dentro de la tarjeta estándar */}
         <ContentCard sx={{ mt: 3 }}>
           <CustomTabs
@@ -209,7 +273,18 @@ const StudentProfilePage = () => {
                 onSaved={(message, severity) => setSnackbar({ message, severity })}
               />
             )}
+            {activeTab === 'interventions' && <InterventionsTab studentId={student.id} />}
             {activeTab === 'rite' && <RiteTab studentId={student.id} />}
+            {activeTab === 'forte' && fortePlan.data && (
+              <FortePlanTab
+                plan={fortePlan.data}
+                canManage={canManageForte}
+                canLoadReports={canLoadForteReports}
+                onEdit={() => setForteDialog('edit')}
+                onReassign={() => setForteDialog('assign')}
+                onSaved={handleForteSaved}
+              />
+            )}
           </Box>
         </ContentCard>
       </>
@@ -227,10 +302,32 @@ const StudentProfilePage = () => {
             { label: 'Estudiantes', href: '/students' },
             { label: student ? `${student.lastName}, ${student.firstName}` : 'Ficha del alumno' },
           ]}
+          action={
+            student ? (
+              <AddButton
+                label="Registrar intervención"
+                icon={<NoteAddIcon />}
+                onClick={() => navigate(`/interventions/new?studentId=${student.id}`)}
+              />
+            ) : undefined
+          }
         />
 
         {renderContent()}
       </PageContainer>
+
+      {/* Asignar o editar el Plan Forte (CRM-089) */}
+      {student && (
+        <FortePlanDialog
+          open={forteDialog !== null}
+          mode={forteDialog ?? 'assign'}
+          studentId={student.id}
+          studentName={`${student.lastName}, ${student.firstName}`}
+          plan={fortePlan.data ?? null}
+          onClose={() => setForteDialog(null)}
+          onSaved={(message) => handleForteSaved(message)}
+        />
+      )}
 
       <DeactivateStudentDialog
         open={dialogOpen}

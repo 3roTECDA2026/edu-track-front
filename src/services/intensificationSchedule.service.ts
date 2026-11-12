@@ -1,6 +1,9 @@
 import { fetchApi } from '@/services/api'
 
-export type IntensificationPeriod = 'DECEMBER' | 'FEBRUARY_MARCH' | 'AUGUST'
+// Los seis períodos del ciclo (Res. 1650/24, Anexo 2). DECEMBER es diciembre 2 (después del
+// cierre del 2.º cuatrimestre) y DECEMBER_TERM_CLOSE, diciembre 1 (antes del cierre).
+export type IntensificationPeriod =
+  'MARCH' | 'JULY' | 'AUGUST' | 'DECEMBER_TERM_CLOSE' | 'DECEMBER' | 'FEBRUARY_MARCH'
 
 export interface ScheduleTeacher {
   id: string
