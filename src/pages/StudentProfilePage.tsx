@@ -18,13 +18,14 @@ import { AttendanceTab } from '@/components/studentProfile/AttendanceTab'
 import { GradesTab } from '@/components/studentProfile/GradesTab'
 import { ObservationsTab } from '@/components/studentProfile/ObservationsTab'
 import { RiteTab } from '@/components/studentProfile/RiteTab'
+import { PendingSubjectsTab } from '@/components/studentProfile/PendingSubjectsTab'
+import { getRole, canManageTrajectories } from '@/services/session'
 import { InterventionsTab } from '@/components/studentProfile/InterventionsTab'
 import { FortePlanTab } from '@/components/studentProfile/FortePlanTab'
 import { FortePlanDialog } from '@/components/studentProfile/FortePlanDialog'
 import { useLazyResource } from '@/hooks/useLazyResource'
 import { deactivateStudent } from '@/services/students.service'
 import { getStudentFortePlan } from '@/services/fortePlan.service'
-import { canManageTrajectories } from '@/services/session'
 import {
   getStudentAttendance,
   getStudentById,
@@ -38,6 +39,7 @@ type TabKey =
   | 'enrollment'
   | 'attendance'
   | 'grades'
+  | 'pending'
   | 'observations'
   | 'interventions'
   | 'rite'
@@ -48,10 +50,12 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'enrollment', label: 'Inscripción' },
   { key: 'attendance', label: 'Asistencia' },
   { key: 'grades', label: 'Calificaciones' },
+  { key: 'pending', label: 'Materias pendientes' },
   { key: 'observations', label: 'Observaciones' },
   { key: 'interventions', label: 'Intervenciones' },
   { key: 'rite', label: 'RITE' },
 ]
+const PENDING_KNOWLEDGE_ROLES = ['ADMINISTRATOR', 'SCHOOL_MANAGEMENT', 'EOE_DIRECTIVE', 'TEACHER']
 
 // Pestaña del Plan Forte: solo para los alumnos asignados al programa (CRM-089)
 const FORTE_TAB: { key: TabKey; label: string } = { key: 'forte', label: 'Plan Forte' }
@@ -88,7 +92,10 @@ const StudentProfilePage = () => {
   const fortePlan = useLazyResource(id ? `forte-plan:${id}` : null, (signal) =>
     getStudentFortePlan(id, signal)
   )
-  const tabs = fortePlan.data ? [...TABS, FORTE_TAB] : TABS
+  const allTabs = fortePlan.data ? [...TABS, FORTE_TAB] : TABS
+  // La pestaña de materias pendientes solo se muestra a los roles que el back deja consultarla
+  const canSeePending = PENDING_KNOWLEDGE_ROLES.includes(getRole() ?? '')
+  const tabs = canSeePending ? allTabs : allTabs.filter((tab) => tab.key !== 'pending')
   const canManageForte = canManageTrajectories()
   // Los reportes los cargan quien gestiona o el responsable del plan (igual que el back)
   const canLoadForteReports =
@@ -106,6 +113,7 @@ const StudentProfilePage = () => {
       : null,
     (signal) => getStudentAttendance(id, currentYear, signal)
   )
+
   const grades = useLazyResource(visitedTabs.includes('grades') ? `grades:${id}` : null, (signal) =>
     getStudentGrades(id, signal)
   )
@@ -250,6 +258,13 @@ const StudentProfilePage = () => {
                 loading={grades.loading}
                 error={grades.error}
                 onRetry={grades.reload}
+              />
+            )}
+            {activeTab === 'pending' && (
+              <PendingSubjectsTab
+                key={student.id}
+                studentId={student.id}
+                onSaved={(message, severity) => setSnackbar({ message, severity })}
               />
             )}
             {activeTab === 'observations' && (
