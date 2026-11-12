@@ -36,6 +36,8 @@ export interface StudentGrade {
     id: string;
     subject: { id: string; name: string };
     academicYear: { id: string; year: number };
+    // Cursada por primera vez o recursado (marca "R", CRM-082)
+    courseType: 'FIRST_TIME' | 'REPEAT';
   };
 }
 

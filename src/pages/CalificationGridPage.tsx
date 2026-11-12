@@ -25,6 +25,7 @@ import { PageHeader } from '@/components/common/PageHeader'
 import { ContentCard } from '@/components/common/ContentCard'
 import { CustomTabs } from '@/components/common/CustomTabs'
 import { AddButton } from '@/components/common/AddButton'
+import { RepeatMark } from '@/components/common/RepeatMark'
 import { StandardTablePagination } from '@/components/common/StandardTablePagination'
 import PorAlumnoTab from '@/pages/PorAlumnoTab'
 import { useClassSections } from '@/hooks/useClassSections'
@@ -836,6 +837,7 @@ export const CalificationGridPage: React.FC = () => {
                           </TableCell>
                           <TableCell sx={{ color: '#111827', whiteSpace: 'nowrap' }}>
                             {row.student.lastName}, {row.student.firstName}
+                            {row.courseType === 'REPEAT' && <RepeatMark />}
                           </TableCell>
                           <TableCell sx={{ color: '#374151' }}>{row.student.dni}</TableCell>
 
