@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import type { RiteDocument, RitePendingSubject, RiteSubject } from '@/services/rite.service'
 import templateDataUrl from '@/assets/rite/RITE_2025_orientada.pdf?inline'
-import { downloadRitePdf } from '@/utils/ritePdf'
+import { downloadRitePdf, omittedPendingCount } from '@/utils/ritePdf'
 
 // La plantilla oficial, embebida como dato por Vite (?inline): así el test no usa APIs de Node
 const templateBytes = () =>
@@ -174,5 +174,24 @@ describe('PDF del RITE sobre la plantilla orientada', () => {
   it('sin MPAA: la tabla queda en blanco', async () => {
     const pdf = await generate(baseDoc({ pendingSubjects: [], pendingSubjectsTotal: 0 }), 'DRAFT')
     expect(pdf.getPageCount()).toBe(2)
+  })
+})
+
+describe('MPAA que no entran en el formulario (CRM-044)', () => {
+  it('sin total informado, cuenta las filas que llegaron', () => {
+    expect(omittedPendingCount(undefined, 6)).toBe(2)
+  })
+
+  it('con el total mayor que las filas, usa el total', () => {
+    expect(omittedPendingCount(6, 4)).toBe(2)
+  })
+
+  it('con el total menor que las filas, usa las filas', () => {
+    expect(omittedPendingCount(3, 6)).toBe(2)
+  })
+
+  it('con 4 o menos, no hay omitidas', () => {
+    expect(omittedPendingCount(4, 4)).toBe(0)
+    expect(omittedPendingCount(0, 0)).toBe(0)
   })
 })

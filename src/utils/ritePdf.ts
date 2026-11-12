@@ -38,6 +38,12 @@ const OBSERVATION_X = 201.5
 
 // Página 2, tabla de materias pendientes (MPAA): 4 filas, medidas sobre el formulario.
 const PENDING_ROWS = 4
+
+// MPAA que no entran en las filas del formulario. Se toma el mayor entre el total que informa el
+// back y las filas que llegaron: si el total viniera menor que las filas, no se subestima el aviso.
+export function omittedPendingCount(total: number | undefined, rows: number): number {
+  return Math.max(0, Math.max(total ?? 0, rows) - PENDING_ROWS)
+}
 const PENDING_FIRST_ROW_TOP = 34.3 // Borde superior de la fila 1 (mm)
 const PENDING_ROW_STEP = 7.6 // Alto de cada fila (mm)
 const PENDING_COLUMN_X: Record<IntensificationPeriod, number> = {
@@ -288,7 +294,7 @@ export async function downloadRitePdf(doc: RiteDocument, status: RiteStatus) {
   })
 
   // El formulario tiene 4 filas (el máximo de MPAA): si hay más, se avisa en el documento.
-  const omittedPending = (doc.pendingSubjectsTotal ?? pendingSubjects.length) - PENDING_ROWS
+  const omittedPending = omittedPendingCount(doc.pendingSubjectsTotal, pendingSubjects.length)
   if (omittedPending > 0) {
     drawText(
       secondPage,
