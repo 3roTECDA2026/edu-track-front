@@ -71,7 +71,8 @@ const PendingSubjectCard = ({ item, onSaved, onUpdated }: PendingSubjectCardProp
         <SoftBadge label={status.label} color={status.color} background={status.background} />
       </Stack>
       <Typography variant="body2" sx={{ color: 'text.secondary', mb: 2 }}>
-        {item.subject.gradeLevel}° año · Quedó pendiente en el ciclo {item.originAcademicYear.year}
+        {item.gradeLevel ?? item.subject.gradeLevel}° año · Quedó pendiente en el ciclo{' '}
+        {item.originAcademicYear.year}
       </Typography>
 
       <Stack spacing={2}>
