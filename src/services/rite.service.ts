@@ -1,4 +1,6 @@
 import { fetchApi } from '@/services/api'
+import type { ResultCode } from '@/services/intensification.service'
+import type { IntensificationPeriod } from '@/services/intensificationSchedule.service'
 import type { PreliminaryAssessment } from '@/services/studentProfile.service'
 import type { Shift } from '@/services/students.service'
 
@@ -26,6 +28,15 @@ export interface RiteTermData {
   observations: string | null
 }
 
+// Resultado de un período de intensificación: con AA va la nota; con CCA o CSA, el código.
+// Los RITE firmados antes de CRM-044 guardaron solo la nota (un número) en su copia fija.
+export interface RiteIntensificationResult {
+  score: number | null
+  resultCode: ResultCode | null
+}
+
+export type RiteIntensificationCell = RiteIntensificationResult | number | null
+
 export interface RiteSubject {
   enrollmentId: string
   type: 'C' | 'R'
@@ -33,8 +44,21 @@ export interface RiteSubject {
   gradeLevel: number
   term1: RiteTermData
   term2: RiteTermData | null
-  intensification: { december: number | null; february: number | null } | null
+  intensification: { december: RiteIntensificationCell; february: RiteIntensificationCell } | null
+  // Nota con la que recuperó el 1.º cuatrimestre durante el 2.º. No está en los RITE firmados antes.
+  term1IntensificationScore?: number | null
   finalScore: number | null
+}
+
+// Fila de la tabla de materias pendientes (MPAA) de la página 2 (CRM-044)
+export interface RitePendingSubject {
+  subjectName: string
+  gradeLevel: number
+  originYear: number
+  initialPendingKnowledge: string | null
+  results: Record<IntensificationPeriod, ResultCode | null>
+  finalScore: number | null
+  closingPendingKnowledge: string | null
 }
 
 // Asistencia de un cuatrimestre. Los campos opcionales no existen en los RITE firmados
@@ -74,6 +98,9 @@ export interface RiteDocument {
   student: { id: string; firstName: string; lastName: string; dni: string; recordNumber: string }
   section: { grade: number; division: string; shift: Shift } | null
   subjects: RiteSubject[]
+  // Opcionales: los RITE firmados antes de CRM-044 no los tienen.
+  pendingSubjects?: RitePendingSubject[]
+  pendingSubjectsTotal?: number // Si es mayor que pendingSubjects.length, hay MPAA que no entran
   attendance: RiteAttendance
   generalNotes: string | null
   notifications: RiteNotification[]

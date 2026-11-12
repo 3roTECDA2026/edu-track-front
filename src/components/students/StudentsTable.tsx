@@ -34,7 +34,8 @@ interface StudentsTableProps {
   loading: boolean;
   onView: (student: StudentListItem) => void;
   onEdit: (student: StudentListItem) => void;
-  onDeactivate: (student: StudentListItem) => void;
+  // Si no se pasa, la tabla no muestra el botón de baja
+  onDeactivate?: (student: StudentListItem) => void;
 }
 
 export const StudentsTable = ({ students, loading, onView, onEdit, onDeactivate }: StudentsTableProps) => {
@@ -97,19 +98,21 @@ export const StudentsTable = ({ students, loading, onView, onEdit, onDeactivate 
                       <EditButton onClick={() => onEdit(student)} />
 
                       {/* La baja es lógica: el alumno pasa a inactivo, no se elimina */}
-                      <Tooltip title={isInactive ? 'Ya está dado de baja' : 'Dar de baja'}>
-                        {/* El span permite que el tooltip funcione aunque el botón esté deshabilitado */}
-                        <span>
-                          <IconButton
-                            size="small"
-                            aria-label="Dar de baja"
-                            disabled={isInactive}
-                            onClick={() => onDeactivate(student)}
-                          >
-                            <BlockIcon fontSize="small" sx={{ color: isInactive ? '#9ca3af' : '#dc2626' }} />
-                          </IconButton>
-                        </span>
-                      </Tooltip>
+                      {onDeactivate && (
+                        <Tooltip title={isInactive ? 'Ya está dado de baja' : 'Dar de baja'}>
+                          {/* El span permite que el tooltip funcione aunque el botón esté deshabilitado */}
+                          <span>
+                            <IconButton
+                              size="small"
+                              aria-label="Dar de baja"
+                              disabled={isInactive}
+                              onClick={() => onDeactivate?.(student)}
+                            >
+                              <BlockIcon fontSize="small" sx={{ color: isInactive ? '#9ca3af' : '#dc2626' }} />
+                            </IconButton>
+                          </span>
+                        </Tooltip>
+                      )}
                     </TableCell>
                   </TableRow>
                 );

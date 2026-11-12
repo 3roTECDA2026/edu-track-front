@@ -2,12 +2,16 @@ import type { IntensificationModel, ResultCode } from '@/services/intensificatio
 import type { IntensificationAttendanceValue } from '@/services/intensificationAttendance.service'
 import type { IntensificationPeriod } from '@/services/intensificationSchedule.service'
 import { SHIFT_LABELS } from '@/components/students/studentLabels'
+import type { OrganizationalModel } from '@/services/institutionalConfig.service'
 
 // Traducción de los enums de intensificación a los textos que ve el usuario
 
 export const PERIOD_LABELS: Record<IntensificationPeriod, string> = {
+  MARCH: 'Marzo',
+  JULY: 'Julio',
   AUGUST: 'Agosto',
-  DECEMBER: 'Diciembre',
+  DECEMBER_TERM_CLOSE: 'Diciembre (cierre del cuatrimestre)',
+  DECEMBER: 'Diciembre (después del cierre)',
   FEBRUARY_MARCH: 'Febrero / Marzo',
 }
 
@@ -50,3 +54,20 @@ export const ATTENDANCE_LABELS: Record<IntensificationAttendanceValue, string> =
 // Año, sección y turno de una sección, por ejemplo "2° B · Tarde"
 export const sectionLabel = (section: { grade: number; division: string; shift: string }) =>
   `${section.grade}° ${section.division} · ${SHIFT_LABELS[section.shift as keyof typeof SHIFT_LABELS] ?? section.shift}`
+
+// Opción organizativa de la escuela (CRM-065), con la letra que ve el usuario
+export const OPTION_LABELS: Record<OrganizationalModel, string> = {
+  OPTION_A: 'A',
+  OPTION_B: 'B',
+  OPTION_C: 'C',
+  OPTION_D: 'D',
+}
+
+// Modelos de intensificación de cada opción organizativa (Cuadro 2 del Anexo 5, Res. 1650/24).
+// El back aplica la misma tabla al validar: esta es solo para mostrar las opciones.
+export const MODELS_BY_OPTION: Record<OrganizationalModel, IntensificationModel[]> = {
+  OPTION_A: ['MODEL_1', 'MODEL_2'],
+  OPTION_B: ['MODEL_1', 'MODEL_3'],
+  OPTION_C: ['MODEL_1', 'MODEL_2', 'MODEL_3'],
+  OPTION_D: ['MODEL_1', 'MODEL_4'],
+}

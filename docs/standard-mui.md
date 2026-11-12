@@ -98,7 +98,9 @@ import RestartAltIcon from '@mui/icons-material/RestartAlt'
 <AddButton label="Limpiar" icon={<RestartAltIcon />} onClick={...} />
 ```
 
-Props: `label` (texto), `onClick`, `icon?` (ícono; por defecto es un `+`).
+Props: `label` (texto), `onClick?`, `icon?` (ícono; por defecto es un `+`). Para enviar un
+formulario, usarlo con `type="submit"` dentro del `<form>` y sin `onClick`: así funciona el
+envío nativo (Enter, accesibilidad) y el `onSubmit` del formulario hace el resto.
 
 ---
 

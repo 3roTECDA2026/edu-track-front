@@ -15,6 +15,7 @@ import { StudentFormDialog } from '@/components/students/StudentFormDialog';
 import { PageHeader } from '@/components/common/PageHeader';
 import ContentCard from '@/components/common/ContentCard';
 import StandardTablePagination from '@/components/common/StandardTablePagination';
+import { canAdminister } from '@/services/session'
 import { PageContainer } from '@/components/common/PageContainer'
 const PAGE_SIZE = 20;
 
@@ -33,6 +34,7 @@ interface SnackbarState {
 
 export const StudentsPage = () => {
   const navigate = useNavigate()
+  const canManageStudents = canAdminister()
 
   const [filters, setFilters] = useState<StudentFiltersState>(INITIAL_FILTERS)
   // El back pagina desde 1; el paginado común (MUI) cuenta desde 0
@@ -116,15 +118,15 @@ export const StudentsPage = () => {
     <MainLayout>
             <PageContainer>
         <PageHeader
-          title="Listado de estudiantes"
-          subtitle="Buscá, filtrá y gestioná los estudiantes de la institución."
-          breadcrumbs={[
-            { label: 'Inicio', href: '/home' },
-            { label: 'Estudiantes', href: '/students' },
-            { label: 'Listado' },
-          ]}
-          action={<AddButton label="Alta estudiante" onClick={() => setCreateOpen(true)} />}
-        />
+      title="Listado de estudiantes"
+      subtitle="Buscá, filtrá y gestioná los estudiantes de la institución."
+      breadcrumbs={[
+    { label: 'Inicio', href: '/home' },
+    { label: 'Estudiantes', href: '/students' },
+    { label: 'Listado' },
+     ]}
+     action={canManageStudents ? <AddButton label="Alta estudiante" onClick={() => setCreateOpen(true)} /> : undefined}
+    />
 
         {/* Tarjeta contenedora estándar: filtros, tabla y paginado */}
         <ContentCard>
@@ -158,7 +160,7 @@ export const StudentsPage = () => {
                 loading={loading}
                 onView={(student) => navigate(`/students/${student.id}`)}
                 onEdit={(student) => setEditStudentId(student.id)}
-                onDeactivate={handleOpenDeactivate}
+                onDeactivate={canManageStudents ? handleOpenDeactivate : undefined}
               />
 
               {result && (
