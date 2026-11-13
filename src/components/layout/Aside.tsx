@@ -23,12 +23,13 @@ import AssessmentIcon from '@mui/icons-material/Assessment'
 import logoEscuela from '@/assets/logo.png'
 import { UserIcon } from 'lucide-react'
 import EventRepeatIcon from '@mui/icons-material/EventRepeat'
+import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import SettingsIcon from '@mui/icons-material/Settings'
 import GavelIcon from '@mui/icons-material/Gavel'
 import GroupsIcon from '@mui/icons-material/Groups'
 import InsightsIcon from '@mui/icons-material/Insights'
 import { EDTE_DASHBOARD_ROLES } from '@/components/edteDashboard/dashboardLabels'
-import { getRole, USER_MANAGEMENT_ROLES } from '@/services/session'
+import { ADMIN_ROLES, getRole, USER_MANAGEMENT_ROLES } from '@/services/session'
 import { CONFLICT_ALLOWED_ROLES } from '@/components/conflicts/ConflictRoleGuard'
 import { EDTE_VIEWER_ROLES } from '@/components/edte/edteLabels'
 import AssignmentIndOutlined from '@mui/icons-material/AssignmentIndOutlined'
@@ -53,6 +54,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Resumen de asistencias', path: '/attendance', icon: <AssessmentIcon /> },
   { label: 'Calificaciones', icon: <GradingIcon />, path: '/calification-grid' },
   { label: 'Intensificación', icon: <EventRepeatIcon />, path: '/intensification-calendar' },
+  { label: 'Promoción', icon: <TrendingUpIcon />, path: '/promotion', roles: ADMIN_ROLES },
   { label: 'Modelo organizativo', icon: <SettingsIcon />, path: '/organizational-model' },
   {
     label: 'Derivados al EDTE',
@@ -60,8 +62,18 @@ const NAV_ITEMS: NavItem[] = [
     path: '/edte-referrals',
     roles: EDTE_REFERRALS_ROLES,
   },
-  { label: 'Reuniones del EDTE', icon: <GroupsIcon />, path: '/edte-meetings', roles: EDTE_VIEWER_ROLES },
-  { label: 'Dashboard del EDTE', icon: <InsightsIcon />, path: '/edte-dashboard', roles: EDTE_DASHBOARD_ROLES },
+  {
+    label: 'Reuniones del EDTE',
+    icon: <GroupsIcon />,
+    path: '/edte-meetings',
+    roles: EDTE_VIEWER_ROLES,
+  },
+  {
+    label: 'Dashboard del EDTE',
+    icon: <InsightsIcon />,
+    path: '/edte-dashboard',
+    roles: EDTE_DASHBOARD_ROLES,
+  },
 ]
 
 export const Aside: React.FC = () => {

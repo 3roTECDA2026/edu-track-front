@@ -24,7 +24,9 @@ import EdteDashboardPage from '@/pages/EdteDashboardPage'
 import { EDTE_DASHBOARD_ROLES } from '@/components/edteDashboard/dashboardLabels'
 import EdteReferralsPage from '@/pages/EdteReferralsPage'
 import { EDTE_REFERRALS_ROLES } from '@/components/edteReferrals/referralLabels'
-import { USER_MANAGEMENT_ROLES } from '@/services/session'
+import PromotionPage from '@/pages/PromotionPage'
+import { ADMIN_ROLES, USER_MANAGEMENT_ROLES } from '@/services/session'
+import { AcademicYearsProvider } from '@/hooks/useAcademicYears'
 import ProtectedRoute from '@/routes/ProtectedRoute'
 
 const AppRouter = () => {
@@ -64,6 +66,18 @@ const AppRouter = () => {
         {/* Dashboard del EDTE (CRM-077): EOE y dirección */}
         <Route element={<ProtectedRoute roles={EDTE_DASHBOARD_ROLES} />}>
           <Route path="/edte-dashboard" element={<EdteDashboardPage />} />
+        </Route>
+
+        {/* Promoción: administración y dirección */}
+        <Route element={<ProtectedRoute roles={ADMIN_ROLES} />}>
+          <Route
+            path="/promotion"
+            element={
+              <AcademicYearsProvider>
+                <PromotionPage />
+              </AcademicYearsProvider>
+            }
+          />
         </Route>
 
         {/* Solo administración */}
