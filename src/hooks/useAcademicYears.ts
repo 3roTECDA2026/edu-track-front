@@ -6,6 +6,7 @@ export interface AcademicYearOption {
   id: string
   year: number
   active: boolean
+  closedAt?: string | null
   term1StartDate?: string | null
   term1EndDate?: string | null
   term2StartDate?: string | null
