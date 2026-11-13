@@ -1,4 +1,6 @@
 // src/routes/AppRouter.tsx
+import ConflictsPage from '@/pages/ConflictsPage'
+import { CONFLICT_ALLOWED_ROLES } from '@/components/conflicts/ConflictRoleGuard'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 import UsersPage from '@/pages/UsersPage'
@@ -14,6 +16,12 @@ import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage'
 import IntensificationCalendarPage from '@/pages/IntensificationCalendarPage'
 import OrganizationalModelPage from '@/pages/OrganizationalModelPage'
 import InterventionFormPage from '@/pages/InterventionFormPage'
+import EdteMeetingsPage from '@/pages/EdteMeetingsPage'
+import EdteMeetingFormPage from '@/pages/EdteMeetingFormPage'
+import EdteMeetingDetailPage from '@/pages/EdteMeetingDetailPage'
+import { EDTE_MANAGER_ROLES, EDTE_VIEWER_ROLES } from '@/components/edte/edteLabels'
+import EdteDashboardPage from '@/pages/EdteDashboardPage'
+import { EDTE_DASHBOARD_ROLES } from '@/components/edteDashboard/dashboardLabels'
 import { USER_MANAGEMENT_ROLES } from '@/services/session'
 import ProtectedRoute from '@/routes/ProtectedRoute'
 
@@ -39,9 +47,31 @@ const AppRouter = () => {
           <Route path="/interventions/new" element={<InterventionFormPage />} />
         </Route>
 
+        {/* Reuniones del EDTE (CRM-075): listado y detalle, solo el personal de la escuela */}
+        <Route element={<ProtectedRoute roles={EDTE_VIEWER_ROLES} />}>
+          <Route path="/edte-meetings" element={<EdteMeetingsPage />} />
+          <Route path="/edte-meetings/:id" element={<EdteMeetingDetailPage />} />
+        </Route>
+
+        {/* Reuniones del EDTE: alta y edición, solo quienes gestionan */}
+        <Route element={<ProtectedRoute roles={EDTE_MANAGER_ROLES} />}>
+          <Route path="/edte-meetings/new" element={<EdteMeetingFormPage />} />
+          <Route path="/edte-meetings/:id/edit" element={<EdteMeetingFormPage />} />
+        </Route>
+
+        {/* Dashboard del EDTE (CRM-077): EOE y dirección */}
+        <Route element={<ProtectedRoute roles={EDTE_DASHBOARD_ROLES} />}>
+          <Route path="/edte-dashboard" element={<EdteDashboardPage />} />
+        </Route>
+
         {/* Solo administración */}
         <Route element={<ProtectedRoute roles={USER_MANAGEMENT_ROLES} />}>
           <Route path="/users" element={<UsersPage />} />
+        </Route>
+
+        {/* CRM-091/092: acceso exclusivo a EOE y Directivos */}
+        <Route element={<ProtectedRoute roles={CONFLICT_ALLOWED_ROLES} />}>
+          <Route path="/conflicts" element={<ConflictsPage />} />
         </Route>
 
         {/* Ruta por defecto */}

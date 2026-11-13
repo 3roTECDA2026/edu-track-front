@@ -6,6 +6,7 @@ import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty'
 import SaveIcon from '@mui/icons-material/Save'
 
 import { AddButton } from '@/components/common/AddButton'
+import { AttemptsHistory } from '@/components/studentProfile/AttemptsHistory'
 import { cardSx } from '@/components/studentProfile/profileStyles'
 import { TabEmpty, TabError, TabLoading } from '@/components/studentProfile/TabStates'
 import { useLazyResource } from '@/hooks/useLazyResource'
@@ -153,6 +154,7 @@ const PendingSubjectCard = ({
           />
         </Box>
       )}
+      <AttemptsHistory pendingSubjectId={item.id} />
     </Paper>
   )
 }
