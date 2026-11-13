@@ -24,6 +24,7 @@ import { SHIFT_LABELS } from '@/components/students/studentLabels'
 const COLUMNS = [
   { label: 'Alumno', align: 'left' },
   { label: 'DNI', align: 'left' },
+  // El curso es el del ciclo que se cerró, el que motivó la derivación (CRM-073)
   { label: 'Curso', align: 'left' },
   { label: 'MPAA', align: 'center' },
   { label: 'PATE', align: 'left' },
@@ -36,6 +37,7 @@ interface EdteReferralsTableProps {
   rows: ReferralRow[]
   loading: boolean
   pateUnavailable: boolean // No se sabe el estado del PATE: no se resalta ni se ofrece crearlo
+  closedYear?: number // Ciclo que se cerró: aclara de qué año es el curso ("Curso en 2025")
   onViewProfile: (row: ReferralRow) => void
   onCreatePate: (row: ReferralRow) => void
   onAddToMeeting: (row: ReferralRow) => void
@@ -51,10 +53,13 @@ export function EdteReferralsTable({
   rows,
   loading,
   pateUnavailable,
+  closedYear,
   onViewProfile,
   onCreatePate,
   onAddToMeeting,
 }: EdteReferralsTableProps) {
+  const columnLabel = (label: string) =>
+    label === 'Curso' && closedYear !== undefined ? `Curso en ${closedYear}` : label
   return (
     <TableContainer sx={{ overflowX: 'auto' }}>
       <Table size="small" sx={{ minWidth: 820 }}>
@@ -62,7 +67,7 @@ export function EdteReferralsTable({
           <TableRow>
             {COLUMNS.map((column) => (
               <TableCell key={column.label} align={column.align} sx={{ whiteSpace: 'nowrap' }}>
-                {column.label}
+                {columnLabel(column.label)}
               </TableCell>
             ))}
           </TableRow>
