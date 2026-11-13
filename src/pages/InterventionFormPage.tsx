@@ -169,7 +169,9 @@ const InterventionFormPage = () => {
         } catch (err: unknown) {
           setNotice({
             type: 'error',
-            text: `La intervención se registró, pero no se pudieron subir los archivos. ${getAttachmentErrorMessage(err, '')} Podés quitar o cambiar los archivos y volver a guardar.`,
+            text:
+              `La intervención se registró, pero no se pudieron subir los archivos. ${getAttachmentErrorMessage(err, 'Ocurrió un error inesperado.')}` +
+              ' Podés quitar o cambiar los archivos y volver a guardar.',
           })
           return
         } finally {
