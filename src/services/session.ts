@@ -73,3 +73,11 @@ export const canAdminister = (): boolean => {
   const role = getRole();
   return !!role && ADMIN_ROLES.includes(role);
 };
+
+// Gestionan las trayectorias (Plan Forte, EDTE): dirección, EOE y administración
+export const TRAJECTORY_MANAGER_ROLES = ['ADMINISTRATOR', 'SCHOOL_MANAGEMENT', 'EOE_DIRECTIVE'];
+
+export const canManageTrajectories = (): boolean => {
+  const role = getRole();
+  return !!role && TRAJECTORY_MANAGER_ROLES.includes(role);
+};

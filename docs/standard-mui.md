@@ -12,6 +12,13 @@ mismos botones y colores.
 - **Colores:** la app es **blanco y negro**. El negro del estándar es `#111827`.
   El único rojo permitido es `#dc2626` (acciones de eliminar / error). No usar
   azules ni otros colores de marca.
+  - **Excepción (semáforo del dashboard del EDTE, CRM-077):** los indicadores de riesgo usan
+    verde, ámbar y rojo, con la misma paleta de las valoraciones TEA / TEP / TED
+    (`ASSESSMENT_CONFIG` en `profileLabels.ts`). No inventar colores nuevos: si hace falta otro
+    semáforo, salir de esa paleta (ver `LEVEL_CONFIG` en `edteDashboard/dashboardLabels.ts`).
+  - **El color nunca va solo:** cada nivel del semáforo lleva también un texto ("Riesgo alto",
+    "Riesgo medio", "Riesgo bajo") y un ícono propio (`LevelBadge`, `levelIcons.ts`), para que se
+    entienda sin distinguir colores. Cualquier semáforo nuevo debe hacer lo mismo.
 - **Tipografía y tamaños:** salen del `theme` (`src/theme/theme.ts`). No escribir
   tamaños de fuente a mano en las pantallas; usar los `variant` de MUI
   (`h4` título de página, `h6` título interno, `body2` datos de tabla).
@@ -98,7 +105,9 @@ import RestartAltIcon from '@mui/icons-material/RestartAlt'
 <AddButton label="Limpiar" icon={<RestartAltIcon />} onClick={...} />
 ```
 
-Props: `label` (texto), `onClick`, `icon?` (ícono; por defecto es un `+`).
+Props: `label` (texto), `onClick?`, `icon?` (ícono; por defecto es un `+`). Para enviar un
+formulario, usarlo con `type="submit"` dentro del `<form>` y sin `onClick`: así funciona el
+envío nativo (Enter, accesibilidad) y el `onSubmit` del formulario hace el resto.
 
 ---
 
@@ -162,7 +171,7 @@ queden iguales:
 ## Qué NO hacer
 
 - No escribir colores de fuente o tamaños a mano si el theme ya los da.
-- No usar azules ni rojos fuera de `#dc2626`.
+- No usar azules ni rojos fuera de `#dc2626` (salvo el semáforo del dashboard del EDTE, ver arriba).
 - No crear un botón nuevo a mano: usar `AddButton` o `EditButton`.
 - No armar el encabezado a mano: usar `PageHeader`.
 - No renombrar `AddButton` (rompería Cursos y Estudiantes).
