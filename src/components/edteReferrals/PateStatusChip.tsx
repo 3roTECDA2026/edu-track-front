@@ -10,7 +10,8 @@ interface PateStatusChipProps {
 export function PateStatusChip({ state }: PateStatusChipProps) {
   if (state === null) return <span aria-label="Estado del PATE desconocido">—</span>
 
-  const { label, icon: Icon, highlighted } = PATE_STATE_CONFIG[state]
+  const { label, icon: Icon, emphasis } = PATE_STATE_CONFIG[state]
+  const strong = emphasis !== 'none'
   return (
     <Chip
       size="small"
@@ -18,9 +19,11 @@ export function PateStatusChip({ state }: PateStatusChipProps) {
       icon={<Icon fontSize="small" />}
       label={label}
       sx={{
-        fontWeight: highlighted ? 700 : 500,
-        color: highlighted ? 'text.primary' : 'text.secondary',
-        borderColor: highlighted ? 'text.primary' : 'divider',
+        fontWeight: emphasis === 'alert' ? 700 : strong ? 600 : 500,
+        color: strong ? 'text.primary' : 'text.secondary',
+        borderColor: strong ? 'text.primary' : 'divider',
+        // Borrador: borde punteado, para que se note sin confundirse con "Sin PATE"
+        borderStyle: emphasis === 'inProgress' ? 'dashed' : 'solid',
         '& .MuiChip-icon': { color: 'inherit' },
       }}
     />

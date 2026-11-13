@@ -49,6 +49,30 @@ const renderTable = (props: Partial<Parameters<typeof EdteReferralsTable>[0]> = 
 const rowOf = (name: string) => screen.getByText(name).closest('tr') as HTMLElement
 
 describe('EdteReferralsTable', () => {
+  it('aclara de qué ciclo es el curso', () => {
+    renderTable({ closedYear: 2025 })
+    expect(screen.getByRole('columnheader', { name: 'Curso en 2025' })).toBeTruthy()
+  })
+
+  it('"Borrador" es un estado propio, destacado distinto de "Sin PATE" y de "En curso"', () => {
+    renderTable({
+      rows: [
+        ...rows,
+        row({ studentId: 's3', firstName: 'Ana', pate: { id: 'p3', status: 'DRAFT' } }),
+      ],
+    })
+    const chipOf = (label: string) =>
+      screen.getByText(label).closest('.MuiChip-root') as HTMLElement
+    const border = (label: string) => getComputedStyle(chipOf(label)).borderStyle
+
+    // Sin PATE: borde continuo; Borrador: punteado (hay algo en proceso)
+    expect(border('Sin PATE')).toBe('solid')
+    expect(border('Borrador')).toBe('dashed')
+    expect(getComputedStyle(chipOf('Borrador')).fontWeight).not.toBe(
+      getComputedStyle(chipOf('En curso')).fontWeight
+    )
+  })
+
   it('muestra alumno, DNI, curso, MPAA y estado del PATE', () => {
     renderTable()
     const sofia = within(rowOf('Pérez, Sofía'))
