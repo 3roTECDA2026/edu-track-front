@@ -1,4 +1,6 @@
 // src/routes/AppRouter.tsx
+import ConflictsPage from '@/pages/ConflictsPage'
+import { CONFLICT_ALLOWED_ROLES } from '@/components/conflicts/ConflictRoleGuard'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 import UsersPage from '@/pages/UsersPage'
@@ -65,6 +67,11 @@ const AppRouter = () => {
         {/* Solo administración */}
         <Route element={<ProtectedRoute roles={USER_MANAGEMENT_ROLES} />}>
           <Route path="/users" element={<UsersPage />} />
+        </Route>
+
+        {/* CRM-091/092: acceso exclusivo a EOE y Directivos */}
+        <Route element={<ProtectedRoute roles={CONFLICT_ALLOWED_ROLES} />}>
+          <Route path="/conflicts" element={<ConflictsPage />} />
         </Route>
 
         {/* Ruta por defecto */}
