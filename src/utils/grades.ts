@@ -24,6 +24,7 @@ export const PASSING_SCORE = 7
 
 export interface FinalScoreCalculationInput {
   finalScore?: number | null
+  subjectStatus?: string | null
   term1Score?: number | null
   term2Score?: number | null
   term1IntensificationScore?: number | null
@@ -37,7 +38,9 @@ export interface FinalScoreCalculationInput {
  * 2. Si el 2.º cuatrimestre está aprobado (>= 7):
  *    - Si el 1.º cuatrimestre también está aprobado (>= 7): promedio de ambos sin redondear (7 y 8 -> 7,5).
  *    - Si recuperó el 1.º cuatrimestre durante el 2.º (term1IntensificationScore >= 7): la nota de esa recuperación.
- * 3. En la vista "Por alumno", si el backend ya guardó una nota final acreditada (>= 7), puede usarse como fallback.
+ * 3. En la vista "Por alumno", si el backend ya guardó una nota final acreditada:
+ *    - Ya sea con estado APPROVED_ACCREDITED (intensificación AA con nota 4 a 10)
+ *    - O finalScore >= 7 (aprobación regular)
  * 4. En cualquier otro caso, la nota final queda sin definir (vacía).
  */
 export function calculateSubjectFinalScore(
@@ -67,9 +70,15 @@ export function calculateSubjectFinalScore(
     }
   }
 
-  // 3. Fallback de finalScore guardado en el backend (solo si es nota de aprobación >= 7)
-  if (typeof input.finalScore === 'number' && input.finalScore >= PASSING_SCORE) {
-    return input.finalScore
+  // 3. Fallback de finalScore guardado en el backend
+  // Si la materia ya fue aprobada/acreditada (ej. intensificación AA con 4 a 10) o si tiene nota >= 7
+  if (typeof input.finalScore === 'number') {
+    if (input.subjectStatus === 'APPROVED_ACCREDITED' && input.finalScore >= 4) {
+      return input.finalScore
+    }
+    if (input.finalScore >= PASSING_SCORE) {
+      return input.finalScore
+    }
   }
 
   return undefined

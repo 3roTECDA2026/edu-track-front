@@ -77,20 +77,78 @@ describe('calculateSubjectFinalScore (CRM-096, CRM-052, CRM-066)', () => {
     expect(res).toBeUndefined()
   })
 
-  it('si finalScore guardado en backend es menor a 7 (ej. MPAA 1 a 3 post-cierre), no se muestra como final aprobada', () => {
+  it('si finalScore guardado en backend es menor a 7 (ej. MPAA 1 a 3 post-cierre) y no está acreditado, no se muestra como final aprobada', () => {
     const res = calculateSubjectFinalScore({
       finalScore: 3,
+      subjectStatus: 'MPAA',
       term1Score: 4,
       term2Score: 5,
     })
     expect(res).toBeUndefined()
   })
 
-  it('si finalScore guardado en backend está acreditado (>= 7), lo utiliza si no hay cuatrimestres en vivo', () => {
+  it('si finalScore guardado en backend está acreditado (>= 7), lo utiliza como fallback', () => {
     const res = calculateSubjectFinalScore({
       finalScore: 8,
+      subjectStatus: 'APPROVED_ACCREDITED',
     })
     expect(res).toBe(8)
+  })
+
+  it('si acreditó en intensificación con nota de 4 a 6 (subjectStatus === APPROVED_ACCREDITED), muestra esa nota final', () => {
+    // Caso solicitado en review: AA de 4 a 6 guardada en el backend por intensificación
+    const res = calculateSubjectFinalScore({
+      finalScore: 5,
+      subjectStatus: 'APPROVED_ACCREDITED',
+    })
+    expect(res).toBe(5)
+
+    const res4 = calculateSubjectFinalScore({
+      finalScore: 4,
+      subjectStatus: 'APPROVED_ACCREDITED',
+    })
+    expect(res4).toBe(4)
+  })
+
+  it('si no se cargaron notas de cuatrimestre formalmente, no asume nota final aunque haya habido cursada', () => {
+    // Paridad con la grilla: sólo se calcula si term1Score y term2Score están formalmente definidos
+    const res = calculateSubjectFinalScore({
+      term1Score: null,
+      term2Score: null,
+    })
+    expect(res).toBeUndefined()
+  })
+
+  it('garantiza paridad total entre la grilla y la vista por alumno', () => {
+    // Caso 1: Recuperación de 1.° cuatrimestre aprobada (8) y 2.° cuatrimestre aprobado (7)
+    const alumno1Grid = calculateSubjectFinalScore({
+      term1Score: 4,
+      term2Score: 7,
+      term1IntensificationScore: 8,
+    })
+    const alumno1PorAlumno = calculateSubjectFinalScore({
+      term1Score: 4,
+      term2Score: 7,
+      term1IntensificationScore: 8,
+    })
+    expect(alumno1Grid).toBe(8)
+    expect(alumno1PorAlumno).toBe(alumno1Grid)
+
+    // Caso 2: Acreditación en intensificación (AA) con 6
+    const alumno2Grid = calculateSubjectFinalScore({
+      term1Score: 4,
+      term2Score: 5,
+      intensifications: [{ resultCode: 'AA', score: 6 }],
+    })
+    // En Por Alumno le llega por el backend como APPROVED_ACCREDITED con finalScore = 6
+    const alumno2PorAlumno = calculateSubjectFinalScore({
+      finalScore: 6,
+      subjectStatus: 'APPROVED_ACCREDITED',
+      term1Score: 4,
+      term2Score: 5,
+    })
+    expect(alumno2Grid).toBe(6)
+    expect(alumno2PorAlumno).toBe(alumno2Grid)
   })
 })
 

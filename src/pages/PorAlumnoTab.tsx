@@ -92,8 +92,9 @@ export const PorAlumnoTab: React.FC = () => {
   const finalFor = (row: (typeof rows)[number]) => {
     return calculateSubjectFinalScore({
       finalScore: row.grade?.finalScore,
-      term1Score: row.grade?.term1Score ?? average(row.grade?.term1Scores ?? []) ?? null,
-      term2Score: row.grade?.term2Score ?? average(row.grade?.term2Scores ?? []) ?? null,
+      subjectStatus: row.grade?.subjectStatus,
+      term1Score: row.grade?.term1Score ?? null,
+      term2Score: row.grade?.term2Score ?? null,
       term1IntensificationScore: row.grade?.term1IntensificationScore ?? null,
     })
   }
