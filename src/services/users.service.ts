@@ -326,14 +326,3 @@ export async function activateUser(
     data: fromBackendUser(response.data),
   };
 }
-
-export interface UserOption {
-  id: string
-  firstName?: string
-  lastName?: string
-}
-
-export async function searchUsers(query: string): Promise<UserOption[]> {
-  const res = await fetchApi<{ data: { items: UserOption[] } }>(`/api/users?search=${encodeURIComponent(query)}`)
-  return res.data?.items ?? []
-}

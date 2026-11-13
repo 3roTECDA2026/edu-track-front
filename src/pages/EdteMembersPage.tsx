@@ -1,143 +1,379 @@
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, FormControl, FormControlLabel, IconButton, InputLabel, MenuItem, Select, Switch, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@mui/material'
-import EditIcon from '@mui/icons-material/Edit'
+import { useEffect, useState } from 'react'
+import {
+  Alert,
+  Button,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  FormControl,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  TextField,
+  Typography,
+} from '@mui/material'
 import DeleteIcon from '@mui/icons-material/Delete'
-import { useState, useEffect } from 'react'
-import MainLayout from '@/components/layout/MainLayout'
-import PageHeader from '@/components/common/PageHeader'
-import { ContentCard } from '@/components/common/ContentCard'
-import { useEdteMembers } from '@/hooks/useEdteMembers'
-import { searchUsers, type UserOption } from '@/services/users.service'
-import { createEdteMember, updateEdteMember, deactivateEdteMember, type EdteMember } from '@/services/edteMembers.service'
 
-export default function EdteMembersPage() {
-  const { members, loading, error } = useEdteMembers()
-  const [local, setLocal] = useState<EdteMember[]>([])
-  useEffect(() => setLocal(members), [members])
+import MainLayout from '@/components/layout/MainLayout'
+import { useNotify } from '@/components/layout/NotificationProvider'
+import { AddButton } from '@/components/common/AddButton'
+import { ContentCard } from '@/components/common/ContentCard'
+import { EditButton } from '@/components/common/EditButton'
+import { PageContainer } from '@/components/common/PageContainer'
+import { PageHeader } from '@/components/common/PageHeader'
+import { useEdteMembers } from '@/hooks/useEdteMembers'
+import {
+  createEdteTeamMember,
+  deactivateEdteTeamMember,
+  listEdteStaffOptions,
+  updateEdteTeamMember,
+  type EdteRole,
+  type EdteShift,
+  type EdteStaffOption,
+  type EdteTeamMember,
+} from '@/services/edteMembers.service'
+
+const SHIFT_LABELS: Record<EdteShift, string> = {
+  MORNING: 'Mañana',
+  AFTERNOON: 'Tarde',
+  EVENING: 'Vespertino',
+  EXTRA_TIME: 'Contraturno',
+}
+
+const EDTE_ROLE_LABELS: Record<EdteRole, string> = {
+  TEACHER: 'Docente',
+  PRECEPTOR: 'Preceptor/a',
+  COUNSELOR: 'Orientador/a',
+  DIRECTIVE: 'Directivo/a',
+  OTHER: 'Otro referente',
+}
+
+const SHIFTS = Object.keys(SHIFT_LABELS) as EdteShift[]
+const EDTE_ROLES = Object.keys(EDTE_ROLE_LABELS) as EdteRole[]
+
+const EdteMembersPage = () => {
+  const notify = useNotify()
+  const { members, loading, error, reload } = useEdteMembers()
+
   const [open, setOpen] = useState(false)
-  const [editing, setEditing] = useState<EdteMember | null>(null)
-  const [role, setRole] = useState('')
-  const [active, setActive] = useState(true)
+  const [editing, setEditing] = useState<EdteTeamMember | null>(null)
+  const [role, setRole] = useState<EdteRole | ''>('')
+  const [shift, setShift] = useState<EdteShift | ''>('')
   const [query, setQuery] = useState('')
-  const [results, setResults] = useState<UserOption[]>([])
+  const [options, setOptions] = useState<EdteStaffOption[]>([])
+  const [optionsError, setOptionsError] = useState<string | null>(null)
   const [selectedUserId, setSelectedUserId] = useState('')
-  const [confirmId, setConfirmId] = useState<string | null>(null)
-  const [msg, setMsg] = useState<string | null>(null)
+  const [toDeactivate, setToDeactivate] = useState<EdteTeamMember | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [deactivating, setDeactivating] = useState(false)
 
   useEffect(() => {
-    if (!query.trim()) { setResults([]); return }
-    searchUsers(query).then((r) => setResults(Array.isArray(r) ? r : [])).catch(() => setResults([]))
-  }, [query])
+    const controller = new AbortController()
+    listEdteStaffOptions(controller.signal)
+      .then(setOptions)
+      .catch((e: unknown) => {
+        if (e instanceof DOMException && e.name === 'AbortError') return
+        setOptionsError('No se pudieron cargar los usuarios.')
+      })
 
-  const reset = () => { setEditing(null); setRole(''); setActive(true); setQuery(''); setSelectedUserId(''); setResults([]) }
-  const openNew = () => { reset(); setOpen(true) }
-  const openEdit = (m: EdteMember) => { setEditing(m); setRole(m.roleInTeam); setActive(m.active); setOpen(true) }
+    return () => controller.abort()
+  }, [])
 
-  const save = async () => {
-    try {
-      if (editing) {
-        const u = await updateEdteMember(editing.id, { roleInTeam: role, active })
-        setLocal((p) => p.map((m) => (m.id === u.id ? u : m)))
-        setMsg('Integrante actualizado')
-      } else {
-        const u = await createEdteMember({ userId: selectedUserId, roleInTeam: role, active })
-        setLocal((p) => [u, ...p])
-        setMsg('Integrante creado')
-      }
-      setOpen(false); reset()
-    } catch (e) { setMsg(e instanceof Error ? e.message : 'Error') }
+  const filteredOptions = options.filter((option) =>
+    option.name.toLowerCase().includes(query.trim().toLowerCase())
+  )
+
+  const reset = () => {
+    setEditing(null)
+    setRole('')
+    setShift('')
+    setQuery('')
+    setSelectedUserId('')
   }
 
-  const deactivate = async (id: string) => {
+  const closeDialog = () => {
+    setOpen(false)
+    reset()
+  }
+
+  const openNew = () => {
+    reset()
+    setOpen(true)
+  }
+
+  const openEdit = (member: EdteTeamMember) => {
+    setEditing(member)
+    setRole(member.edteRole)
+    setShift(member.shift)
+    setQuery('')
+    setSelectedUserId('')
+    setOpen(true)
+  }
+
+  const save = async () => {
+    if (!role) return
+    if (!editing && (!selectedUserId || !shift)) return
+
+    setSaving(true)
     try {
-      await deactivateEdteMember(id)
-      setLocal((p) => p.map((m) => (m.id === id ? { ...m, active: false } : m)))
-      setMsg('Integrante dado de baja')
-    } catch (e) { setMsg(e instanceof Error ? e.message : 'Error') }
-    setConfirmId(null)
+      if (editing) {
+        await updateEdteTeamMember(editing.id, { edteRole: role })
+        notify.success('Integrante actualizado')
+      } else {
+        if (!selectedUserId || !shift) return
+        await createEdteTeamMember({ userId: selectedUserId, shift, edteRole: role })
+        notify.success('Integrante creado')
+      }
+      closeDialog()
+      reload()
+    } catch (e) {
+      notify.error(e instanceof Error ? e.message : 'No se pudo guardar el integrante')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const confirmDeactivate = async () => {
+    if (!toDeactivate) return
+
+    setDeactivating(true)
+    try {
+      await deactivateEdteTeamMember(toDeactivate.id)
+      notify.success(`${toDeactivate.user.name} fue dado de baja`)
+      setToDeactivate(null)
+      reload()
+    } catch (e) {
+      notify.error(e instanceof Error ? e.message : 'No se pudo dar de baja al integrante')
+    } finally {
+      setDeactivating(false)
+    }
   }
 
   return (
     <MainLayout>
-      <Box sx={{ maxWidth: 1200, mx: 'auto', p: 1 }}>
-        <PageHeader title="Integrantes del EDTE" subtitle="Gestión de integrantes." breadcrumbs={[{ label: 'Inicio', href: '/home' }, { label: 'EDTE' }, { label: 'Integrantes' }]} />
-        {msg && <Typography color="primary" sx={{ mb: 1 }}>{msg}</Typography>}
-        {error && <Typography color="error" sx={{ mb: 1 }}>{error}</Typography>}
-        <Box sx={{ mb: 2 }}>
-          <Button variant="contained" onClick={openNew}>Nuevo integrante</Button>
-        </Box>
+      <PageContainer>
+        <PageHeader
+          title="Integrantes del EDTE"
+          subtitle="Gestión de integrantes del Equipo de Definición de Trayectorias Educativas."
+          breadcrumbs={[
+            { label: 'Inicio', href: '/home' },
+            { label: 'EDTE' },
+            { label: 'Integrantes' },
+          ]}
+          action={<AddButton label="Nuevo integrante" onClick={openNew} />}
+        />
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+
         <ContentCard>
           <Table size="small">
-            <TableHead>
+            <TableHead sx={{ backgroundColor: '#fafafa' }}>
               <TableRow>
                 <TableCell>Nombre</TableCell>
+                <TableCell>Turno</TableCell>
                 <TableCell>Rol</TableCell>
                 <TableCell>Estado</TableCell>
                 <TableCell>Acciones</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
-              {local.map((m) => (
-                <TableRow key={m.id}>
-                  <TableCell>{m.user ? `${m.user.lastName ?? ''}, ${m.user.firstName ?? ''}` : m.userId}</TableCell>
-                  <TableCell>{m.roleInTeam}</TableCell>
-                  <TableCell>{m.active ? 'Activo' : 'Inactivo'}</TableCell>
-                  <TableCell>
-                    <IconButton size="small" onClick={() => openEdit(m)}><EditIcon fontSize="small" /></IconButton>
-                    <IconButton size="small" color="error" onClick={() => setConfirmId(m.id)} disabled={!m.active}><DeleteIcon fontSize="small" /></IconButton>
+              {loading && (
+                <TableRow>
+                  <TableCell colSpan={5}>
+                    <Typography variant="body2" color="text.secondary">
+                      Cargando integrantes...
+                    </Typography>
                   </TableCell>
                 </TableRow>
-              ))}
-              {local.length === 0 && !loading && (
+              )}
+              {!loading && members.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={4}>
+                  <TableCell colSpan={5}>
                     <Typography variant="body2">Sin integrantes cargados.</Typography>
                   </TableCell>
                 </TableRow>
               )}
+              {!loading &&
+                members.map((member) => (
+                  <TableRow key={member.id} hover>
+                    <TableCell>{member.user.name}</TableCell>
+                    <TableCell>{SHIFT_LABELS[member.shift]}</TableCell>
+                    <TableCell>{EDTE_ROLE_LABELS[member.edteRole]}</TableCell>
+                    <TableCell>{member.active ? 'Activo' : 'Inactivo'}</TableCell>
+                    <TableCell>
+                      <EditButton
+                        onClick={() => openEdit(member)}
+                        disabled={!member.active}
+                        label="Editar integrante"
+                      />
+                      <IconButton
+                        size="small"
+                        color="error"
+                        aria-label="Dar de baja"
+                        onClick={() => setToDeactivate(member)}
+                        disabled={!member.active}
+                      >
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
             </TableBody>
           </Table>
         </ContentCard>
-      </Box>
-      <Dialog open={open} onClose={() => { setOpen(false); reset() }}>
-        <DialogTitle>{editing ? 'Editar integrante' : 'Nuevo integrante'}</DialogTitle>
+      </PageContainer>
+
+      <Dialog open={open} onClose={saving ? undefined : closeDialog} maxWidth="sm" fullWidth>
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          {editing ? 'Editar integrante' : 'Nuevo integrante'}
+        </DialogTitle>
         <DialogContent>
           {!editing && (
             <>
-              <TextField label="Buscar usuario" value={query} onChange={(e) => setQuery(e.target.value)} fullWidth sx={{ mt: 1 }} />
-              <Select value={selectedUserId} onChange={(e) => setSelectedUserId(e.target.value)} fullWidth sx={{ mt: 1 }} displayEmpty>
-                <MenuItem value="" disabled>Seleccionar usuario</MenuItem>
-                {(Array.isArray(results) ? results : []).map((u) => (
-                  <MenuItem key={u.id} value={u.id}>{(u.lastName ?? '') + ', ' + (u.firstName ?? '')}</MenuItem>
-                ))}
-              </Select>
+              <TextField
+                label="Buscar usuario"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                fullWidth
+                sx={{ mt: 1 }}
+              />
+              <FormControl fullWidth sx={{ mt: 2 }}>
+                <InputLabel id="edte-user-label">Usuario</InputLabel>
+                <Select
+                  labelId="edte-user-label"
+                  value={selectedUserId}
+                  label="Usuario"
+                  displayEmpty
+                  onChange={(event) => setSelectedUserId(event.target.value)}
+                >
+                  <MenuItem value="" disabled>
+                    Seleccionar usuario
+                  </MenuItem>
+                  {filteredOptions.map((option) => (
+                    <MenuItem key={option.userId} value={option.userId}>
+                      {option.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              {optionsError && (
+                <Alert severity="error" sx={{ mt: 2 }}>
+                  {optionsError}
+                </Alert>
+              )}
             </>
           )}
+
           <FormControl fullWidth sx={{ mt: 2 }}>
-            <InputLabel>Rol</InputLabel>
-            <Select value={role} label="Rol" onChange={(e) => setRole(e.target.value)}>
-              <MenuItem value="DOCENTE">Docente</MenuItem>
-              <MenuItem value="PRECEPTOR">Preceptor</MenuItem>
-              <MenuItem value="ORIENTADOR">Orientador</MenuItem>
-              <MenuItem value="DIRECTIVO">Directivo</MenuItem>
+            <InputLabel id="edte-shift-label">Turno</InputLabel>
+            <Select
+              labelId="edte-shift-label"
+              value={shift}
+              label="Turno"
+              displayEmpty
+              disabled={Boolean(editing)}
+              onChange={(event) => setShift(event.target.value as EdteShift)}
+            >
+              <MenuItem value="" disabled>
+                Seleccionar turno
+              </MenuItem>
+              {SHIFTS.map((value) => (
+                <MenuItem key={value} value={value}>
+                  {SHIFT_LABELS[value]}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
-          <FormControlLabel control={<Switch checked={active} onChange={(e) => setActive(e.target.checked)} />} label="Activo" sx={{ mt: 2 }} />
+
+          <FormControl fullWidth sx={{ mt: 2 }}>
+            <InputLabel id="edte-role-label">Rol</InputLabel>
+            <Select
+              labelId="edte-role-label"
+              value={role}
+              label="Rol"
+              displayEmpty
+              onChange={(event) => setRole(event.target.value as EdteRole)}
+            >
+              <MenuItem value="" disabled>
+                Seleccionar rol
+              </MenuItem>
+              {EDTE_ROLES.map((value) => (
+                <MenuItem key={value} value={value}>
+                  {EDTE_ROLE_LABELS[value]}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => { setOpen(false); reset() }}>Cancelar</Button>
-          <Button variant="contained" onClick={save} disabled={!role || (!editing && !selectedUserId)}>Guardar</Button>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={closeDialog}
+            disabled={saving}
+            color="inherit"
+            sx={{ textTransform: 'none' }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={save}
+            disabled={saving || !role || (!editing && (!selectedUserId || !shift))}
+            variant="contained"
+            sx={{ textTransform: 'none' }}
+          >
+            {saving ? 'Guardando...' : 'Guardar'}
+          </Button>
         </DialogActions>
       </Dialog>
-      <Dialog open={!!confirmId} onClose={() => setConfirmId(null)}>
-        <DialogTitle>Confirmar baja</DialogTitle>
+
+      <Dialog
+        open={!!toDeactivate}
+        onClose={deactivating ? undefined : () => setToDeactivate(null)}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle sx={{ fontWeight: 700 }}>
+          ¿Dar de baja a {toDeactivate?.user.name}?
+        </DialogTitle>
         <DialogContent>
-          <Typography>¿Dar de baja a este integrante?</Typography>
+          <DialogContentText>
+            El integrante va a dejar de aparecer en el listado. Sus datos se conservan y se puede
+            volver a dar de alta.
+          </DialogContentText>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmId(null)}>Cancelar</Button>
-          <Button color="error" onClick={() => confirmId && deactivate(confirmId)}>Confirmar</Button>
+        <DialogActions sx={{ px: 3, pb: 2 }}>
+          <Button
+            onClick={() => setToDeactivate(null)}
+            disabled={deactivating}
+            color="inherit"
+            sx={{ textTransform: 'none' }}
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={confirmDeactivate}
+            disabled={deactivating}
+            variant="contained"
+            color="error"
+            sx={{ textTransform: 'none' }}
+          >
+            {deactivating ? 'Dando de baja...' : 'Dar de baja'}
+          </Button>
         </DialogActions>
       </Dialog>
     </MainLayout>
   )
 }
+
+export default EdteMembersPage

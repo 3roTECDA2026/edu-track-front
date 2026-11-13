@@ -1,29 +1,83 @@
 import { fetchApi } from '@/services/api'
 
-export interface EdteMember {
+export type EdteShift = 'MORNING' | 'AFTERNOON' | 'EVENING' | 'EXTRA_TIME'
+
+export type EdteRole = 'TEACHER' | 'PRECEPTOR' | 'COUNSELOR' | 'DIRECTIVE' | 'OTHER'
+
+export interface EdteTeamMember {
   id: string
-  userId: string
-  roleInTeam: string
+  user: {
+    id: string
+    name: string
+    role: string
+  }
+  shift: EdteShift
+  edteRole: EdteRole
   active: boolean
-  user?: { firstName?: string; lastName?: string }
+  joinedAt: string
 }
 
-export async function listEdteMembers(): Promise<EdteMember[]> {
-  const res = await fetchApi<{ data: EdteMember[] }>('/api/edte-members')
-  return res.data ?? []
+export interface ListEdteTeamMembersQuery {
+  status?: 'active' | 'inactive' | 'all'
+  shift?: EdteShift
 }
 
-export async function createEdteMember(input: { userId: string; roleInTeam: string; active?: boolean }): Promise<EdteMember> {
-  const res = await fetchApi<{ data: EdteMember }>('/api/edte-members', { method: 'POST', body: JSON.stringify(input) })
-  return res.data
+export interface CreateEdteTeamMemberInput {
+  userId: string
+  shift: EdteShift
+  edteRole: EdteRole
 }
 
-export async function updateEdteMember(id: string, input: { roleInTeam?: string; active?: boolean }): Promise<EdteMember> {
-  const res = await fetchApi<{ data: EdteMember }>(`/api/edte-members/${id}`, { method: 'PUT', body: JSON.stringify(input) })
-  return res.data
+export interface UpdateEdteTeamMemberInput {
+  edteRole: EdteRole
 }
 
-export async function deactivateEdteMember(id: string): Promise<EdteMember> {
-  const res = await fetchApi<{ data: EdteMember }>(`/api/edte-members/${id}`, { method: 'DELETE' })
-  return res.data
+export interface EdteStaffOption {
+  userId: string
+  name: string
+  role: string
+}
+
+export async function listEdteTeamMembers(
+  query: ListEdteTeamMembersQuery = {},
+  signal?: AbortSignal
+): Promise<EdteTeamMember[]> {
+  const params = new URLSearchParams()
+  if (query.status) params.set('status', query.status)
+  if (query.shift) params.set('shift', query.shift)
+  const search = params.toString()
+  return fetchApi<EdteTeamMember[]>(`/api/edte-team-members${search ? `?${search}` : ''}`, {
+    signal,
+  })
+}
+
+export async function createEdteTeamMember(
+  input: CreateEdteTeamMemberInput
+): Promise<EdteTeamMember> {
+  return fetchApi<EdteTeamMember>('/api/edte-team-members', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  })
+}
+
+export async function updateEdteTeamMember(
+  id: string,
+  input: UpdateEdteTeamMemberInput
+): Promise<EdteTeamMember> {
+  return fetchApi<EdteTeamMember>(`/api/edte-team-members/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  })
+}
+
+export async function deactivateEdteTeamMember(id: string): Promise<EdteTeamMember> {
+  return fetchApi<EdteTeamMember>(`/api/edte-team-members/${encodeURIComponent(id)}/deactivate`, {
+    method: 'PATCH',
+  })
+}
+
+// Personal activo que puede integrar el EDTE. Se usa para el selector de alta porque
+// /api/users es solo para administración y esta pantalla también la usa dirección/EOE.
+export async function listEdteStaffOptions(signal?: AbortSignal): Promise<EdteStaffOption[]> {
+  return fetchApi<EdteStaffOption[]>('/api/edte-meetings/member-options', { signal })
 }
