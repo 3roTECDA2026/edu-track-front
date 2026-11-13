@@ -21,7 +21,13 @@ import { useStudents } from '@/hooks/useStudents'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useStudentGrades } from '@/hooks/useStudentGrades'
 import type { StudentListItem } from '@/services/students.service'
-import { average, gradeLevel, GRADE_COLORS } from '@/utils/grades'
+import {
+  average,
+  calculateSubjectFinalScore,
+  formatScore,
+  gradeLevel,
+  GRADE_COLORS,
+} from '@/utils/grades'
 
 const headSx = {
   fontWeight: 700,
@@ -30,7 +36,6 @@ const headSx = {
   letterSpacing: '0.05em',
   backgroundColor: '#fafafa',
 } as const
-
 
 function valueCell(value: number | undefined, strong = false) {
   const c = GRADE_COLORS[gradeLevel(value)]
@@ -48,17 +53,16 @@ function valueCell(value: number | undefined, strong = false) {
         fontWeight: strong ? 800 : 700,
       }}
     >
-      {value ?? '—'}
+      {value !== undefined ? formatScore(value) : '—'}
     </Box>
   )
 }
 
 export const PorAlumnoTab: React.FC = () => {
-  
   const { sections } = useClassSections()
   const yearOptions = useMemo(
     () => Array.from(new Set(sections.map((s) => s.year))).sort((a, b) => b - a),
-    [sections],
+    [sections]
   )
   const [year, setYear] = useState<number | ''>('')
   useEffect(() => {
@@ -80,19 +84,21 @@ export const PorAlumnoTab: React.FC = () => {
   })
   const studentOptions = studentsData?.data ?? []
 
-  
   const { rows, loading, error } = useStudentGrades(
     selected?.id ?? '',
-    year === '' ? undefined : year,
+    year === '' ? undefined : year
   )
 
- 
   const finalFor = (row: (typeof rows)[number]) => {
-    const a1 = average(row.grade?.term1Scores ?? [])
-    const a2 = average(row.grade?.term2Scores ?? [])
-    return average([a1, a2])
+    return calculateSubjectFinalScore({
+      finalScore: row.grade?.finalScore,
+      subjectStatus: row.grade?.subjectStatus,
+      term1Score: row.grade?.term1Score ?? null,
+      term2Score: row.grade?.term2Score ?? null,
+      term1IntensificationScore: row.grade?.term1IntensificationScore ?? null,
+    })
   }
-  
+
   const generalAverage = average(rows.map((r) => finalFor(r)))
 
   return (
@@ -166,7 +172,7 @@ export const PorAlumnoTab: React.FC = () => {
               {rows.map((r) => {
                 const a1 = average(r.grade?.term1Scores ?? [])
                 const a2 = average(r.grade?.term2Scores ?? [])
-                const fin = average([a1, a2])
+                const fin = finalFor(r)
                 return (
                   <TableRow key={r.id} hover>
                     <TableCell sx={{ color: '#111827', whiteSpace: 'nowrap' }}>
@@ -183,7 +189,6 @@ export const PorAlumnoTab: React.FC = () => {
               <TableRow>
                 <TableCell
                   sx={{ ...headSx, backgroundColor: 'transparent', borderTop: '2px solid #d1d5db' }}
-                  
                 >
                   PROMEDIO
                 </TableCell>
