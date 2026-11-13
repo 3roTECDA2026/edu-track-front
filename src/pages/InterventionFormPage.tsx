@@ -19,13 +19,21 @@ import { PageContainer } from '@/components/common/PageContainer'
 import { PageHeader } from '@/components/common/PageHeader'
 import { ContentCard } from '@/components/common/ContentCard'
 import { AddButton } from '@/components/common/AddButton'
+import { AttachmentPicker } from '@/components/interventions/AttachmentPicker'
+import {
+  getAttachmentErrorMessage,
+  validateAttachmentFiles,
+} from '@/components/interventions/attachmentRules'
 import { useClassSections } from '@/hooks/useClassSections'
 import { useStudents } from '@/hooks/useStudents'
 import { useDebounce } from '@/hooks/useDebounce'
 import { useCreateIntervention } from '@/hooks/useCreateIntervention'
 import { getStudentById } from '@/services/studentProfile.service'
 import type { StudentListItem } from '@/services/students.service'
-import type { InterventionEventType } from '@/services/interventions.service'
+import {
+  uploadInterventionAttachments,
+  type InterventionEventType,
+} from '@/services/interventions.service'
 
 // Opciones del selector de tipo (texto en castellano, valor = enum del back).
 const EVENT_TYPE_OPTIONS: { value: InterventionEventType; label: string }[] = [
@@ -59,6 +67,13 @@ const InterventionFormPage = () => {
   const [interventionProposal, setInterventionProposal] = useState('')
   const [involvedActors, setInvolvedActors] = useState('')
   const [date, setDate] = useState(todayIso())
+  const [files, setFiles] = useState<File[]>([])
+  // Si la intervención se guardó pero falló la subida de archivos, guardamos su id:
+  // al volver a tocar "Guardar" solo se reintenta la subida, sin crear otra intervención.
+  const [createdId, setCreatedId] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const alreadyCreated = createdId !== null
+  const busy = saving || uploading
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [notice, setNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -119,6 +134,8 @@ const InterventionFormPage = () => {
     if (!eventType) next.eventType = 'Elegí el tipo de evento'
     if (!description.trim()) next.description = 'Describí la situación detectada'
     if (!date) next.date = 'Elegí la fecha'
+    const fileErrors = validateAttachmentFiles(files)
+    if (fileErrors.length > 0) next.files = fileErrors.join(' ')
     setErrors(next)
     return Object.keys(next).length === 0
   }
@@ -129,15 +146,39 @@ const InterventionFormPage = () => {
       return
     }
     try {
-      await save({
-        studentId: student!.id,
-        classSectionId,
-        eventType: eventType as InterventionEventType,
-        description: description.trim(),
-        interventionProposal: interventionProposal.trim() || undefined,
-        involvedActors: involvedActors.trim() || undefined,
-        date,
-      })
+      let interventionId = createdId
+      if (!interventionId) {
+        const created = await save({
+          studentId: student!.id,
+          classSectionId,
+          eventType: eventType as InterventionEventType,
+          description: description.trim(),
+          interventionProposal: interventionProposal.trim() || undefined,
+          involvedActors: involvedActors.trim() || undefined,
+          date,
+        })
+        interventionId = created.id
+        setCreatedId(created.id)
+      }
+
+      // Los adjuntos necesitan el id de la intervención: se suben después de crearla.
+      if (files.length > 0) {
+        setUploading(true)
+        try {
+          await uploadInterventionAttachments(interventionId, files)
+        } catch (err: unknown) {
+          setNotice({
+            type: 'error',
+            text:
+              `La intervención se registró, pero no se pudieron subir los archivos. ${getAttachmentErrorMessage(err, 'Ocurrió un error inesperado.')}` +
+              ' Podés quitar o cambiar los archivos y volver a guardar.',
+          })
+          return
+        } finally {
+          setUploading(false)
+        }
+      }
+
       setNotice({ type: 'success', text: 'Intervención registrada correctamente.' })
       // Confirmación y vuelta a la ficha del alumno.
       window.setTimeout(() => navigate(`/students/${student!.id}`), 1200)
@@ -175,7 +216,7 @@ const InterventionFormPage = () => {
                 options={studentOptions}
                 value={student}
                 loading={loadingStudents}
-                disabled={studentLocked}
+                disabled={studentLocked || alreadyCreated}
                 onChange={(_, value) => setStudent(value)}
                 onInputChange={(_, value) => setSearch(value)}
                 getOptionLabel={(option) => studentLabel(option)}
@@ -191,7 +232,10 @@ const InterventionFormPage = () => {
                 )}
               />
 
-              <FormControl error={Boolean(errors.classSection)} disabled={courseLocked}>
+              <FormControl
+                error={Boolean(errors.classSection)}
+                disabled={courseLocked || alreadyCreated}
+              >
                 <InputLabel id="lbl-course">Curso</InputLabel>
                 <Select
                   labelId="lbl-course"
@@ -214,12 +258,17 @@ const InterventionFormPage = () => {
                   label="Fecha"
                   value={date}
                   onChange={(event) => setDate(event.target.value)}
+                  disabled={alreadyCreated}
                   error={Boolean(errors.date)}
                   helperText={errors.date ?? ' '}
                   slotProps={{ inputLabel: { shrink: true } }}
                   sx={{ flex: 1 }}
                 />
-                <FormControl error={Boolean(errors.eventType)} sx={{ flex: 1 }}>
+                <FormControl
+                  error={Boolean(errors.eventType)}
+                  disabled={alreadyCreated}
+                  sx={{ flex: 1 }}
+                >
                   <InputLabel id="lbl-type">Tipo de evento</InputLabel>
                   <Select
                     labelId="lbl-type"
@@ -242,6 +291,7 @@ const InterventionFormPage = () => {
                 placeholder="Ej.: EOE, Equipo Directivo, Madre"
                 value={involvedActors}
                 onChange={(event) => setInvolvedActors(event.target.value)}
+                disabled={alreadyCreated}
               />
 
               <TextField
@@ -251,6 +301,7 @@ const InterventionFormPage = () => {
                 minRows={3}
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
+                disabled={alreadyCreated}
                 error={Boolean(errors.description)}
                 helperText={errors.description ?? ' '}
               />
@@ -261,14 +312,30 @@ const InterventionFormPage = () => {
                 minRows={3}
                 value={interventionProposal}
                 onChange={(event) => setInterventionProposal(event.target.value)}
+                disabled={alreadyCreated}
+              />
+
+              <AttachmentPicker
+                files={files}
+                onChange={setFiles}
+                disabled={busy}
+                error={errors.files}
               />
 
               <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
                 <AddButton
-                  label={saving ? 'Guardando…' : 'Guardar'}
+                  label={
+                    saving
+                      ? 'Guardando…'
+                      : uploading
+                        ? 'Subiendo archivos…'
+                        : alreadyCreated
+                          ? 'Reintentar subida'
+                          : 'Guardar'
+                  }
                   icon={<SaveIcon />}
                   onClick={handleSave}
-                  disabled={saving}
+                  disabled={busy}
                 />
               </Box>
             </Stack>
