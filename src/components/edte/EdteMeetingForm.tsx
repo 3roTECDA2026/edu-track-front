@@ -74,13 +74,15 @@ const valuesFromMeeting = (meeting: EdteMeetingDetail): EdteMeetingFormValues =>
 interface EdteMeetingFormProps {
   // La reunión que se edita, ya cargada; sin ella, es una reunión nueva
   meeting?: EdteMeetingDetail
+  // Alumno para sumar de entrada (`?studentId=`, desde la pantalla de derivados, CRM-074)
+  initialStudent?: StudentOption
 }
 
 // Formulario de alta y edición de una reunión del EDTE (CRM-075): fecha, período, turno,
 // integrantes convocados (presentes o ausentes), alumnos tratados y consideraciones.
 // Se monta recién cuando los datos de la reunión ya están cargados, así que su estado inicial sale
 // de las props y no hace falta sincronizarlo con efectos.
-export const EdteMeetingForm = ({ meeting }: EdteMeetingFormProps) => {
+export const EdteMeetingForm = ({ meeting, initialStudent }: EdteMeetingFormProps) => {
   const isEdit = Boolean(meeting)
   const navigate = useNavigate()
   const notify = useNotify()
@@ -93,7 +95,7 @@ export const EdteMeetingForm = ({ meeting }: EdteMeetingFormProps) => {
   const memberOptions = useLazyResource('edte-member-options', (signal) =>
     getEdteMeetingMemberOptions(signal)
   )
-  const participants = useMeetingParticipants(meeting)
+  const participants = useMeetingParticipants(meeting, initialStudent)
   const [saving, setSaving] = useState(false)
 
   const {

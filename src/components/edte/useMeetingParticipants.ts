@@ -18,19 +18,26 @@ export const sectionLabel = (section: { grade: number; division: string } | null
 // Integrantes convocados, alumnos tratados y consideraciones por alumno de una reunión del EDTE
 // (CRM-075). Parte de los datos de la reunión que se edita (o vacío si es nueva) y no vuelve a
 // sincronizarse: el formulario se monta recién cuando esos datos ya están cargados.
-export function useMeetingParticipants(meeting?: EdteMeetingDetail) {
+// `initialStudent`: un alumno para sumar de entrada (el de "Agregar a reunión" de la pantalla de
+// derivados, CRM-074). Si ya está en la reunión, no se repite.
+export function useMeetingParticipants(
+  meeting?: EdteMeetingDetail,
+  initialStudent?: StudentOption
+) {
   // Convocados: userId → presente. Si no está en el mapa, no fue convocado
   const [members, setMembers] = useState<Map<string, boolean>>(
     () => new Map(meeting?.members.map((member) => [member.userId, member.present]) ?? [])
   )
-  const [students, setStudents] = useState<StudentOption[]>(
-    () =>
+  const [students, setStudents] = useState<StudentOption[]>(() => {
+    const fromMeeting =
       meeting?.students.map((student) => ({
         studentId: student.studentId,
         label: studentLabel(student),
         detail: sectionLabel(student.section),
       })) ?? []
-  )
+    const alreadyIn = fromMeeting.some((student) => student.studentId === initialStudent?.studentId)
+    return initialStudent && !alreadyIn ? [...fromMeeting, initialStudent] : fromMeeting
+  })
   const [notes, setNotes] = useState<Record<string, string>>(() =>
     Object.fromEntries(
       (meeting?.students ?? []).map((student) => [student.studentId, student.notes ?? ''])
