@@ -23,6 +23,8 @@ import { getRole, canManageTrajectories } from '@/services/session'
 import { InterventionsTab } from '@/components/studentProfile/InterventionsTab'
 import { FortePlanTab } from '@/components/studentProfile/FortePlanTab'
 import { FortePlanDialog } from '@/components/studentProfile/FortePlanDialog'
+import { SubjectRepeatsTab } from '@/components/subjectRepeats/SubjectRepeatsTab'
+import { canManageSubjectRepeats } from '@/components/subjectRepeats/subjectRepeatLabels'
 import { useLazyResource } from '@/hooks/useLazyResource'
 import { deactivateStudent } from '@/services/students.service'
 import { getStudentFortePlan } from '@/services/fortePlan.service'
@@ -40,6 +42,7 @@ type TabKey =
   | 'attendance'
   | 'grades'
   | 'pending'
+  | 'repeats'
   | 'observations'
   | 'interventions'
   | 'rite'
@@ -51,6 +54,8 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'attendance', label: 'Asistencia' },
   { key: 'grades', label: 'Calificaciones' },
   { key: 'pending', label: 'Materias pendientes' },
+  // Materias que recursa (CRM-082)
+  { key: 'repeats', label: 'Recursados' },
   { key: 'observations', label: 'Observaciones' },
   { key: 'interventions', label: 'Intervenciones' },
   { key: 'rite', label: 'RITE' },
@@ -265,6 +270,15 @@ const StudentProfilePage = () => {
                 key={student.id}
                 studentId={student.id}
                 onSaved={(message, severity) => setSnackbar({ message, severity })}
+              />
+            )}
+            {activeTab === 'repeats' && (
+              <SubjectRepeatsTab
+                // Al cambiar de alumno se reinicia el estado (diálogos de alta, cambio y baja)
+                key={student.id}
+                studentId={student.id}
+                studentName={`${student.lastName}, ${student.firstName}`}
+                canManage={canManageSubjectRepeats()}
               />
             )}
             {activeTab === 'observations' && (

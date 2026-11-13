@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import SchoolIcon from '@mui/icons-material/School';
 import type { PreliminaryAssessment, StudentGrade } from '@/services/studentProfile.service';
+import { RepeatMark } from '@/components/common/RepeatMark';
 import { SoftBadge } from '@/components/studentProfile/SoftBadge';
 import { TabEmpty, TabError, TabLoading } from '@/components/studentProfile/TabStates';
 import { COLORS, bodyCellSx, cardSx, headerCellSx } from '@/components/studentProfile/profileStyles';
@@ -113,6 +114,7 @@ export const GradesTab = ({ grades, loading, error, onRetry }: GradesTabProps) =
               <TableRow key={grade.id} hover>
                 <TableCell sx={{ ...bodyCellSx, fontWeight: 700, color: COLORS.ink }}>
                   {grade.enrollment.subject.name}
+                  {grade.enrollment.courseType === 'REPEAT' && <RepeatMark />}
                 </TableCell>
                 <TableCell align="center" sx={bodyCellSx}>
                   <AssessmentBadge value={grade.preliminaryAssessment1} />
