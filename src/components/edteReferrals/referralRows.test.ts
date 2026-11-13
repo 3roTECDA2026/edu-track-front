@@ -83,6 +83,19 @@ describe('buildReferralRows', () => {
     expect(rows[0].pendingCount).toBe(5)
   })
 
+  it('conserva las MPAA al derivar y las de hoy', () => {
+    const rows = buildReferralRows(
+      [
+        referral('s1', 'Pérez', 'Sofía', '45111222', {
+          pendingCountAtDecision: 6,
+          pendingCount: 4,
+        }),
+      ],
+      []
+    )
+    expect(rows[0]).toMatchObject({ pendingCountAtDecision: 6, pendingCount: 4 })
+  })
+
   it('sin derivados devuelve una lista vacía', () => {
     expect(buildReferralRows([], [pate('s1', 'IN_PROGRESS')])).toEqual([])
   })

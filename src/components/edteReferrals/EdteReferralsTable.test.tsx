@@ -14,6 +14,7 @@ const row = (overrides: Partial<ReferralRow>): ReferralRow => ({
   lastName: 'Pérez',
   dni: '45111222',
   section: { id: 'c1', grade: 2, division: 'A', shift: 'MORNING' },
+  pendingCountAtDecision: 5,
   pendingCount: 5,
   pate: null,
   ...overrides,
@@ -27,6 +28,7 @@ const rows = [
     lastName: 'García',
     dni: '46222333',
     section: null,
+    pendingCountAtDecision: 6,
     pendingCount: 6,
     pate: { id: 'p2', status: 'IN_PROGRESS' },
   }),
@@ -73,12 +75,22 @@ describe('EdteReferralsTable', () => {
     )
   })
 
+  it('muestra las MPAA al derivar y las de hoy, cada una con su nombre', () => {
+    renderTable({ rows: [row({ pendingCountAtDecision: 6, pendingCount: 4 })] })
+    const headers = screen.getAllByRole('columnheader').map((cell) => cell.textContent)
+    const cells = within(rowOf('Pérez, Sofía'))
+      .getAllByRole('cell')
+      .map((cell) => cell.textContent)
+    expect(cells[headers.indexOf('MPAA al derivar')]).toBe('6')
+    expect(cells[headers.indexOf('MPAA hoy')]).toBe('4')
+  })
+
   it('muestra alumno, DNI, curso, MPAA y estado del PATE', () => {
     renderTable()
     const sofia = within(rowOf('Pérez, Sofía'))
     expect(sofia.getByText('45111222')).toBeTruthy()
     expect(sofia.getByText('2° A · Mañana')).toBeTruthy()
-    expect(sofia.getByText('5')).toBeTruthy()
+    expect(sofia.getAllByText('5')).toHaveLength(2) // al derivar y hoy
     expect(sofia.getByText('Sin PATE')).toBeTruthy()
 
     const mateo = within(rowOf('García, Mateo'))

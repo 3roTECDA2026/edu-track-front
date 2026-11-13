@@ -99,7 +99,7 @@ export const EdteReferralsPage = () => {
           <Stack spacing={2}>
             {pateUnavailable && (
               <Alert severity="warning">
-                No se pudo consultar el estado de los PATE: el listado se muestra sin esa columna.
+                No se pudo consultar el estado de los PATE: la columna PATE se muestra con un guion.
               </Alert>
             )}
 

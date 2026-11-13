@@ -14,7 +14,8 @@ export interface ReferralRow {
   lastName: string
   dni: string
   section: ReferralSection | null
-  pendingCount: number
+  pendingCountAtDecision: number // MPAA que tenía cuando el motor lo derivó
+  pendingCount: number // MPAA que sigue debiendo hoy
   pate: { id: string; status: PateStatus } | null
 }
 
@@ -54,6 +55,7 @@ export function buildReferralRows(referrals: EdteReferral[], pates: PateSummary[
         lastName: referral.student.lastName,
         dni: referral.student.dni,
         section: referral.section,
+        pendingCountAtDecision: referral.pendingCountAtDecision,
         pendingCount: referral.pendingCount,
         pate: pate ? { id: pate.id, status: pate.status } : null,
       }

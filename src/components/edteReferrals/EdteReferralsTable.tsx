@@ -26,7 +26,10 @@ const COLUMNS = [
   { label: 'DNI', align: 'left' },
   // El curso es el del ciclo que se cerró, el que motivó la derivación (CRM-073)
   { label: 'Curso', align: 'left' },
-  { label: 'MPAA', align: 'center' },
+  // Las dos cifras, con su nombre: la que motivó la derivación y la que debe hoy (acreditó
+  // alguna en la intensificación o el cierre de ciclo)
+  { label: 'MPAA al derivar', align: 'center' },
+  { label: 'MPAA hoy', align: 'center' },
   { label: 'PATE', align: 'left' },
   { label: 'Acciones', align: 'right' },
 ] as const
@@ -97,6 +100,7 @@ export function EdteReferralsTable({
                     <TableCell sx={{ fontWeight: withoutPate ? 700 : 500 }}>{name}</TableCell>
                     <TableCell>{row.dni}</TableCell>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>{sectionText(row)}</TableCell>
+                    <TableCell align="center">{row.pendingCountAtDecision}</TableCell>
                     <TableCell align="center">{row.pendingCount}</TableCell>
                     <TableCell>
                       <PateStatusChip
