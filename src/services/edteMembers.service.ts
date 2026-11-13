@@ -4,6 +4,8 @@ export type EdteShift = 'MORNING' | 'AFTERNOON' | 'EVENING' | 'EXTRA_TIME'
 
 export type EdteRole = 'TEACHER' | 'PRECEPTOR' | 'COUNSELOR' | 'DIRECTIVE' | 'OTHER'
 
+export type EdteStatusFilter = 'active' | 'inactive' | 'all'
+
 export interface EdteTeamMember {
   id: string
   user: {
@@ -18,7 +20,7 @@ export interface EdteTeamMember {
 }
 
 export interface ListEdteTeamMembersQuery {
-  status?: 'active' | 'inactive' | 'all'
+  status?: EdteStatusFilter
   shift?: EdteShift
 }
 
@@ -36,6 +38,18 @@ export interface EdteStaffOption {
   userId: string
   name: string
   role: string
+}
+
+export interface EdteMembership {
+  id: string
+  shift: EdteShift
+  edteRole: EdteRole
+  joinedAt: string
+}
+
+export interface MyEdteMembership {
+  isMember: boolean
+  memberships: EdteMembership[]
 }
 
 export async function listEdteTeamMembers(
@@ -80,4 +94,10 @@ export async function deactivateEdteTeamMember(id: string): Promise<EdteTeamMemb
 // /api/users es solo para administración y esta pantalla también la usa dirección/EOE.
 export async function listEdteStaffOptions(signal?: AbortSignal): Promise<EdteStaffOption[]> {
   return fetchApi<EdteStaffOption[]>('/api/edte-meetings/member-options', { signal })
+}
+
+// Membresías del usuario logueado. Lo usan las pantallas que necesitan saber si mostrar
+// las opciones del EDTE (CRM-077 y CRM-074).
+export async function getMyEdteMembership(signal?: AbortSignal): Promise<MyEdteMembership> {
+  return fetchApi<MyEdteMembership>('/api/edte-team-members/me', { signal })
 }

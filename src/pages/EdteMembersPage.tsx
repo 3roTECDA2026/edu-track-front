@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   Alert,
+  Box,
   Button,
   Dialog,
   DialogActions,
@@ -21,6 +22,7 @@ import {
   Typography,
 } from '@mui/material'
 import DeleteIcon from '@mui/icons-material/Delete'
+import FilterAltOffIcon from '@mui/icons-material/FilterAltOff'
 
 import MainLayout from '@/components/layout/MainLayout'
 import { useNotify } from '@/components/layout/NotificationProvider'
@@ -38,6 +40,7 @@ import {
   type EdteRole,
   type EdteShift,
   type EdteStaffOption,
+  type EdteStatusFilter,
   type EdteTeamMember,
 } from '@/services/edteMembers.service'
 
@@ -61,7 +64,9 @@ const EDTE_ROLES = Object.keys(EDTE_ROLE_LABELS) as EdteRole[]
 
 const EdteMembersPage = () => {
   const notify = useNotify()
-  const { members, loading, error, reload } = useEdteMembers()
+  const [statusFilter, setStatusFilter] = useState<EdteStatusFilter>('active')
+  const [shiftFilter, setShiftFilter] = useState<EdteShift | ''>('')
+  const { members, loading, error, reload } = useEdteMembers(statusFilter, shiftFilter || undefined)
 
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<EdteTeamMember | null>(null)
@@ -178,6 +183,63 @@ const EdteMembersPage = () => {
         )}
 
         <ContentCard>
+          <Box
+            sx={{
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: 1.5,
+              alignItems: 'center',
+              p: 2,
+              backgroundColor: '#fafafa',
+              borderBottom: '1px solid #e5e7eb',
+            }}
+          >
+            <TextField
+              select
+              size="small"
+              label="Estado"
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value as EdteStatusFilter)}
+              sx={{ minWidth: 180 }}
+            >
+              <MenuItem value="active">Activos</MenuItem>
+              <MenuItem value="inactive">Inactivos</MenuItem>
+              <MenuItem value="all">Todos</MenuItem>
+            </TextField>
+
+            <TextField
+              select
+              size="small"
+              label="Turno"
+              value={shiftFilter}
+              onChange={(event) => setShiftFilter(event.target.value as EdteShift | '')}
+              sx={{ minWidth: 180 }}
+            >
+              <MenuItem value="">Todos los turnos</MenuItem>
+              {SHIFTS.map((value) => (
+                <MenuItem key={value} value={value}>
+                  {SHIFT_LABELS[value]}
+                </MenuItem>
+              ))}
+            </TextField>
+
+            {(statusFilter !== 'active' || shiftFilter !== '') && (
+              <Button
+                variant="text"
+                color="inherit"
+                size="small"
+                startIcon={<FilterAltOffIcon />}
+                onClick={() => {
+                  setStatusFilter('active')
+                  setShiftFilter('')
+                }}
+                sx={{ textTransform: 'none', color: 'text.secondary' }}
+              >
+                Limpiar
+              </Button>
+            )}
+          </Box>
+
           <Table size="small">
             <TableHead sx={{ backgroundColor: '#fafafa' }}>
               <TableRow>
@@ -201,7 +263,9 @@ const EdteMembersPage = () => {
               {!loading && members.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5}>
-                    <Typography variant="body2">Sin integrantes cargados.</Typography>
+                    <Typography variant="body2">
+                      Sin integrantes para los filtros seleccionados.
+                    </Typography>
                   </TableCell>
                 </TableRow>
               )}

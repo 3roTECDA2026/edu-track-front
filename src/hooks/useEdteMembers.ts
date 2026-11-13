@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 
-import { listEdteTeamMembers, type EdteTeamMember } from '@/services/edteMembers.service'
+import {
+  listEdteTeamMembers,
+  type EdteShift,
+  type EdteStatusFilter,
+  type EdteTeamMember,
+} from '@/services/edteMembers.service'
 
 interface EdteMembersState {
   key: string
@@ -8,16 +13,16 @@ interface EdteMembersState {
   error?: string
 }
 
-export function useEdteMembers() {
+export function useEdteMembers(status: EdteStatusFilter = 'active', shift?: EdteShift) {
   const [reloadKey, setReloadKey] = useState(0)
   const [state, setState] = useState<EdteMembersState>({ key: '' })
 
-  const requestKey = `edte-members:${reloadKey}`
+  const requestKey = `${status}:${shift ?? ''}:${reloadKey}`
 
   useEffect(() => {
     const controller = new AbortController()
 
-    listEdteTeamMembers({}, controller.signal)
+    listEdteTeamMembers({ status, shift }, controller.signal)
       .then((members) => setState({ key: requestKey, members }))
       .catch((e: unknown) => {
         if (controller.signal.aborted) return
@@ -26,7 +31,7 @@ export function useEdteMembers() {
       })
 
     return () => controller.abort()
-  }, [requestKey])
+  }, [status, shift, requestKey])
 
   const loading = state.key !== requestKey
 
