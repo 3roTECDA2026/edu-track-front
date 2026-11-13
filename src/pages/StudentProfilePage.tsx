@@ -274,6 +274,8 @@ const StudentProfilePage = () => {
             )}
             {activeTab === 'repeats' && (
               <SubjectRepeatsTab
+                // Al cambiar de alumno se reinicia el estado (diálogos de alta, cambio y baja)
+                key={student.id}
                 studentId={student.id}
                 studentName={`${student.lastName}, ${student.firstName}`}
                 canManage={canManageSubjectRepeats()}
