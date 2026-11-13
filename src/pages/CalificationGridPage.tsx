@@ -826,8 +826,10 @@ export const CalificationGridPage: React.FC = () => {
                   <TableBody>
                     {pageRows.map((row, i) => {
                       const finalValue = finalScore(row)
-                      const homeSection = row.student.enrollmentHistory[0]?.classSection
-                      const isInterSection = Boolean(homeSection && homeSection.id !== classSectionId)
+                      const homeSection = row.student.enrollmentHistory?.[0]?.classSection
+                      const isInterSection = Boolean(
+                        homeSection && homeSection.id !== classSectionId
+                      )
                       return (
                         <TableRow key={row.id} hover>
                           <TableCell align="right" sx={{ color: '#9ca3af' }}>
@@ -839,7 +841,13 @@ export const CalificationGridPage: React.FC = () => {
                               <Chip
                                 size="small"
                                 label={`Inter-sección: ${homeSection.grade}°${homeSection.division} ${SHIFT_LABELS[homeSection.shift]}`}
-                                sx={{ ml: 1, height: 20, fontSize: '0.7rem', bgcolor: '#f3f4f6', color: '#374151' }}
+                                sx={{
+                                  ml: 1,
+                                  height: 20,
+                                  fontSize: '0.7rem',
+                                  bgcolor: 'action.hover',
+                                  color: 'text.secondary',
+                                }}
                               />
                             )}
                           </TableCell>
