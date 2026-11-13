@@ -21,9 +21,8 @@ import {
   EMPTY,
   PASSING_SCORE,
   SUBJECT_STATUS_LABELS,
-
-} from '@/components/studentProfile/profileLabels';
-import { formatScore } from '@/utils/grades';
+} from '@/components/studentProfile/profileLabels'
+import { formatScore } from '@/utils/grades'
 
 interface GradesTabProps {
   grades: StudentGrade[] | undefined
@@ -61,9 +60,10 @@ const Score = ({ value }: { value: number | null }) => {
   if (value === null) return <>{EMPTY}</>
   const failing = value < PASSING_SCORE
   return (
-
-
-    <Box component="span" sx={{ fontWeight: failing ? 700 : 500, color: failing ? COLORS.danger : 'inherit' }}>
+    <Box
+      component="span"
+      sx={{ fontWeight: failing ? 700 : 500, color: failing ? COLORS.danger : 'inherit' }}
+    >
       {formatScore(value)}
     </Box>
   )
@@ -138,14 +138,16 @@ export const GradesTab = ({ grades, loading, error, onRetry, homeSection }: Grad
                     homeSection.year === latestYear &&
                     (grade.enrollment.classSection.grade !== homeSection.grade ||
                       grade.enrollment.classSection.division !== homeSection.division ||
-                      grade.enrollment.classSection.shift !== homeSection.shift) && (
+                      (grade.enrollment.classSection.shift !== undefined &&
+                        grade.enrollment.classSection.shift !== homeSection.shift)) && (
                       <Typography
                         variant="caption"
                         sx={{ display: 'block', color: 'text.secondary', fontWeight: 600 }}
                       >
                         Cursa en: {grade.enrollment.classSection.grade}°
                         {grade.enrollment.classSection.division}{' '}
-                        {SHIFT_LABELS[grade.enrollment.classSection.shift]}
+                        {grade.enrollment.classSection.shift &&
+                          SHIFT_LABELS[grade.enrollment.classSection.shift]}
                       </Typography>
                     )}
                 </TableCell>

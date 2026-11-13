@@ -35,7 +35,7 @@ export interface StudentGrade {
   enrollment: {
     id: string
     subject: { id: string; name: string }
-    classSection: { id: string; grade: number; division: string; shift: Shift }
+    classSection: { id: string; grade: number; division: string; shift?: Shift }
     academicYear: { id: string; year: number }
   }
 }
