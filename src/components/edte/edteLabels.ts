@@ -62,6 +62,16 @@ export const EDTE_VIEWER_ROLES = [...EDTE_MANAGER_ROLES, 'TEACHER', 'PRECEPTOR']
 // AAAA-MM-DD → DD/MM/AAAA
 export const formatMeetingDate = (date: string) => date.split('-').reverse().join('/')
 
+// Rutas del formulario de reunión. Con `studentId`, el formulario suma a ese alumno a la reunión
+// (lo usa "Agregar a reunión" de la pantalla de derivados, CRM-074). El alumno se guarda desde el
+// formulario: el PATCH de reuniones reemplaza la lista completa y podría pisar cambios
+export const newMeetingPath = (studentId?: string) =>
+  studentId ? `/edte-meetings/new?studentId=${studentId}` : '/edte-meetings/new'
+export const editMeetingPath = (meetingId: string, studentId?: string) =>
+  studentId
+    ? `/edte-meetings/${meetingId}/edit?studentId=${studentId}`
+    : `/edte-meetings/${meetingId}/edit`
+
 // Un enlace solo se muestra como link si es http o https (por si hubiera datos viejos con otro
 // protocolo, como javascript:, que ejecutaría código al hacer clic)
 export const isSafeWebUrl = (value: string | null | undefined): value is string => {

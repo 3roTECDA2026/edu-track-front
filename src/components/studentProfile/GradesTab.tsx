@@ -8,49 +8,71 @@ import {
   TableHead,
   TableRow,
   Typography,
-} from '@mui/material';
-import SchoolIcon from '@mui/icons-material/School';
-import type { PreliminaryAssessment, StudentGrade } from '@/services/studentProfile.service';
-import { SoftBadge } from '@/components/studentProfile/SoftBadge';
-import { TabEmpty, TabError, TabLoading } from '@/components/studentProfile/TabStates';
-import { COLORS, bodyCellSx, cardSx, headerCellSx } from '@/components/studentProfile/profileStyles';
+} from '@mui/material'
+import SchoolIcon from '@mui/icons-material/School'
+import type { PreliminaryAssessment, StudentGrade } from '@/services/studentProfile.service'
+import type { CurrentSection } from '@/services/students.service'
+import { RepeatMark } from '@/components/common/RepeatMark'
+import { SoftBadge } from '@/components/studentProfile/SoftBadge'
+import { TabEmpty, TabError, TabLoading } from '@/components/studentProfile/TabStates'
+import { COLORS, bodyCellSx, cardSx, headerCellSx } from '@/components/studentProfile/profileStyles'
+import { SHIFT_LABELS } from '@/components/students/studentLabels'
 import {
   ASSESSMENT_CONFIG,
   EMPTY,
   PASSING_SCORE,
   SUBJECT_STATUS_LABELS,
-} from '@/components/studentProfile/profileLabels';
-import { formatScore } from '@/utils/grades';
+} from '@/components/studentProfile/profileLabels'
+import { formatScore } from '@/utils/grades'
 
 interface GradesTabProps {
-  grades: StudentGrade[] | undefined;
-  loading: boolean;
-  error: string | undefined;
-  onRetry: () => void;
+  grades: StudentGrade[] | undefined
+  loading: boolean
+  error: string | undefined
+  onRetry: () => void
+  homeSection: CurrentSection | null
 }
 
-const COLUMNS = ['Materia', 'Valoración 1° C', 'Nota 1° C', 'Valoración 2° C', 'Nota 2° C', 'Nota final', 'Estado'];
+const COLUMNS = [
+  'Materia',
+  'Valoración 1° C',
+  'Nota 1° C',
+  'Valoración 2° C',
+  'Nota 2° C',
+  'Nota final',
+  'Estado',
+]
 
 const AssessmentBadge = ({ value }: { value: PreliminaryAssessment | null }) => {
-  if (!value) return <>{EMPTY}</>;
-  const config = ASSESSMENT_CONFIG[value];
-  return <SoftBadge label={value} color={config.color} background={config.background} title={config.description} />;
-};
+  if (!value) return <>{EMPTY}</>
+  const config = ASSESSMENT_CONFIG[value]
+  return (
+    <SoftBadge
+      label={value}
+      color={config.color}
+      background={config.background}
+      title={config.description}
+    />
+  )
+}
 
 // Las notas por debajo de la aprobación se resaltan en rojo.
 const Score = ({ value }: { value: number | null }) => {
-  if (value === null) return <>{EMPTY}</>;
-  const failing = value < PASSING_SCORE;
+  if (value === null) return <>{EMPTY}</>
+  const failing = value < PASSING_SCORE
   return (
-    <Box component="span" sx={{ fontWeight: failing ? 700 : 500, color: failing ? COLORS.danger : 'inherit' }}>
+    <Box
+      component="span"
+      sx={{ fontWeight: failing ? 700 : 500, color: failing ? COLORS.danger : 'inherit' }}
+    >
       {formatScore(value)}
     </Box>
-  );
-};
+  )
+}
 
-export const GradesTab = ({ grades, loading, error, onRetry }: GradesTabProps) => {
-  if (loading && !grades) return <TabLoading />;
-  if (error) return <TabError message={error} onRetry={onRetry} />;
+export const GradesTab = ({ grades, loading, error, onRetry, homeSection }: GradesTabProps) => {
+  if (loading && !grades) return <TabLoading />
+  if (error) return <TabError message={error} onRetry={onRetry} />
   if (!grades || grades.length === 0) {
     return (
       <TabEmpty
@@ -58,13 +80,13 @@ export const GradesTab = ({ grades, loading, error, onRetry }: GradesTabProps) =
         title="Sin calificaciones cargadas"
         text="Cuando los docentes carguen las notas del estudiante, van a aparecer acá."
       />
-    );
+    )
   }
 
-  const latestYear = Math.max(...grades.map((grade) => grade.enrollment.academicYear.year));
+  const latestYear = Math.max(...grades.map((grade) => grade.enrollment.academicYear.year))
   const rows = grades
     .filter((grade) => grade.enrollment.academicYear.year === latestYear)
-    .sort((a, b) => a.enrollment.subject.name.localeCompare(b.enrollment.subject.name, 'es'));
+    .sort((a, b) => a.enrollment.subject.name.localeCompare(b.enrollment.subject.name, 'es'))
 
   return (
     <Paper variant="outlined" sx={{ ...cardSx, overflow: 'hidden' }}>
@@ -113,6 +135,23 @@ export const GradesTab = ({ grades, loading, error, onRetry }: GradesTabProps) =
               <TableRow key={grade.id} hover>
                 <TableCell sx={{ ...bodyCellSx, fontWeight: 700, color: COLORS.ink }}>
                   {grade.enrollment.subject.name}
+                  {homeSection &&
+                    homeSection.year === latestYear &&
+                    (grade.enrollment.classSection.grade !== homeSection.grade ||
+                      grade.enrollment.classSection.division !== homeSection.division ||
+                      (grade.enrollment.classSection.shift !== undefined &&
+                        grade.enrollment.classSection.shift !== homeSection.shift)) && (
+                      <Typography
+                        variant="caption"
+                        sx={{ display: 'block', color: 'text.secondary', fontWeight: 600 }}
+                      >
+                        Cursa en: {grade.enrollment.classSection.grade}°
+                        {grade.enrollment.classSection.division}{' '}
+                        {grade.enrollment.classSection.shift &&
+                          SHIFT_LABELS[grade.enrollment.classSection.shift]}
+                      </Typography>
+                    )}
+                  {grade.enrollment.courseType === 'REPEAT' && <RepeatMark />}
                 </TableCell>
                 <TableCell align="center" sx={bodyCellSx}>
                   <AssessmentBadge value={grade.preliminaryAssessment1} />
@@ -136,7 +175,7 @@ export const GradesTab = ({ grades, loading, error, onRetry }: GradesTabProps) =
         </Table>
       </TableContainer>
     </Paper>
-  );
-};
+  )
+}
 
-export default GradesTab;
+export default GradesTab

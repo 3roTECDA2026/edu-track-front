@@ -4,6 +4,7 @@ import type { KeyboardEvent } from 'react'
 import {
   Alert,
   Box,
+  Chip,
   FormControl,
   InputLabel,
   MenuItem,
@@ -25,7 +26,9 @@ import { PageHeader } from '@/components/common/PageHeader'
 import { ContentCard } from '@/components/common/ContentCard'
 import { CustomTabs } from '@/components/common/CustomTabs'
 import { AddButton } from '@/components/common/AddButton'
+import { RepeatMark } from '@/components/common/RepeatMark'
 import { StandardTablePagination } from '@/components/common/StandardTablePagination'
+import { SHIFT_LABELS } from '@/components/students/studentLabels'
 import PorAlumnoTab from '@/pages/PorAlumnoTab'
 import { useClassSections } from '@/hooks/useClassSections'
 import { useSubjects } from '@/hooks/useSubjects'
@@ -42,7 +45,7 @@ import type {
   RosterRow,
   SaveGradeInput,
 } from '@/services/grades.service'
-import { formatScore } from '@/utils/grades'
+import { calculateSubjectFinalScore, formatScore } from '@/utils/grades'
 
 type Mode = 'edit' | 'view'
 type Level = 'low' | 'mid' | 'high' | 'empty'
@@ -50,8 +53,6 @@ type Term = 1 | 2
 
 const TERMS: Term[] = [1, 2]
 const ASSESSMENTS: PreliminaryAssessment[] = ['TEA', 'TEP', 'TED']
-// Nota mínima para aprobar el cuatrimestre: con 7 o más en los dos, la final es el promedio (E2-RF-05)
-const PASSING_SCORE = 7
 // En intensificación, con 4 o más acredita la materia (AA); con 1 a 3 sigue intensificando (CCA)
 const INTENSIFICATION_PASSING_SCORE = 4
 const DEFAULT_ROWS_PER_PAGE = 10
@@ -251,19 +252,14 @@ export const CalificationGridPage: React.FC = () => {
   // Nota final: si acreditó en una intensificación (AA), es la nota de la intensificación (CRM-066).
   // Si no, con el 2.º cuatrimestre aprobado (7 o más): el promedio de los dos, si también aprobó el
   // 1.º (E2-RF-05), o la nota con la que recuperó el 1.º durante el 2.º (Anexo 5, inc. 8.b).
-  // Es la misma regla que usa el cierre del ciclo en el back (CRM-052). En otro caso queda vacía.
+  // Es la misma regla unificada que usa el cierre del ciclo en el back (CRM-052) y Por Alumno (CRM-096).
   function finalScore(row: RosterRow): number | undefined {
-    const accredited = (row.intensifications ?? []).find((attempt) => attempt.resultCode === 'AA')
-    if (accredited && typeof accredited.score === 'number') return accredited.score
-
-    const first = scores[termKey(row.id, 1)]
-    const second = scores[termKey(row.id, 2)]
-    if (second === undefined || second < PASSING_SCORE) return undefined
-    // Promedio sin redondear (7 y 8 → 7,5), igual que el back
-    if (first !== undefined && first >= PASSING_SCORE) return (first + second) / 2
-    const recovered = row.grade?.term1IntensificationScore
-    if (typeof recovered === 'number' && recovered >= PASSING_SCORE) return recovered
-    return undefined
+    return calculateSubjectFinalScore({
+      term1Score: scores[termKey(row.id, 1)],
+      term2Score: scores[termKey(row.id, 2)],
+      term1IntensificationScore: row.grade?.term1IntensificationScore,
+      intensifications: row.intensifications,
+    })
   }
 
   function editScore(enrollmentId: string, term: Term, raw: string) {
@@ -829,6 +825,10 @@ export const CalificationGridPage: React.FC = () => {
                   <TableBody>
                     {pageRows.map((row, i) => {
                       const finalValue = finalScore(row)
+                      const homeSection = row.student.enrollmentHistory?.[0]?.classSection
+                      const isInterSection = Boolean(
+                        homeSection && homeSection.id !== classSectionId
+                      )
                       return (
                         <TableRow key={row.id} hover>
                           <TableCell align="right" sx={{ color: '#9ca3af' }}>
@@ -836,6 +836,20 @@ export const CalificationGridPage: React.FC = () => {
                           </TableCell>
                           <TableCell sx={{ color: '#111827', whiteSpace: 'nowrap' }}>
                             {row.student.lastName}, {row.student.firstName}
+                            {isInterSection && homeSection && (
+                              <Chip
+                                size="small"
+                                label={`Inter-sección: ${homeSection.grade}°${homeSection.division} ${SHIFT_LABELS[homeSection.shift]}`}
+                                sx={{
+                                  ml: 1,
+                                  height: 20,
+                                  fontSize: '0.7rem',
+                                  bgcolor: 'action.hover',
+                                  color: 'text.secondary',
+                                }}
+                              />
+                            )}
+                            {row.courseType === 'REPEAT' && <RepeatMark />}
                           </TableCell>
                           <TableCell sx={{ color: '#374151' }}>{row.student.dni}</TableCell>
 

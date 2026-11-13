@@ -16,6 +16,9 @@ export interface PendingSubject {
   updatedAt: string
   subject: { id: string; name: string; gradeLevel: number }
   originAcademicYear: { id: string; year: number }
+  // Año de la MPAA (CRM-097): el de la cursada de origen o, si no quedó guardado, el de la materia.
+  // Opcional para tolerar un back sin actualizar
+  gradeLevel?: number
 }
 
 // Un texto vacío borra el campo; si un campo no se manda, queda como estaba

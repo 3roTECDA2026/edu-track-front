@@ -20,6 +20,70 @@ export function formatScore(value: number): string {
   return value.toLocaleString('es-AR', { maximumFractionDigits: 2 })
 }
 
+export const PASSING_SCORE = 7
+
+export interface FinalScoreCalculationInput {
+  finalScore?: number | null
+  subjectStatus?: string | null
+  term1Score?: number | null
+  term2Score?: number | null
+  term1IntensificationScore?: number | null
+  intensifications?: Array<{ resultCode: string | null; score: number | null }> | null
+}
+
+/**
+ * Calcula la nota final de una materia aplicando la regla de aprobación oficial
+ * de la grilla y del cierre del ciclo en el backend (CRM-052, CRM-066, CRM-096):
+ * 1. Si acreditó en una intensificación (AA), es la nota de esa intensificación.
+ * 2. Si el 2.º cuatrimestre está aprobado (>= 7):
+ *    - Si el 1.º cuatrimestre también está aprobado (>= 7): promedio de ambos sin redondear (7 y 8 -> 7,5).
+ *    - Si recuperó el 1.º cuatrimestre durante el 2.º (term1IntensificationScore >= 7): la nota de esa recuperación.
+ * 3. En la vista "Por alumno", si el backend ya guardó una nota final acreditada:
+ *    - Ya sea con estado APPROVED_ACCREDITED (intensificación AA con nota 4 a 10)
+ *    - O finalScore >= 7 (aprobación regular)
+ * 4. En cualquier otro caso, la nota final queda sin definir (vacía).
+ */
+export function calculateSubjectFinalScore(
+  input: FinalScoreCalculationInput | null | undefined
+): number | undefined {
+  if (!input) return undefined
+
+  // 1. Acreditación en intensificación (AA)
+  const accredited = (input.intensifications ?? []).find((attempt) => attempt.resultCode === 'AA')
+  if (accredited && typeof accredited.score === 'number') return accredited.score
+
+  const first = typeof input.term1Score === 'number' ? input.term1Score : undefined
+  const second = typeof input.term2Score === 'number' ? input.term2Score : undefined
+
+  // 2. Si ambos cuatrimestres están cargados y el 2.° está aprobado
+  if (second !== undefined && second >= PASSING_SCORE) {
+    if (first !== undefined && first >= PASSING_SCORE) {
+      return (first + second) / 2
+    }
+
+    const recovered =
+      typeof input.term1IntensificationScore === 'number'
+        ? input.term1IntensificationScore
+        : undefined
+    if (recovered !== undefined && recovered >= PASSING_SCORE) {
+      return recovered
+    }
+  }
+
+  // 3. Fallback de finalScore guardado en el backend
+  // Si la materia ya fue aprobada/acreditada (ej. intensificación AA con 4 a 10) o si tiene nota >= 7
+  if (typeof input.finalScore === 'number') {
+    if (input.subjectStatus === 'APPROVED_ACCREDITED' && input.finalScore >= 4) {
+      return input.finalScore
+    }
+    if (input.finalScore >= PASSING_SCORE) {
+      return input.finalScore
+    }
+  }
+
+  return undefined
+}
+
 export function average(values: Array<number | null | undefined>): number | undefined {
   const nums = values.filter((v): v is number => typeof v === 'number')
   if (nums.length === 0) return undefined

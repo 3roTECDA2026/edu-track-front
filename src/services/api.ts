@@ -28,12 +28,15 @@ function getAuthToken(): string | null {
   return sessionStorage.getItem('token') || localStorage.getItem('token');
 }
 
-export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+// Arma y manda el pedido con el token. Lanza ApiError si la respuesta no es OK.
+async function request(endpoint: string, options: RequestInit): Promise<Response> {
   const token = getAuthToken();
 
   const headers = new Headers(options.headers);
 
-  if (!headers.has('Content-Type')) {
+  // Con FormData (subida de archivos) no se pone Content-Type: lo arma el navegador,
+  // con el separador (boundary) entre archivos. Si lo forzamos a JSON, la subida se rompe.
+  if (!headers.has('Content-Type') && !(options.body instanceof FormData)) {
     headers.set('Content-Type', 'application/json');
   }
 
@@ -55,5 +58,17 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
     throw new ApiError(response.status, errorData);
   }
 
+  return response;
+}
+
+export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const response = await request(endpoint, options);
   return response.json() as Promise<T>;
+}
+
+// Igual que fetchApi, pero devuelve el contenido como archivo (Blob), para descargas.
+// Un <a href> no manda el token: por eso los archivos protegidos se piden con esta función.
+export async function fetchApiBlob(endpoint: string, options: RequestInit = {}): Promise<Blob> {
+  const response = await request(endpoint, options);
+  return response.blob();
 }

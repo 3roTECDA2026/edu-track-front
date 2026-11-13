@@ -1,6 +1,7 @@
 import { Box, Paper, Typography } from '@mui/material'
 import EventNoteIcon from '@mui/icons-material/EventNote'
 
+import { InterventionAttachments } from '@/components/interventions/InterventionAttachments'
 import { SoftBadge } from '@/components/studentProfile/SoftBadge'
 import { TabEmpty, TabError, TabLoading } from '@/components/studentProfile/TabStates'
 import { COLORS, cardSx, labelSx } from '@/components/studentProfile/profileStyles'
@@ -80,6 +81,7 @@ export const InterventionsTab = ({ studentId }: InterventionsTabProps) => {
             <Field label="Situación detectada" value={item.description} />
             <Field label="Propuesta de intervención" value={item.interventionProposal} />
             <Field label="Actores involucrados" value={item.involvedActors} />
+            <InterventionAttachments interventionId={item.id} />
           </Box>
         </Paper>
       ))}
