@@ -54,8 +54,18 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Intensificación', icon: <EventRepeatIcon />, path: '/intensification-calendar' },
   { label: 'Promoción', icon: <TrendingUpIcon />, path: '/promotion', roles: ADMIN_ROLES },
   { label: 'Modelo organizativo', icon: <SettingsIcon />, path: '/organizational-model' },
-  { label: 'Reuniones del EDTE', icon: <GroupsIcon />, path: '/edte-meetings', roles: EDTE_VIEWER_ROLES },
-  { label: 'Dashboard del EDTE', icon: <InsightsIcon />, path: '/edte-dashboard', roles: EDTE_DASHBOARD_ROLES },
+  {
+    label: 'Reuniones del EDTE',
+    icon: <GroupsIcon />,
+    path: '/edte-meetings',
+    roles: EDTE_VIEWER_ROLES,
+  },
+  {
+    label: 'Dashboard del EDTE',
+    icon: <InsightsIcon />,
+    path: '/edte-dashboard',
+    roles: EDTE_DASHBOARD_ROLES,
+  },
 ]
 
 export const Aside: React.FC = () => {
