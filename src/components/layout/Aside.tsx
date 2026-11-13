@@ -26,11 +26,12 @@ import EventRepeatIcon from '@mui/icons-material/EventRepeat'
 import SettingsIcon from '@mui/icons-material/Settings'
 import GavelIcon from '@mui/icons-material/Gavel'
 import GroupsIcon from '@mui/icons-material/Groups'
+import GroupAddIcon from '@mui/icons-material/GroupAdd'
 import InsightsIcon from '@mui/icons-material/Insights'
 import { EDTE_DASHBOARD_ROLES } from '@/components/edteDashboard/dashboardLabels'
 import { getRole, USER_MANAGEMENT_ROLES } from '@/services/session'
 import { CONFLICT_ALLOWED_ROLES } from '@/components/conflicts/ConflictRoleGuard'
-import { EDTE_VIEWER_ROLES } from '@/components/edte/edteLabels'
+import { EDTE_MANAGER_ROLES, EDTE_VIEWER_ROLES } from '@/components/edte/edteLabels'
 
 const drawerWidth = 250
 
@@ -44,7 +45,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: 'Panel', icon: <DashboardIcon />, path: '/home' },
   { label: 'Usuarios', icon: <UserIcon />, path: '/users', roles: USER_MANAGEMENT_ROLES },
-  { label: 'Integrantes EDTE', icon: <PeopleIcon />, path: '/edte-members', roles: ['ADMINISTRATOR', 'SCHOOL_MANAGEMENT', 'EOE_DIRECTIVE'] },
   { label: 'Estudiantes', icon: <PeopleIcon />, path: '/students' },
   { label: 'Conflictos', icon: <GavelIcon />, path: '/conflicts', roles: CONFLICT_ALLOWED_ROLES },
   { label: 'Cursos', icon: <SchoolIcon />, path: '/courses' },
@@ -53,8 +53,24 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Calificaciones', icon: <GradingIcon />, path: '/calification-grid' },
   { label: 'Intensificación', icon: <EventRepeatIcon />, path: '/intensification-calendar' },
   { label: 'Modelo organizativo', icon: <SettingsIcon />, path: '/organizational-model' },
-  { label: 'Reuniones del EDTE', icon: <GroupsIcon />, path: '/edte-meetings', roles: EDTE_VIEWER_ROLES },
-  { label: 'Dashboard del EDTE', icon: <InsightsIcon />, path: '/edte-dashboard', roles: EDTE_DASHBOARD_ROLES },
+  {
+    label: 'Integrantes EDTE',
+    icon: <GroupAddIcon />,
+    path: '/edte-members',
+    roles: EDTE_MANAGER_ROLES,
+  },
+  {
+    label: 'Reuniones del EDTE',
+    icon: <GroupsIcon />,
+    path: '/edte-meetings',
+    roles: EDTE_VIEWER_ROLES,
+  },
+  {
+    label: 'Dashboard del EDTE',
+    icon: <InsightsIcon />,
+    path: '/edte-dashboard',
+    roles: EDTE_DASHBOARD_ROLES,
+  },
 ]
 
 export const Aside: React.FC = () => {

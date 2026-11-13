@@ -38,3 +38,16 @@ describe('menú: Reuniones del EDTE', () => {
     expect(screen.queryByText('Reuniones del EDTE')).toBeNull()
   })
 })
+
+describe('menú: Integrantes del EDTE', () => {
+  it.each(['ADMINISTRATOR', 'SCHOOL_MANAGEMENT', 'EOE_DIRECTIVE'])('lo ve %s', (role) => {
+    renderMenu(role)
+    expect(screen.getByText('Integrantes EDTE')).toBeTruthy()
+  })
+
+  it.each(['TEACHER', 'PRECEPTOR', 'STUDENT', 'FAMILY', null])('no lo ve %s', (role) => {
+    renderMenu(role)
+    expect(screen.getByText('Estudiantes')).toBeTruthy()
+    expect(screen.queryByText('Integrantes EDTE')).toBeNull()
+  })
+})

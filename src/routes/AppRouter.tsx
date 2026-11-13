@@ -65,8 +65,8 @@ const AppRouter = () => {
           <Route path="/edte-dashboard" element={<EdteDashboardPage />} />
         </Route>
 
-        {/* EDTE: requiere rol directivo/EOE/admin */}
-        <Route element={<ProtectedRoute roles={['ADMINISTRATOR', 'SCHOOL_MANAGEMENT', 'EOE_DIRECTIVE']} />}>
+        {/* Integrantes del EDTE (CRM-072): administración, dirección y EOE */}
+        <Route element={<ProtectedRoute roles={EDTE_MANAGER_ROLES} />}>
           <Route path="/edte-members" element={<EdteMembersPage />} />
         </Route>
 

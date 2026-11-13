@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import {
   Alert,
+  Autocomplete,
   Box,
   Button,
   Dialog,
@@ -26,6 +27,7 @@ import FilterAltOffIcon from '@mui/icons-material/FilterAltOff'
 
 import MainLayout from '@/components/layout/MainLayout'
 import { useNotify } from '@/components/layout/NotificationProvider'
+import { SHIFT_LABELS } from '@/components/students/studentLabels'
 import { AddButton } from '@/components/common/AddButton'
 import { ContentCard } from '@/components/common/ContentCard'
 import { EditButton } from '@/components/common/EditButton'
@@ -43,13 +45,6 @@ import {
   type EdteStatusFilter,
   type EdteTeamMember,
 } from '@/services/edteMembers.service'
-
-const SHIFT_LABELS: Record<EdteShift, string> = {
-  MORNING: 'Mañana',
-  AFTERNOON: 'Tarde',
-  EVENING: 'Vespertino',
-  EXTRA_TIME: 'Contraturno',
-}
 
 const EDTE_ROLE_LABELS: Record<EdteRole, string> = {
   TEACHER: 'Docente',
@@ -72,7 +67,6 @@ const EdteMembersPage = () => {
   const [editing, setEditing] = useState<EdteTeamMember | null>(null)
   const [role, setRole] = useState<EdteRole | ''>('')
   const [shift, setShift] = useState<EdteShift | ''>('')
-  const [query, setQuery] = useState('')
   const [options, setOptions] = useState<EdteStaffOption[]>([])
   const [optionsError, setOptionsError] = useState<string | null>(null)
   const [selectedUserId, setSelectedUserId] = useState('')
@@ -92,15 +86,10 @@ const EdteMembersPage = () => {
     return () => controller.abort()
   }, [])
 
-  const filteredOptions = options.filter((option) =>
-    option.name.toLowerCase().includes(query.trim().toLowerCase())
-  )
-
   const reset = () => {
     setEditing(null)
     setRole('')
     setShift('')
-    setQuery('')
     setSelectedUserId('')
   }
 
@@ -118,7 +107,6 @@ const EdteMembersPage = () => {
     setEditing(member)
     setRole(member.edteRole)
     setShift(member.shift)
-    setQuery('')
     setSelectedUserId('')
     setOpen(true)
   }
@@ -240,6 +228,12 @@ const EdteMembersPage = () => {
             )}
           </Box>
 
+          {statusFilter === 'inactive' && !loading && !error && (
+            <Alert severity="info" sx={{ mx: 2, mt: 2 }}>
+              Para reactivar a un integrante, dalo de alta de nuevo con el mismo usuario y turno.
+            </Alert>
+          )}
+
           <Table size="small">
             <TableHead sx={{ backgroundColor: '#fafafa' }}>
               <TableRow>
@@ -260,7 +254,7 @@ const EdteMembersPage = () => {
                   </TableCell>
                 </TableRow>
               )}
-              {!loading && members.length === 0 && (
+              {!loading && !error && members.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={5}>
                     <Typography variant="body2">
@@ -306,32 +300,17 @@ const EdteMembersPage = () => {
         <DialogContent>
           {!editing && (
             <>
-              <TextField
-                label="Buscar usuario"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                fullWidth
+              <Autocomplete
+                options={options}
+                getOptionLabel={(option) => option.name}
+                value={options.find((option) => option.userId === selectedUserId) ?? null}
+                onChange={(_, option) => setSelectedUserId(option?.userId ?? '')}
+                renderInput={(params) => (
+                  <TextField {...params} label="Usuario" margin="normal" fullWidth />
+                )}
+                noOptionsText="Sin usuarios"
                 sx={{ mt: 1 }}
               />
-              <FormControl fullWidth sx={{ mt: 2 }}>
-                <InputLabel id="edte-user-label">Usuario</InputLabel>
-                <Select
-                  labelId="edte-user-label"
-                  value={selectedUserId}
-                  label="Usuario"
-                  displayEmpty
-                  onChange={(event) => setSelectedUserId(event.target.value)}
-                >
-                  <MenuItem value="" disabled>
-                    Seleccionar usuario
-                  </MenuItem>
-                  {filteredOptions.map((option) => (
-                    <MenuItem key={option.userId} value={option.userId}>
-                      {option.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
               {optionsError && (
                 <Alert severity="error" sx={{ mt: 2 }}>
                   {optionsError}
