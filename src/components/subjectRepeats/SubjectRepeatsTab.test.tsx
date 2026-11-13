@@ -16,6 +16,7 @@ const repeat = (overrides: Partial<SubjectRepeat> = {}): SubjectRepeat => ({
   pendingSubject: { id: 'p-geo', status: 'PENDING', originYear: 2025 },
   hasGrade: false,
   attendanceCount: 0,
+  pateId: null,
   ...overrides,
 })
 
@@ -111,6 +112,13 @@ describe('pestaña de recursados (CRM-082)', () => {
     renderTab()
     expect(await screen.findByText('Pendiente de 2025 · acreditada')).toBeTruthy()
     expect(screen.queryByRole('button', { name: /quitar/i })).toBeNull()
+  })
+
+  it('si lo creó un PATE, el botón de quitar está deshabilitado', async () => {
+    stubBack({ repeats: [repeat({ pateId: 'pate1' })] })
+    renderTab()
+    const button = await screen.findByRole('button', { name: /quitar/i })
+    expect((button as HTMLButtonElement).disabled).toBe(true)
   })
 
   it('con notas cargadas el botón de quitar está deshabilitado', async () => {

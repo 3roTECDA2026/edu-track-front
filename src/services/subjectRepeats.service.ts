@@ -21,6 +21,8 @@ export interface SubjectRepeat {
   // Si tiene notas o asistencia ya no se puede quitar
   hasGrade: boolean
   attendanceCount: number
+  // PATE que lo creó al confirmarse (CRM-078), o null si se asignó a mano
+  pateId: string | null
 }
 
 export interface RepeatOption {

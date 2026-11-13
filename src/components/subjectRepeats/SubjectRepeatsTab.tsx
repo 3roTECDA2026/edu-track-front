@@ -41,11 +41,13 @@ interface SubjectRepeatsTabProps {
 
 // Motivo por el que un recursado no se puede quitar (igual que el back), o null
 const deleteBlockReason = (repeat: SubjectRepeat) =>
-  repeat.hasGrade
-    ? 'Ya tiene notas cargadas'
-    : repeat.attendanceCount > 0
-      ? 'Ya tiene asistencias cargadas'
-      : null
+  repeat.pateId
+    ? 'Lo creó un PATE: no se puede quitar desde acá'
+    : repeat.hasGrade
+      ? 'Ya tiene notas cargadas'
+      : repeat.attendanceCount > 0
+        ? 'Ya tiene asistencias cargadas'
+        : null
 
 // Materias que recursa el alumno (CRM-082, E4-RF-09)
 export const SubjectRepeatsTab = ({
