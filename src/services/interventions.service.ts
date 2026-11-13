@@ -1,4 +1,4 @@
-import { fetchApi } from '@/services/api'
+import { fetchApi, fetchApiBlob } from '@/services/api'
 
 // Tipos de evento (coinciden con el enum del back).
 export type InterventionEventType = 'PEDAGOGICAL' | 'CONDUCT' | 'HEALTH'
@@ -66,4 +66,54 @@ export async function listStudentInterventions(
     { signal }
   )
   return res.data.data
+}
+
+// ---- Adjuntos (CRM-087) ----
+
+// Un adjunto tal como lo devuelve el back (sin la ruta interna donde se guarda el archivo).
+export interface InterventionAttachment {
+  id: string
+  interventionId: string
+  originalName: string
+  mimeType: string
+  size: number // en bytes
+  createdAt: string
+  uploadedBy: InterventionAuthor
+}
+
+// Sube uno o varios archivos. Van en un FormData con el campo "files", que es el que espera
+// el back (multer). Puede hacerlo el autor de la intervención, dentro de las 48 hs.
+export async function uploadInterventionAttachments(
+  interventionId: string,
+  files: File[]
+): Promise<InterventionAttachment[]> {
+  const formData = new FormData()
+  files.forEach((file) => formData.append('files', file))
+  const res = await fetchApi<{ data: InterventionAttachment[] }>(
+    `/api/interventions/${encodeURIComponent(interventionId)}/attachments`,
+    { method: 'POST', body: formData }
+  )
+  return res.data
+}
+
+// Lista los adjuntos de una intervención.
+export async function listInterventionAttachments(
+  interventionId: string,
+  signal?: AbortSignal
+): Promise<InterventionAttachment[]> {
+  const res = await fetchApi<{ data: InterventionAttachment[] }>(
+    `/api/interventions/${encodeURIComponent(interventionId)}/attachments`,
+    { signal }
+  )
+  return res.data
+}
+
+// Trae el archivo de un adjunto (con el token), para descargarlo o verlo.
+export function downloadInterventionAttachment(
+  interventionId: string,
+  attachmentId: string
+): Promise<Blob> {
+  return fetchApiBlob(
+    `/api/interventions/${encodeURIComponent(interventionId)}/attachments/${encodeURIComponent(attachmentId)}`
+  )
 }
