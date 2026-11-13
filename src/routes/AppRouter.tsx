@@ -13,8 +13,6 @@ import StudentProfilePage from '@/pages/StudentProfilePage'
 import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage'
 import IntensificationCalendarPage from '@/pages/IntensificationCalendarPage'
 import EdteMembersPage from '@/pages/EdteMembersPage'
-import PatesPage from '@/pages/PatesPage'
-import PateDetailPage from '@/pages/PateDetailPage'
 import OrganizationalModelPage from '@/pages/OrganizationalModelPage'
 import { USER_MANAGEMENT_ROLES } from '@/services/session'
 import ProtectedRoute from '@/routes/ProtectedRoute'
@@ -43,8 +41,6 @@ const AppRouter = () => {
         {/* EDTE: requiere rol directivo/EOE/admin */}
         <Route element={<ProtectedRoute roles={['ADMINISTRATOR', 'SCHOOL_MANAGEMENT', 'EOE_DIRECTIVE']} />}>
           <Route path="/edte-members" element={<EdteMembersPage />} />
-          <Route path="/pates" element={<PatesPage />} />
-          <Route path="/pates/:id" element={<PateDetailPage />} />
         </Route>
 
         {/* Solo administración */}
