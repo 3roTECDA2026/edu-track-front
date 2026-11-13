@@ -13,13 +13,10 @@ import {
 } from '@mui/material'
 
 import { AddButton } from '@/components/common/AddButton'
-import {
-  MEETING_PERIOD_LABELS,
-  formatDate,
-  listDraftMeetings,
-} from '@/components/edteReferrals/meetingLinks'
+import { MEETING_PERIOD_LABELS, formatMeetingDate } from '@/components/edte/edteLabels'
 import type { ReferralRow } from '@/components/edteReferrals/referralRows'
 import { useLazyResource } from '@/hooks/useLazyResource'
+import { listEdteMeetings } from '@/services/edteMeeting.service'
 
 interface AddToMeetingDialogProps {
   student: ReferralRow
@@ -39,7 +36,7 @@ export function AddToMeetingDialog({
   onNewMeeting,
 }: AddToMeetingDialogProps) {
   const meetings = useLazyResource(`draft-meetings:${year}`, (signal) =>
-    listDraftMeetings(year, signal)
+    listEdteMeetings({ year, status: 'DRAFT' }, signal)
   )
 
   return (
@@ -70,7 +67,7 @@ export function AddToMeetingDialog({
             {(meetings.data ?? []).map((meeting) => (
               <ListItemButton key={meeting.id} onClick={() => onChooseMeeting(meeting.id)}>
                 <ListItemText
-                  primary={`${formatDate(meeting.date)} · ${MEETING_PERIOD_LABELS[meeting.period]}`}
+                  primary={`${formatMeetingDate(meeting.date)} · ${MEETING_PERIOD_LABELS[meeting.period]}`}
                   secondary={
                     meeting.studentsCount === 1 ? '1 alumno' : `${meeting.studentsCount} alumnos`
                   }

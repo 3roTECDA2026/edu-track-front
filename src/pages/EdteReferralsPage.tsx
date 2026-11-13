@@ -9,7 +9,7 @@ import { StandardTablePagination } from '@/components/common/StandardTablePagina
 import { AddToMeetingDialog } from '@/components/edteReferrals/AddToMeetingDialog'
 import { EdteReferralsFilters } from '@/components/edteReferrals/EdteReferralsFilters'
 import { EdteReferralsTable } from '@/components/edteReferrals/EdteReferralsTable'
-import { editMeetingPath, newMeetingPath } from '@/components/edteReferrals/meetingLinks'
+import { editMeetingPath, newMeetingPath } from '@/components/edte/edteLabels'
 import { CREATE_PATE_PATH } from '@/components/edteReferrals/referralLabels'
 import {
   EMPTY_FILTERS,
