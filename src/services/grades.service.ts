@@ -1,16 +1,26 @@
 import { fetchApi } from '@/services/api'
 import type { ResultCode } from '@/services/intensification.service'
+import type { Shift } from '@/services/students.service'
 
 export type ScoreSlot = number | null
 
 // Valoración parcial de cada cuatrimestre (pedido del equipo directivo, CRM-066)
 export type PreliminaryAssessment = 'TEA' | 'TEP' | 'TED'
 
+export interface RosterHomeSection {
+  id: string
+  grade: number
+  division: string
+  shift: Shift
+}
+
 export interface RosterStudent {
   id: string
   dni: string
   lastName: string
   firstName: string
+  // Sección de matrícula vigente del alumno (para detectar inter-sección)
+  enrollmentHistory: { classSection: RosterHomeSection }[]
 }
 
 export interface RosterGrade {

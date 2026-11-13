@@ -16,6 +16,7 @@ const grade = (id: string, name: string, courseType: 'FIRST_TIME' | 'REPEAT'): S
   enrollment: {
     id: `e-${id}`,
     subject: { id: `s-${id}`, name },
+    classSection: { id: 'cs1', grade: 3, division: 'A' },
     academicYear: { id: 'y2026', year: 2026 },
     courseType,
   },
@@ -31,6 +32,7 @@ describe('calificaciones de la ficha: marca R (CRM-082)', () => {
         loading={false}
         error={undefined}
         onRetry={() => {}}
+        homeSection={null}
       />
     )
     const marks = screen.getAllByLabelText('Recursa la materia')

@@ -4,6 +4,7 @@ import type { KeyboardEvent } from 'react'
 import {
   Alert,
   Box,
+  Chip,
   FormControl,
   InputLabel,
   MenuItem,
@@ -27,6 +28,7 @@ import { CustomTabs } from '@/components/common/CustomTabs'
 import { AddButton } from '@/components/common/AddButton'
 import { RepeatMark } from '@/components/common/RepeatMark'
 import { StandardTablePagination } from '@/components/common/StandardTablePagination'
+import { SHIFT_LABELS } from '@/components/students/studentLabels'
 import PorAlumnoTab from '@/pages/PorAlumnoTab'
 import { useClassSections } from '@/hooks/useClassSections'
 import { useSubjects } from '@/hooks/useSubjects'
@@ -830,6 +832,10 @@ export const CalificationGridPage: React.FC = () => {
                   <TableBody>
                     {pageRows.map((row, i) => {
                       const finalValue = finalScore(row)
+                      const homeSection = row.student.enrollmentHistory?.[0]?.classSection
+                      const isInterSection = Boolean(
+                        homeSection && homeSection.id !== classSectionId
+                      )
                       return (
                         <TableRow key={row.id} hover>
                           <TableCell align="right" sx={{ color: '#9ca3af' }}>
@@ -837,6 +843,19 @@ export const CalificationGridPage: React.FC = () => {
                           </TableCell>
                           <TableCell sx={{ color: '#111827', whiteSpace: 'nowrap' }}>
                             {row.student.lastName}, {row.student.firstName}
+                            {isInterSection && homeSection && (
+                              <Chip
+                                size="small"
+                                label={`Inter-sección: ${homeSection.grade}°${homeSection.division} ${SHIFT_LABELS[homeSection.shift]}`}
+                                sx={{
+                                  ml: 1,
+                                  height: 20,
+                                  fontSize: '0.7rem',
+                                  bgcolor: 'action.hover',
+                                  color: 'text.secondary',
+                                }}
+                              />
+                            )}
                             {row.courseType === 'REPEAT' && <RepeatMark />}
                           </TableCell>
                           <TableCell sx={{ color: '#374151' }}>{row.student.dni}</TableCell>
