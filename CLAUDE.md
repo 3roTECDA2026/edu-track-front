@@ -20,8 +20,10 @@ calificaciones, RITE (con generación del PDF oficial) y alumnos derivados al ED
 Cruza el listado de derivación del back (`/api/edte-referrals`, CRM-073) con los PATE del ciclo
 (`/api/pates`, CRM-078); los filtros y el buscador se aplican en el front
 (`components/edteReferrals/referralRows.ts`). Partes provisorias, aisladas hasta que entren otros
-PR: `meetingLinks.ts` (reuniones de CRM-075), `CREATE_PATE_PATH` en `null` (no hay pantalla del
-PATE) y el ciclo tomado del año actual (no hay endpoint montado del ciclo activo).
+PR: `CREATE_PATE_PATH` en `null` (no hay pantalla del PATE) y el ciclo tomado del año actual (no
+hay endpoint montado del ciclo activo). "Agregar a reunión" usa las reuniones de CRM-075 y abre el
+formulario con `?studentId=`, que suma a ese alumno a los tratados (`newMeetingPath` y
+`editMeetingPath` en `components/edte/edteLabels.ts`).
 
 ## 2. Stack
 
