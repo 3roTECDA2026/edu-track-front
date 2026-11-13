@@ -37,6 +37,7 @@ export interface StudentGrade {
     subject: { id: string; name: string }
     classSection: { id: string; grade: number; division: string; shift?: Shift }
     academicYear: { id: string; year: number }
+    courseType: 'FIRST_TIME' | 'REPEAT'
   }
 }
 

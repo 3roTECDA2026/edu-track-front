@@ -50,8 +50,12 @@ export interface RosterIntensification {
   knowledgeAtClose: string | null
 }
 
+// Cursada por primera vez o recursado (marca "R", CRM-082)
+export type CourseType = 'FIRST_TIME' | 'REPEAT'
+
 export interface RosterRow {
   id: string // enrollmentId
+  courseType: CourseType
   student: RosterStudent
   subject: { id: string; name: string }
   grade: RosterGrade | null

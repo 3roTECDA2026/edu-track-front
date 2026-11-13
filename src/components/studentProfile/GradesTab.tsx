@@ -12,6 +12,7 @@ import {
 import SchoolIcon from '@mui/icons-material/School'
 import type { PreliminaryAssessment, StudentGrade } from '@/services/studentProfile.service'
 import type { CurrentSection } from '@/services/students.service'
+import { RepeatMark } from '@/components/common/RepeatMark'
 import { SoftBadge } from '@/components/studentProfile/SoftBadge'
 import { TabEmpty, TabError, TabLoading } from '@/components/studentProfile/TabStates'
 import { COLORS, bodyCellSx, cardSx, headerCellSx } from '@/components/studentProfile/profileStyles'
@@ -150,6 +151,7 @@ export const GradesTab = ({ grades, loading, error, onRetry, homeSection }: Grad
                           SHIFT_LABELS[grade.enrollment.classSection.shift]}
                       </Typography>
                     )}
+                  {grade.enrollment.courseType === 'REPEAT' && <RepeatMark />}
                 </TableCell>
                 <TableCell align="center" sx={bodyCellSx}>
                   <AssessmentBadge value={grade.preliminaryAssessment1} />
