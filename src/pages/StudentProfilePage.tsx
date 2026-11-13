@@ -1,11 +1,12 @@
 // src/pages/StudentProfilePage.tsx
 import { useEffect, useState, type SyntheticEvent } from 'react'
 import { Alert, Box, Button, Skeleton, Snackbar } from '@mui/material'
+import NoteAddIcon from '@mui/icons-material/NoteAdd'
 import { useNavigate, useParams } from 'react-router-dom'
-
 import { MainLayout } from '@/components/layout/MainLayout'
 import { PageContainer } from '@/components/common/PageContainer'
 import { PageHeader } from '@/components/common/PageHeader'
+import { AddButton } from '@/components/common/AddButton'
 import { ContentCard } from '@/components/common/ContentCard'
 import { CustomTabs } from '@/components/common/CustomTabs'
 import { DeactivateStudentDialog } from '@/components/students/DeactivateStudentDialog'
@@ -17,12 +18,14 @@ import { AttendanceTab } from '@/components/studentProfile/AttendanceTab'
 import { GradesTab } from '@/components/studentProfile/GradesTab'
 import { ObservationsTab } from '@/components/studentProfile/ObservationsTab'
 import { RiteTab } from '@/components/studentProfile/RiteTab'
+import { PendingSubjectsTab } from '@/components/studentProfile/PendingSubjectsTab'
+import { getRole, canManageTrajectories } from '@/services/session'
+import { InterventionsTab } from '@/components/studentProfile/InterventionsTab'
 import { FortePlanTab } from '@/components/studentProfile/FortePlanTab'
 import { FortePlanDialog } from '@/components/studentProfile/FortePlanDialog'
 import { useLazyResource } from '@/hooks/useLazyResource'
 import { deactivateStudent } from '@/services/students.service'
 import { getStudentFortePlan } from '@/services/fortePlan.service'
-import { canManageTrajectories } from '@/services/session'
 import {
   getStudentAttendance,
   getStudentById,
@@ -32,16 +35,27 @@ import {
 import { currentUser } from '@/utils/currentUser'
 
 type TabKey =
-  'personal' | 'enrollment' | 'attendance' | 'grades' | 'observations' | 'rite' | 'forte'
+  | 'personal'
+  | 'enrollment'
+  | 'attendance'
+  | 'grades'
+  | 'pending'
+  | 'observations'
+  | 'interventions'
+  | 'rite'
+  | 'forte'
 
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'personal', label: 'Datos personales' },
   { key: 'enrollment', label: 'Inscripción' },
   { key: 'attendance', label: 'Asistencia' },
   { key: 'grades', label: 'Calificaciones' },
+  { key: 'pending', label: 'Materias pendientes' },
   { key: 'observations', label: 'Observaciones' },
+  { key: 'interventions', label: 'Intervenciones' },
   { key: 'rite', label: 'RITE' },
 ]
+const PENDING_KNOWLEDGE_ROLES = ['ADMINISTRATOR', 'SCHOOL_MANAGEMENT', 'EOE_DIRECTIVE', 'TEACHER']
 
 // Pestaña del Plan Forte: solo para los alumnos asignados al programa (CRM-089)
 const FORTE_TAB: { key: TabKey; label: string } = { key: 'forte', label: 'Plan Forte' }
@@ -78,7 +92,10 @@ const StudentProfilePage = () => {
   const fortePlan = useLazyResource(id ? `forte-plan:${id}` : null, (signal) =>
     getStudentFortePlan(id, signal)
   )
-  const tabs = fortePlan.data ? [...TABS, FORTE_TAB] : TABS
+  const allTabs = fortePlan.data ? [...TABS, FORTE_TAB] : TABS
+  // La pestaña de materias pendientes solo se muestra a los roles que el back deja consultarla
+  const canSeePending = PENDING_KNOWLEDGE_ROLES.includes(getRole() ?? '')
+  const tabs = canSeePending ? allTabs : allTabs.filter((tab) => tab.key !== 'pending')
   const canManageForte = canManageTrajectories()
   // Los reportes los cargan quien gestiona o el responsable del plan (igual que el back)
   const canLoadForteReports =
@@ -96,6 +113,7 @@ const StudentProfilePage = () => {
       : null,
     (signal) => getStudentAttendance(id, currentYear, signal)
   )
+
   const grades = useLazyResource(visitedTabs.includes('grades') ? `grades:${id}` : null, (signal) =>
     getStudentGrades(id, signal)
   )
@@ -243,6 +261,13 @@ const StudentProfilePage = () => {
                 homeSection={student.currentSection}
               />
             )}
+            {activeTab === 'pending' && (
+              <PendingSubjectsTab
+                key={student.id}
+                studentId={student.id}
+                onSaved={(message, severity) => setSnackbar({ message, severity })}
+              />
+            )}
             {activeTab === 'observations' && (
               <ObservationsTab
                 key={student.id}
@@ -250,6 +275,7 @@ const StudentProfilePage = () => {
                 onSaved={(message, severity) => setSnackbar({ message, severity })}
               />
             )}
+            {activeTab === 'interventions' && <InterventionsTab studentId={student.id} />}
             {activeTab === 'rite' && <RiteTab studentId={student.id} />}
             {activeTab === 'forte' && fortePlan.data && (
               <FortePlanTab
@@ -278,6 +304,15 @@ const StudentProfilePage = () => {
             { label: 'Estudiantes', href: '/students' },
             { label: student ? `${student.lastName}, ${student.firstName}` : 'Ficha del alumno' },
           ]}
+          action={
+            student ? (
+              <AddButton
+                label="Registrar intervención"
+                icon={<NoteAddIcon />}
+                onClick={() => navigate(`/interventions/new?studentId=${student.id}`)}
+              />
+            ) : undefined
+          }
         />
 
         {renderContent()}

@@ -14,6 +14,11 @@ export const GRADE_COLORS: Record<Level, { bg: string; fg: string }> = {
   empty: { bg: 'transparent', fg: '#9ca3af' },
 }
 
+// Nota con coma decimal, como se escribe en Argentina: 7,5. La nota final puede tener decimales
+// porque es el promedio de los dos cuatrimestres (Res. 1650/24, Anexo 5, inc. 8.a)
+export function formatScore(value: number): string {
+  return value.toLocaleString('es-AR', { maximumFractionDigits: 2 })
+}
 
 export function average(values: Array<number | null | undefined>): number | undefined {
   const nums = values.filter((v): v is number => typeof v === 'number')

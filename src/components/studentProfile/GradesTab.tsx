@@ -21,7 +21,9 @@ import {
   EMPTY,
   PASSING_SCORE,
   SUBJECT_STATUS_LABELS,
-} from '@/components/studentProfile/profileLabels'
+
+} from '@/components/studentProfile/profileLabels';
+import { formatScore } from '@/utils/grades';
 
 interface GradesTabProps {
   grades: StudentGrade[] | undefined
@@ -59,11 +61,10 @@ const Score = ({ value }: { value: number | null }) => {
   if (value === null) return <>{EMPTY}</>
   const failing = value < PASSING_SCORE
   return (
-    <Box
-      component="span"
-      sx={{ fontWeight: failing ? 700 : 500, color: failing ? COLORS.danger : 'inherit' }}
-    >
-      {value}
+
+
+    <Box component="span" sx={{ fontWeight: failing ? 700 : 500, color: failing ? COLORS.danger : 'inherit' }}>
+      {formatScore(value)}
     </Box>
   )
 }
