@@ -37,7 +37,6 @@ const headSx = {
   backgroundColor: '#fafafa',
 } as const
 
-
 function valueCell(value: number | undefined, strong = false) {
   const c = GRADE_COLORS[gradeLevel(value)]
   return (
@@ -60,11 +59,10 @@ function valueCell(value: number | undefined, strong = false) {
 }
 
 export const PorAlumnoTab: React.FC = () => {
-  
   const { sections } = useClassSections()
   const yearOptions = useMemo(
     () => Array.from(new Set(sections.map((s) => s.year))).sort((a, b) => b - a),
-    [sections],
+    [sections]
   )
   const [year, setYear] = useState<number | ''>('')
   useEffect(() => {
@@ -86,13 +84,11 @@ export const PorAlumnoTab: React.FC = () => {
   })
   const studentOptions = studentsData?.data ?? []
 
-  
   const { rows, loading, error } = useStudentGrades(
     selected?.id ?? '',
-    year === '' ? undefined : year,
+    year === '' ? undefined : year
   )
 
- 
   const finalFor = (row: (typeof rows)[number]) => {
     return calculateSubjectFinalScore({
       finalScore: row.grade?.finalScore,
@@ -101,7 +97,7 @@ export const PorAlumnoTab: React.FC = () => {
       term1IntensificationScore: row.grade?.term1IntensificationScore ?? null,
     })
   }
-  
+
   const generalAverage = average(rows.map((r) => finalFor(r)))
 
   return (
@@ -192,7 +188,6 @@ export const PorAlumnoTab: React.FC = () => {
               <TableRow>
                 <TableCell
                   sx={{ ...headSx, backgroundColor: 'transparent', borderTop: '2px solid #d1d5db' }}
-                  
                 >
                   PROMEDIO
                 </TableCell>

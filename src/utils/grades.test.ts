@@ -1,23 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import {
-  average,
-  calculateSubjectFinalScore,
-  formatScore,
-} from './grades'
+import { average, calculateSubjectFinalScore, formatScore } from './grades'
 
 describe('calculateSubjectFinalScore (CRM-096, CRM-052, CRM-066)', () => {
   it('devuelve undefined si input es nulo o indefinido', () => {
     expect(calculateSubjectFinalScore(null)).toBeUndefined()
     expect(calculateSubjectFinalScore(undefined)).toBeUndefined()
-  })
-
-  it('prioriza la nota final calculada por el backend si ya existe', () => {
-    const res = calculateSubjectFinalScore({
-      finalScore: 8,
-      term1Score: 4,
-      term2Score: 5,
-    })
-    expect(res).toBe(8)
   })
 
   it('asigna la nota de intensificación cuando acreditó con AA', () => {
@@ -88,6 +75,22 @@ describe('calculateSubjectFinalScore (CRM-096, CRM-052, CRM-066)', () => {
       term1IntensificationScore: 8,
     })
     expect(res).toBeUndefined()
+  })
+
+  it('si finalScore guardado en backend es menor a 7 (ej. MPAA 1 a 3 post-cierre), no se muestra como final aprobada', () => {
+    const res = calculateSubjectFinalScore({
+      finalScore: 3,
+      term1Score: 4,
+      term2Score: 5,
+    })
+    expect(res).toBeUndefined()
+  })
+
+  it('si finalScore guardado en backend está acreditado (>= 7), lo utiliza si no hay cuatrimestres en vivo', () => {
+    const res = calculateSubjectFinalScore({
+      finalScore: 8,
+    })
+    expect(res).toBe(8)
   })
 })
 
