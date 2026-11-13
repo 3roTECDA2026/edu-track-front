@@ -3,6 +3,7 @@ import { Box, Button, CircularProgress, Paper, Stack, TextField, Typography } fr
 import AssignmentLateIcon from '@mui/icons-material/AssignmentLate'
 import SaveIcon from '@mui/icons-material/Save'
 
+import { AttemptsHistory } from '@/components/studentProfile/AttemptsHistory'
 import { cardSx } from '@/components/studentProfile/profileStyles'
 import { SoftBadge } from '@/components/studentProfile/SoftBadge'
 import { TabEmpty, TabError, TabLoading } from '@/components/studentProfile/TabStates'
@@ -118,6 +119,7 @@ const PendingSubjectCard = ({ item, onSaved, onUpdated }: PendingSubjectCardProp
           </Button>
         </Box>
       )}
+      <AttemptsHistory pendingSubjectId={item.id} />
     </Paper>
   )
 }
