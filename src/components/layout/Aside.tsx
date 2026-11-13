@@ -32,6 +32,8 @@ import { EDTE_DASHBOARD_ROLES } from '@/components/edteDashboard/dashboardLabels
 import { ADMIN_ROLES, getRole, USER_MANAGEMENT_ROLES } from '@/services/session'
 import { CONFLICT_ALLOWED_ROLES } from '@/components/conflicts/ConflictRoleGuard'
 import { EDTE_VIEWER_ROLES } from '@/components/edte/edteLabels'
+import AssignmentIndOutlined from '@mui/icons-material/AssignmentIndOutlined'
+import { EDTE_REFERRALS_ROLES } from '@/components/edteReferrals/referralLabels'
 
 const drawerWidth = 250
 
@@ -54,6 +56,12 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Intensificación', icon: <EventRepeatIcon />, path: '/intensification-calendar' },
   { label: 'Promoción', icon: <TrendingUpIcon />, path: '/promotion', roles: ADMIN_ROLES },
   { label: 'Modelo organizativo', icon: <SettingsIcon />, path: '/organizational-model' },
+  {
+    label: 'Derivados al EDTE',
+    icon: <AssignmentIndOutlined />,
+    path: '/edte-referrals',
+    roles: EDTE_REFERRALS_ROLES,
+  },
   {
     label: 'Reuniones del EDTE',
     icon: <GroupsIcon />,

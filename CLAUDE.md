@@ -14,7 +14,16 @@ Consume la API REST del repositorio `edu-track-back` (Express + Prisma + Postgre
 
 Pantallas principales: login, panel de inicio (horarios activos y alertas de estudiantes),
 usuarios, estudiantes (listado, ficha y trayectoria), cursos, inasistencias, carga de
-calificaciones y RITE (con generación del PDF oficial).
+calificaciones, RITE (con generación del PDF oficial) y alumnos derivados al EDTE.
+
+**Derivados al EDTE** (`/edte-referrals`, CRM-074): solo EOE y dirección (`EDTE_REFERRALS_ROLES`).
+Cruza el listado de derivación del back (`/api/edte-referrals`, CRM-073) con los PATE del ciclo
+(`/api/pates`, CRM-078); los filtros y el buscador se aplican en el front
+(`components/edteReferrals/referralRows.ts`). Partes provisorias, aisladas hasta que entren otros
+PR: `CREATE_PATE_PATH` en `null` (no hay pantalla del PATE) y el ciclo tomado del año actual (no
+hay endpoint montado del ciclo activo). "Agregar a reunión" usa las reuniones de CRM-075 y abre el
+formulario con `?studentId=`, que suma a ese alumno a los tratados (`newMeetingPath` y
+`editMeetingPath` en `components/edte/edteLabels.ts`).
 
 ## 2. Stack
 

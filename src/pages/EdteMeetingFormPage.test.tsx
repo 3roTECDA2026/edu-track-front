@@ -150,3 +150,70 @@ describe('formulario de reunión del EDTE', () => {
     })
   })
 })
+
+// Alumno que llega con ?studentId= desde "Agregar a reunión" de la pantalla de derivados (CRM-074)
+describe('alumno para sumar de entrada (CRM-074)', () => {
+  const student = {
+    id: 's9',
+    firstName: 'Ana',
+    lastName: 'Pérez',
+    dni: '40111222',
+    currentSection: { year: 2026, grade: 2, division: 'B', shift: 'AFTERNOON' },
+  }
+
+  const apiWithStudent = (meeting?: ReturnType<typeof detail>) =>
+    stubApi([
+      [(url) => url.includes('/member-options'), memberOptions],
+      [(url) => url.includes('/candidates'), []],
+      [(url) => url.includes('/api/students/'), student],
+      [(url) => /\/api\/edte-meetings\/[^/?]+$/.test(url), meeting ?? detail()],
+    ])
+
+  it('en una reunión nueva, el alumno ya figura entre los tratados', async () => {
+    loginAs('SCHOOL_MANAGEMENT')
+    apiWithStudent()
+    renderAt('/edte-meetings/new?studentId=s9')
+    expect((await screen.findAllByText(/Pérez, Ana \(DNI 40111222\)/)).length).toBeGreaterThan(0)
+  })
+
+  it('si el alumno ya está en la reunión, no se repite', async () => {
+    loginAs('SCHOOL_MANAGEMENT')
+    api()
+    renderAt('/edte-meetings/m1/edit')
+    const withoutParam = (await screen.findAllByText(/García, Mateo \(DNI 46222333\)/)).length
+    cleanup()
+
+    stubApi([
+      [(url) => url.includes('/member-options'), memberOptions],
+      [(url) => url.includes('/candidates'), []],
+      [
+        (url) => url.includes('/api/students/'),
+        { ...student, id: 's1', firstName: 'Mateo', lastName: 'García', dni: '46222333' },
+      ],
+      [(url) => /\/api\/edte-meetings\/[^/?]+$/.test(url), detail()],
+    ])
+    renderAt('/edte-meetings/m1/edit?studentId=s1')
+    expect((await screen.findAllByText(/García, Mateo \(DNI 46222333\)/)).length).toBe(withoutParam)
+  })
+
+  it('si no se puede cargar el alumno, avisa y abre el formulario igual', async () => {
+    loginAs('SCHOOL_MANAGEMENT')
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (url.includes('/api/students/')) {
+          return {
+            ok: false,
+            status: 404,
+            json: async () => ({ error: 'Estudiante no encontrado' }),
+          }
+        }
+        const body = url.includes('/member-options') ? memberOptions : []
+        return { ok: true, status: 200, json: async () => body }
+      })
+    )
+    renderAt('/edte-meetings/new?studentId=nope')
+    expect(await screen.findByText(/no se pudo cargar el alumno para sumarlo/i)).toBeTruthy()
+    expect(await screen.findByRole('button', { name: /guardar/i })).toBeTruthy()
+  })
+})
