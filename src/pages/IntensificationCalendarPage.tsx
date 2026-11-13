@@ -49,8 +49,9 @@ import {
   type ScheduleTeacher,
 } from '@/services/intensificationSchedule.service'
 
-// Los tres períodos del requerimiento (E3-RF-04), en el orden en que ocurren.
-// Agosto pertenece al ciclo en curso; diciembre y febrero/marzo, al ciclo que cierran.
+// Los seis períodos del ciclo (E3-RF-04; Res. 1650/24, Anexo 2), en el orden en que ocurren.
+// Marzo, julio, agosto y diciembre 1 pertenecen al ciclo en curso; diciembre 2 y febrero/marzo,
+// al ciclo que cierran.
 const PERIODS: {
   value: IntensificationPeriod
   label: string
@@ -58,15 +59,33 @@ const PERIODS: {
   defaults: (year: number) => [string, string]
 }[] = [
   {
+    value: 'MARCH',
+    label: 'Marzo',
+    hint: (year) => `Materias pendientes de ciclos anteriores, durante el ciclo ${year}`,
+    defaults: (year) => [`${year}-03-09`, `${year}-03-20`],
+  },
+  {
+    value: 'JULY',
+    label: 'Julio',
+    hint: (year) => `Antes del receso de invierno del ciclo ${year}`,
+    defaults: (year) => [`${year}-07-06`, `${year}-07-17`],
+  },
+  {
     value: 'AUGUST',
     label: 'Agosto',
     hint: (year) => `Durante el ciclo ${year}`,
     defaults: (year) => [`${year}-08-03`, `${year}-08-14`],
   },
   {
+    value: 'DECEMBER_TERM_CLOSE',
+    label: 'Diciembre (cierre del cuatrimestre)',
+    hint: (year) => `Antes del cierre del 2.º cuatrimestre del ciclo ${year}`,
+    defaults: (year) => [`${year}-11-23`, `${year}-12-04`],
+  },
+  {
     value: 'DECEMBER',
-    label: 'Diciembre',
-    hint: (year) => `Cierre del ciclo ${year}`,
+    label: 'Diciembre (después del cierre)',
+    hint: (year) => `Después del cierre del 2.º cuatrimestre del ciclo ${year}`,
     defaults: (year) => [`${year}-12-07`, `${year}-12-18`],
   },
   {

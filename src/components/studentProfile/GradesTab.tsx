@@ -20,6 +20,7 @@ import {
   PASSING_SCORE,
   SUBJECT_STATUS_LABELS,
 } from '@/components/studentProfile/profileLabels';
+import { formatScore } from '@/utils/grades';
 
 interface GradesTabProps {
   grades: StudentGrade[] | undefined;
@@ -42,7 +43,7 @@ const Score = ({ value }: { value: number | null }) => {
   const failing = value < PASSING_SCORE;
   return (
     <Box component="span" sx={{ fontWeight: failing ? 700 : 500, color: failing ? COLORS.danger : 'inherit' }}>
-      {value}
+      {formatScore(value)}
     </Box>
   );
 };
