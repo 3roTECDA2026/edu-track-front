@@ -25,6 +25,8 @@ import EdteDashboardPage from '@/pages/EdteDashboardPage'
 import { EDTE_DASHBOARD_ROLES } from '@/components/edteDashboard/dashboardLabels'
 import EdteReferralsPage from '@/pages/EdteReferralsPage'
 import { EDTE_REFERRALS_ROLES } from '@/components/edteReferrals/referralLabels'
+import { PateFormPage } from '@/pages/PateFormPage'
+import { PateDetailPage } from '@/pages/PateDetailPage'
 import PromotionPage from '@/pages/PromotionPage'
 import { ADMIN_ROLES, USER_MANAGEMENT_ROLES } from '@/services/session'
 import { AcademicYearsProvider } from '@/hooks/useAcademicYears'
@@ -87,9 +89,11 @@ const AppRouter = () => {
         </Route>
 
         {/* Solo administración */}
-        {/* Derivados al EDTE (CRM-074): solo EOE y dirección */}
+        {/* Derivados al EDTE y PATE (CRM-074 / CRM-079 / CRM-080): solo EOE y dirección */}
         <Route element={<ProtectedRoute roles={EDTE_REFERRALS_ROLES} />}>
           <Route path="/edte-referrals" element={<EdteReferralsPage />} />
+          <Route path="/pates/new" element={<PateFormPage />} />
+          <Route path="/pates/:id" element={<PateDetailPage />} />
         </Route>
 
         <Route element={<ProtectedRoute roles={USER_MANAGEMENT_ROLES} />}>

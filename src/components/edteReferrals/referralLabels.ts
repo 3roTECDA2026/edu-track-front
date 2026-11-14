@@ -34,9 +34,7 @@ export const PATE_STATE_CONFIG: Record<
   CLOSED: { label: 'Cerrado', icon: TaskAltOutlined, emphasis: 'none' },
 }
 
-// Pantalla del PATE en el front: todavía no existe. La ruta acordada es /pates/new?studentId=
-// (ver CRM-074-plan, 3.2.3); el ticket del formulario está por confirmar. Mientras sea null, el
-// botón "Crear PATE" queda deshabilitado con una explicación.
-export const CREATE_PATE_PATH: ((studentId: string) => string) | null = null
+// Pantalla del PATE en el front (CRM-079)
+export const CREATE_PATE_PATH = (studentId: string) => `/pates/new?studentId=${studentId}`
 
-export const CREATE_PATE_UNAVAILABLE = 'La pantalla para crear el PATE todavía no está disponible'
+export const CREATE_PATE_UNAVAILABLE = 'Crear PATE'
