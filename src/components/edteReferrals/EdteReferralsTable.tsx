@@ -119,13 +119,17 @@ export function EdteReferralsTable({
                       </Tooltip>
 
                       {row.pate === null && !pateUnavailable && (
-                        <Tooltip title={CREATE_PATE_PATH ? 'Crear PATE' : CREATE_PATE_UNAVAILABLE}>
+                        <Tooltip
+                          title={
+                            CREATE_PATE_PATH(row.studentId) ? 'Crear PATE' : CREATE_PATE_UNAVAILABLE
+                          }
+                        >
                           {/* El span permite que el tooltip funcione con el botón deshabilitado */}
                           <span>
                             <IconButton
                               size="small"
                               aria-label={`Crear PATE de ${name}`}
-                              disabled={!CREATE_PATE_PATH}
+                              disabled={!CREATE_PATE_PATH(row.studentId)}
                               onClick={() => onCreatePate(row)}
                             >
                               <NoteAddOutlined fontSize="small" />
