@@ -27,11 +27,12 @@ import TrendingUpIcon from '@mui/icons-material/TrendingUp'
 import SettingsIcon from '@mui/icons-material/Settings'
 import GavelIcon from '@mui/icons-material/Gavel'
 import GroupsIcon from '@mui/icons-material/Groups'
+import GroupAddIcon from '@mui/icons-material/GroupAdd'
 import InsightsIcon from '@mui/icons-material/Insights'
 import { EDTE_DASHBOARD_ROLES } from '@/components/edteDashboard/dashboardLabels'
 import { ADMIN_ROLES, getRole, USER_MANAGEMENT_ROLES } from '@/services/session'
 import { CONFLICT_ALLOWED_ROLES } from '@/components/conflicts/ConflictRoleGuard'
-import { EDTE_VIEWER_ROLES } from '@/components/edte/edteLabels'
+import { EDTE_MANAGER_ROLES, EDTE_VIEWER_ROLES } from '@/components/edte/edteLabels'
 import AssignmentIndOutlined from '@mui/icons-material/AssignmentIndOutlined'
 import { EDTE_REFERRALS_ROLES } from '@/components/edteReferrals/referralLabels'
 
@@ -56,6 +57,12 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Intensificación', icon: <EventRepeatIcon />, path: '/intensification-calendar' },
   { label: 'Promoción', icon: <TrendingUpIcon />, path: '/promotion', roles: ADMIN_ROLES },
   { label: 'Modelo organizativo', icon: <SettingsIcon />, path: '/organizational-model' },
+  {
+    label: 'Integrantes EDTE',
+    icon: <GroupAddIcon />,
+    path: '/edte-members',
+    roles: EDTE_MANAGER_ROLES,
+  },
   {
     label: 'Derivados al EDTE',
     icon: <AssignmentIndOutlined />,

@@ -14,6 +14,7 @@ import CoursesPage from '@/pages/CoursesPage'
 import StudentProfilePage from '@/pages/StudentProfilePage'
 import StudentTrajectoryPage from '@/pages/StudentTrajectoryPage'
 import IntensificationCalendarPage from '@/pages/IntensificationCalendarPage'
+import EdteMembersPage from '@/pages/EdteMembersPage'
 import OrganizationalModelPage from '@/pages/OrganizationalModelPage'
 import InterventionFormPage from '@/pages/InterventionFormPage'
 import EdteMeetingsPage from '@/pages/EdteMeetingsPage'
@@ -66,6 +67,11 @@ const AppRouter = () => {
         {/* Dashboard del EDTE (CRM-077): EOE y dirección */}
         <Route element={<ProtectedRoute roles={EDTE_DASHBOARD_ROLES} />}>
           <Route path="/edte-dashboard" element={<EdteDashboardPage />} />
+        </Route>
+
+        {/* Integrantes del EDTE (CRM-072): administración, dirección y EOE */}
+        <Route element={<ProtectedRoute roles={EDTE_MANAGER_ROLES} />}>
+          <Route path="/edte-members" element={<EdteMembersPage />} />
         </Route>
 
         {/* Promoción: administración y dirección */}
