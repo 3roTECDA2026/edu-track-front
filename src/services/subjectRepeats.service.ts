@@ -39,6 +39,9 @@ export interface RepeatOption {
 
 export interface RepeatOptions {
   activeCycle: { id: string; year: number }
+  // Materias del alumno en el ciclo activo (cursadas + recursadas) y el máximo (12, E3-RF-13)
+  subjectCount: number
+  maxSubjects: number
   options: RepeatOption[]
 }
 

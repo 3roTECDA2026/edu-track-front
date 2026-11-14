@@ -65,7 +65,7 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: 'attendance', label: 'Asistencia' },
   { key: 'grades', label: 'Calificaciones' },
   { key: 'pending', label: 'Materias pendientes' },
-  // Materias que recursa (CRM-082)
+  // Materias a recursar (CRM-082, CRM-083)
   { key: 'repeats', label: 'Recursados' },
   { key: 'observations', label: 'Observaciones' },
   { key: 'interventions', label: 'Intervenciones' },
@@ -115,7 +115,12 @@ const StudentProfilePage = () => {
   const allTabs = fortePlan.data ? [...TABS, FORTE_TAB] : TABS
   // La pestaña de materias pendientes solo se muestra a los roles que el back deja consultarla
   const canSeePending = PENDING_KNOWLEDGE_ROLES.includes(getRole() ?? '')
-  const tabs = canSeePending ? allTabs : allTabs.filter((tab) => tab.key !== 'pending')
+  // Los recursados solo los ven y gestionan Gestión Escolar, EOE/Directivos y Administración
+  // (CRM-083)
+  const canSeeRepeats = canManageSubjectRepeats()
+  const tabs = allTabs.filter(
+    (tab) => (tab.key !== 'pending' || canSeePending) && (tab.key !== 'repeats' || canSeeRepeats)
+  )
   const canManageForte = canManageTrajectories()
   // Los reportes los cargan quien gestiona o el responsable del plan (igual que el back)
   const canLoadForteReports =
@@ -312,7 +317,7 @@ const StudentProfilePage = () => {
                 key={student.id}
                 studentId={student.id}
                 studentName={`${student.lastName}, ${student.firstName}`}
-                canManage={canManageSubjectRepeats()}
+                canManage={canSeeRepeats}
               />
             )}
             {activeTab === 'observations' && (
