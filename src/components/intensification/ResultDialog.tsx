@@ -13,6 +13,11 @@ import {
   Typography,
 } from '@mui/material'
 
+import { AttachmentPicker } from '@/components/common/AttachmentPicker'
+import {
+  getAttachmentErrorMessage,
+  validateAttachmentFiles,
+} from '@/components/common/attachmentRules'
 import { RESULT_LABELS } from '@/components/intensification/intensificationLabels'
 import {
   intensificationService,
@@ -47,6 +52,11 @@ export const ResultDialog = ({ open, assignment, onClose, onSaved }: ResultDialo
   const [pendingKnowledge, setPendingKnowledge] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Evidencias (CRM-060): se suben después de guardar el resultado, porque van al intento
+  const [files, setFiles] = useState<File[]>([])
+  // Si el resultado se guardó pero falló la subida, al reintentar solo se suben los archivos:
+  // volver a mandar el resultado daría error (con AA ya no se cambia)
+  const [resultSaved, setResultSaved] = useState(false)
 
   // Al abrir, se cargan los datos que ya tenga (por ejemplo, un CCA anterior)
   useEffect(() => {
@@ -57,6 +67,8 @@ export const ResultDialog = ({ open, assignment, onClose, onSaved }: ResultDialo
     setKnowledgeAtClose(assignment.knowledgeAtClose ?? '')
     setPendingKnowledge(assignment.pendingKnowledge ?? '')
     setError(null)
+    setFiles([])
+    setResultSaved(false)
   }, [open, assignment])
 
   const approved = resultCode === 'AA'
@@ -82,35 +94,67 @@ export const ResultDialog = ({ open, assignment, onClose, onSaved }: ResultDialo
       ? 'La fecha de evaluación no puede ser futura.'
       : null
 
-  const canSave = Boolean(resultCode) && !scoreError && !dateError && !saving
+  const filesError = validateAttachmentFiles(files).join(' ') || undefined
+  const canSave =
+    (resultSaved || (Boolean(resultCode) && !scoreError && !dateError)) && !filesError && !saving
+
+  const resultMessage = approved
+    ? 'Resultado guardado: la materia quedó acreditada.'
+    : 'Resultado guardado: la materia sigue en intensificación.'
+
+  // Si el resultado ya quedó guardado, la lista de asignaciones tiene que actualizarse igual
+  function handleClose() {
+    if (saving) return
+    if (resultSaved) onSaved(`${resultMessage} Las evidencias no se subieron.`)
+    onClose()
+  }
 
   async function handleSave() {
     if (!assignment || !resultCode) return
     setSaving(true)
     setError(null)
     try {
-      await intensificationService.registerResult(assignment.id, {
-        resultCode,
-        score: scoreValue,
-        evaluationDate,
-        knowledgeAtClose: knowledgeAtClose.trim() || null,
-        ...(!approved && { pendingKnowledge: pendingKnowledge.trim() || null }),
-      })
-      onSaved(
-        approved
-          ? 'Resultado guardado: la materia quedó acreditada.'
-          : 'Resultado guardado: la materia sigue en intensificación.'
-      )
-      onClose()
+      if (!resultSaved) {
+        await intensificationService.registerResult(assignment.id, {
+          resultCode,
+          score: scoreValue,
+          evaluationDate,
+          knowledgeAtClose: knowledgeAtClose.trim() || null,
+          ...(!approved && { pendingKnowledge: pendingKnowledge.trim() || null }),
+        })
+        setResultSaved(true)
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'No se pudo guardar el resultado.')
-    } finally {
       setSaving(false)
+      return
     }
+
+    if (files.length > 0) {
+      try {
+        await intensificationService.uploadAttachments(assignment.id, files)
+      } catch (err: unknown) {
+        setError(
+          `El resultado se guardó, pero no se pudieron subir las evidencias. ${getAttachmentErrorMessage(err, '')}`.trim()
+        )
+        setSaving(false)
+        return
+      }
+    }
+
+    setSaving(false)
+    const evidence =
+      files.length === 0
+        ? ''
+        : files.length === 1
+          ? ' Se adjuntó 1 evidencia.'
+          : ` Se adjuntaron ${files.length} evidencias.`
+    onSaved(`${resultMessage}${evidence}`)
+    onClose()
   }
 
   return (
-    <Dialog open={open} onClose={() => !saving && onClose()} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle sx={{ fontWeight: 700 }}>
         Resultado · {assignment?.student.lastName}, {assignment?.student.firstName}
       </DialogTitle>
@@ -126,6 +170,7 @@ export const ResultDialog = ({ open, assignment, onClose, onSaved }: ResultDialo
             size="small"
             value={resultCode}
             onChange={(event) => setResultCode(event.target.value as ResultCode)}
+            disabled={resultSaved}
           >
             {(Object.keys(RESULT_LABELS) as ResultCode[]).map((code) => (
               <MenuItem key={code} value={code}>
@@ -140,7 +185,7 @@ export const ResultDialog = ({ open, assignment, onClose, onSaved }: ResultDialo
               size="small"
               value={score}
               onChange={(event) => setScore(event.target.value)}
-              disabled={!resultCode}
+              disabled={!resultCode || resultSaved}
               error={Boolean(scoreError)}
               helperText={scoreError ?? ' '}
               slotProps={{ htmlInput: { inputMode: 'numeric', maxLength: 2 } }}
@@ -154,6 +199,7 @@ export const ResultDialog = ({ open, assignment, onClose, onSaved }: ResultDialo
               size="small"
               value={evaluationDate}
               onChange={(event) => setEvaluationDate(event.target.value)}
+              disabled={resultSaved}
               error={Boolean(dateError)}
               helperText={dateError ?? ' '}
               slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: today } }}
@@ -168,6 +214,7 @@ export const ResultDialog = ({ open, assignment, onClose, onSaved }: ResultDialo
             minRows={2}
             value={knowledgeAtClose}
             onChange={(event) => setKnowledgeAtClose(event.target.value.slice(0, 2000))}
+            disabled={resultSaved}
           />
 
           {/* Con CCA o CSA, la materia sigue: se actualizan los saberes que le quedan */}
@@ -179,10 +226,24 @@ export const ResultDialog = ({ open, assignment, onClose, onSaved }: ResultDialo
               minRows={2}
               value={pendingKnowledge}
               onChange={(event) => setPendingKnowledge(event.target.value.slice(0, 2000))}
+              disabled={resultSaved}
             />
           )}
 
-          {approved && (
+          {/* Evidencias del intento: trabajos prácticos, evaluaciones (CRM-060) */}
+          <Stack spacing={0.5}>
+            <Typography variant="subtitle2">Evidencias (opcional)</Typography>
+            <AttachmentPicker
+              files={files}
+              onChange={setFiles}
+              disabled={saving}
+              error={filesError}
+              checkPdfs
+              allowMergePhotos
+            />
+          </Stack>
+
+          {approved && !resultSaved && (
             <Alert severity="info">
               La materia queda acreditada y sale de las materias pendientes. Después de guardar, el
               resultado no se puede cambiar.
@@ -192,8 +253,8 @@ export const ResultDialog = ({ open, assignment, onClose, onSaved }: ResultDialo
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose} color="inherit" disabled={saving}>
-          Cancelar
+        <Button onClick={handleClose} color="inherit" disabled={saving}>
+          {resultSaved ? 'Cerrar' : 'Cancelar'}
         </Button>
         <Button
           variant="contained"
@@ -201,7 +262,7 @@ export const ResultDialog = ({ open, assignment, onClose, onSaved }: ResultDialo
           onClick={() => void handleSave()}
           startIcon={saving ? <CircularProgress size={16} color="inherit" /> : undefined}
         >
-          {saving ? 'Guardando...' : 'Guardar resultado'}
+          {saving ? 'Guardando...' : resultSaved ? 'Reintentar subida' : 'Guardar resultado'}
         </Button>
       </DialogActions>
     </Dialog>

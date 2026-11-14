@@ -1,4 +1,4 @@
-import { fetchApi } from '@/services/api'
+import { fetchApi, fetchApiBlob } from '@/services/api'
 import type { IntensificationPeriod } from '@/services/intensificationSchedule.service'
 
 // Los textos de los modelos, períodos y resultados están en
@@ -60,6 +60,21 @@ export interface RegisterResultInput {
   evaluationDate?: string // Fecha del examen (AAAA-MM-DD); si no viene, el back usa la de carga
 }
 
+// Evidencia adjunta a un intento (CRM-060). El back responde el objeto directo, sin { data }
+export interface IntensificationAttachment {
+  id: string
+  intensificationId: string
+  originalName: string
+  mimeType: string
+  size: number // en bytes
+  createdAt: string
+  uploadedBy: { id: string; firstName: string; lastName: string }
+}
+
+// Quién puede quitar una evidencia: por ahora solo dirección (igual que ATTACHMENT_DELETE_ROLES
+// en el back, que es quien lo valida)
+export const ATTACHMENT_DELETE_ROLES = ['SCHOOL_MANAGEMENT']
+
 const BASE = '/api/intensifications'
 
 export const intensificationService = {
@@ -105,4 +120,34 @@ export const intensificationService = {
       method: 'PATCH',
       body: JSON.stringify(data),
     }),
+
+  // ---- Evidencias del intento (CRM-060) ----
+
+  // Van en un FormData con el campo "files", el que espera el back (multer)
+  uploadAttachments: (id: string, files: File[]) => {
+    const formData = new FormData()
+    files.forEach((file) => formData.append('files', file))
+    return fetchApi<IntensificationAttachment[]>(`${BASE}/${encodeURIComponent(id)}/attachments`, {
+      method: 'POST',
+      body: formData,
+    })
+  },
+
+  listAttachments: (id: string, signal?: AbortSignal) =>
+    fetchApi<IntensificationAttachment[]>(`${BASE}/${encodeURIComponent(id)}/attachments`, {
+      signal,
+    }),
+
+  // El archivo, pedido con el token (un <a href> no lo manda)
+  downloadAttachment: (id: string, attachmentId: string) =>
+    fetchApiBlob(
+      `${BASE}/${encodeURIComponent(id)}/attachments/${encodeURIComponent(attachmentId)}`
+    ),
+
+  // Baja lógica: queda registrado quién la quitó (solo dirección)
+  deleteAttachment: (id: string, attachmentId: string) =>
+    fetchApi<{ deleted: boolean }>(
+      `${BASE}/${encodeURIComponent(id)}/attachments/${encodeURIComponent(attachmentId)}`,
+      { method: 'DELETE' }
+    ),
 }

@@ -64,6 +64,8 @@ export interface PendingSubjectAttempt {
   // Null mientras el docente no cargó el resultado
   resultCode: ResultCode | null
   score: number | null
+  // Evidencias vigentes del intento (CRM-060)
+  attachmentsCount: number
 }
 
 // Los intentos de la MPAA, del más viejo al más nuevo
