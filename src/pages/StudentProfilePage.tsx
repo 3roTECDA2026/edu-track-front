@@ -31,6 +31,7 @@ import { ObservationsTab } from '@/components/studentProfile/ObservationsTab'
 import { RiteTab } from '@/components/studentProfile/RiteTab'
 import { PendingSubjectsTab } from '@/components/studentProfile/PendingSubjectsTab'
 import { getRole, canManageTrajectories } from '@/services/session'
+import AssignmentIcon from '@mui/icons-material/Assignment'
 import { InterventionsTab } from '@/components/studentProfile/InterventionsTab'
 import { FortePlanTab } from '@/components/studentProfile/FortePlanTab'
 import { FortePlanDialog } from '@/components/studentProfile/FortePlanDialog'
@@ -376,11 +377,22 @@ const StudentProfilePage = () => {
           ]}
           action={
             student ? (
-              <AddButton
-                label="Registrar intervención"
-                icon={<NoteAddIcon />}
-                onClick={() => navigate(`/interventions/new?studentId=${student.id}`)}
-              />
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                {canManageTrajectories() && (
+                  <Button
+                    variant="outlined"
+                    startIcon={<AssignmentIcon />}
+                    onClick={() => navigate(`/pates/new?studentId=${student.id}`)}
+                  >
+                    Crear PATE
+                  </Button>
+                )}
+                <AddButton
+                  label="Registrar intervención"
+                  icon={<NoteAddIcon />}
+                  onClick={() => navigate(`/interventions/new?studentId=${student.id}`)}
+                />
+              </Box>
             ) : undefined
           }
         />
