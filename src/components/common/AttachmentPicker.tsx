@@ -36,6 +36,8 @@ interface AttachmentPickerProps {
   checkPdfs?: boolean
   // Ofrece unir dos o más fotos en un solo PDF, para trabajos en papel fotografiados (CRM-060)
   allowMergePhotos?: boolean
+  // Avisa mientras revisa un PDF o une fotos: el formulario no debería guardar en ese momento
+  onBusyChange?: (busy: boolean) => void
 }
 
 const fileKey = (file: File) => `${file.name}-${file.size}`
@@ -53,6 +55,7 @@ export const AttachmentPicker = ({
   error,
   checkPdfs = false,
   allowMergePhotos = false,
+  onBusyChange,
 }: AttachmentPickerProps) => {
   const inputRef = useRef<HTMLInputElement>(null)
   const [pdfPages, setPdfPages] = useState<Record<string, number>>({})
@@ -64,7 +67,11 @@ export const AttachmentPicker = ({
   const [mergeError, setMergeError] = useState<string | null>(null)
 
   const photos = files.filter((file) => isImageFile(file.name))
-  const busy = disabled || checking || merging
+  const working = checking || merging
+  const busy = disabled || working
+  useEffect(() => {
+    onBusyChange?.(working)
+  }, [working, onBusyChange])
 
   // Link temporal para mostrar cada imagen antes de subirla. Se libera al cambiar la lista
   // o al salir de la pantalla, para no dejar memoria ocupada.

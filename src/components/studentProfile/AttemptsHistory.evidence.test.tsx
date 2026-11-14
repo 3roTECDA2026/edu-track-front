@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { AttemptsHistory } from '@/components/studentProfile/AttemptsHistory'
@@ -72,4 +72,23 @@ describe('evidencias en el historial de intentos (CRM-060)', () => {
       expect(screen.getByText(/queda registrado quién lo quitó/i)).toBeTruthy()
     }
   )
+
+  it('al quitar una evidencia vuelve a pedir el historial, para actualizar el contador', async () => {
+    const fetchMock = renderHistory('SCHOOL_MANAGEMENT')
+    const attemptsCalls = () =>
+      fetchMock.mock.calls.filter(([url]) => String(url).includes('/attempts')).length
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver evidencias (2)' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Quitar evaluacion.pdf' }))
+    expect(attemptsCalls()).toBe(1)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Quitar' }))
+
+    await waitFor(() => expect(attemptsCalls()).toBe(2))
+    // stubApi tipa un solo argumento: se leen también las opciones del pedido
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit | undefined]>
+    expect(
+      calls.some(([url, init]) => url.includes('/attachments/a1') && init?.method === 'DELETE')
+    ).toBe(true)
+  })
 })

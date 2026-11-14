@@ -57,6 +57,8 @@ export const ResultDialog = ({ open, assignment, onClose, onSaved }: ResultDialo
   // Si el resultado se guardó pero falló la subida, al reintentar solo se suben los archivos:
   // volver a mandar el resultado daría error (con AA ya no se cambia)
   const [resultSaved, setResultSaved] = useState(false)
+  // Mientras se revisa un PDF o se unen fotos, no se guarda
+  const [pickerBusy, setPickerBusy] = useState(false)
 
   // Al abrir, se cargan los datos que ya tenga (por ejemplo, un CCA anterior)
   useEffect(() => {
@@ -96,7 +98,10 @@ export const ResultDialog = ({ open, assignment, onClose, onSaved }: ResultDialo
 
   const filesError = validateAttachmentFiles(files).join(' ') || undefined
   const canSave =
-    (resultSaved || (Boolean(resultCode) && !scoreError && !dateError)) && !filesError && !saving
+    (resultSaved || (Boolean(resultCode) && !scoreError && !dateError)) &&
+    !filesError &&
+    !pickerBusy &&
+    !saving
 
   const resultMessage = approved
     ? 'Resultado guardado: la materia quedó acreditada.'
@@ -240,6 +245,7 @@ export const ResultDialog = ({ open, assignment, onClose, onSaved }: ResultDialo
               error={filesError}
               checkPdfs
               allowMergePhotos
+              onBusyChange={setPickerBusy}
             />
           </Stack>
 

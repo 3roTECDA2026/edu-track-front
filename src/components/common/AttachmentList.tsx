@@ -29,7 +29,7 @@ import {
 } from '@/components/common/attachmentRules'
 import { useNotify } from '@/components/layout/NotificationProvider'
 import { useLazyResource } from '@/hooks/useLazyResource'
-import { openBlob, saveBlob } from '@/utils/saveBlob'
+import { openBlankTab, openBlob, saveBlob } from '@/utils/saveBlob'
 
 // Lo mínimo que se necesita de un adjunto para listarlo
 export interface AttachmentItem {
@@ -79,11 +79,17 @@ export function AttachmentList<T extends AttachmentItem>({
 
   const attachments = useLazyResource(open ? resourceKey : null, load)
 
-  const withFile = async (attachment: T, action: (blob: Blob) => void, fallback: string) => {
+  const withFile = async (
+    attachment: T,
+    action: (blob: Blob) => void,
+    fallback: string,
+    onError?: () => void
+  ) => {
     setBusyId(attachment.id)
     try {
       action(await download(attachment))
     } catch (err: unknown) {
+      onError?.()
       notify.error(getAttachmentErrorMessage(err, fallback))
     } finally {
       setBusyId(null)
@@ -185,7 +191,16 @@ export function AttachmentList<T extends AttachmentItem>({
                     <IconButton
                       size="small"
                       aria-label={`Ver ${attachment.originalName}`}
-                      onClick={() => withFile(attachment, openBlob, 'No se pudo abrir el archivo.')}
+                      onClick={() => {
+                        // La pestaña se abre ya, en el clic; el archivo se carga cuando llega
+                        const tab = openBlankTab()
+                        void withFile(
+                          attachment,
+                          (blob) => openBlob(blob, tab, attachment.originalName),
+                          'No se pudo abrir el archivo.',
+                          () => tab?.close()
+                        )
+                      }}
                       disabled={busy}
                     >
                       <OpenInNewIcon fontSize="small" />

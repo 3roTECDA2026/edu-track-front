@@ -139,6 +139,9 @@ export const AttemptsHistory = ({ pendingSubjectId }: AttemptsHistoryProps) => {
                         canDeleteEvidence
                           ? async (file) => {
                               await intensificationService.deleteAttachment(attempt.id, file.id)
+                              // Se recargan los intentos para actualizar el contador (N). Mientras
+                              // tanto se siguen mostrando los datos anteriores, sin parpadeo
+                              attempts.reload()
                             }
                           : undefined
                       }
