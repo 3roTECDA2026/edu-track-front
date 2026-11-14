@@ -56,7 +56,7 @@ interface AttemptsHistoryProps {
 // Los intentos se piden la primera vez que se abre el bloque.
 export const AttemptsHistory = ({ pendingSubjectId }: AttemptsHistoryProps) => {
   const [open, setOpen] = useState(false)
-  // Quitar una evidencia: solo dirección por ahora (el back lo valida igual)
+  // Quitar una evidencia: dirección y administración (el back lo valida igual)
   const role = getRole()
   const canDeleteEvidence = role !== undefined && ATTACHMENT_DELETE_ROLES.includes(role)
   const [requested, setRequested] = useState(false)

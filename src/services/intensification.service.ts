@@ -71,9 +71,9 @@ export interface IntensificationAttachment {
   uploadedBy: { id: string; firstName: string; lastName: string }
 }
 
-// Quién puede quitar una evidencia: por ahora solo dirección (igual que ATTACHMENT_DELETE_ROLES
+// Quién puede quitar una evidencia: dirección y administración (igual que ATTACHMENT_DELETE_ROLES
 // en el back, que es quien lo valida)
-export const ATTACHMENT_DELETE_ROLES = ['SCHOOL_MANAGEMENT']
+export const ATTACHMENT_DELETE_ROLES = ['SCHOOL_MANAGEMENT', 'ADMINISTRATOR']
 
 const BASE = '/api/intensifications'
 
@@ -144,7 +144,7 @@ export const intensificationService = {
       `${BASE}/${encodeURIComponent(id)}/attachments/${encodeURIComponent(attachmentId)}`
     ),
 
-  // Baja lógica: queda registrado quién la quitó (solo dirección)
+  // Baja lógica: queda registrado quién la quitó (dirección y administración)
   deleteAttachment: (id: string, attachmentId: string) =>
     fetchApi<{ deleted: boolean }>(
       `${BASE}/${encodeURIComponent(id)}/attachments/${encodeURIComponent(attachmentId)}`,

@@ -60,13 +60,16 @@ describe('evidencias en el historial de intentos (CRM-060)', () => {
     expect(screen.queryByRole('button', { name: 'Quitar evaluacion.pdf' })).toBeNull()
   })
 
-  it('dirección puede quitar una evidencia, con confirmación', async () => {
-    renderHistory('SCHOOL_MANAGEMENT')
+  it.each(['SCHOOL_MANAGEMENT', 'ADMINISTRATOR'])(
+    '%s puede quitar una evidencia, con confirmación',
+    async (role) => {
+      renderHistory(role)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Ver evidencias (2)' }))
-    fireEvent.click(await screen.findByRole('button', { name: 'Quitar evaluacion.pdf' }))
+      fireEvent.click(await screen.findByRole('button', { name: 'Ver evidencias (2)' }))
+      fireEvent.click(await screen.findByRole('button', { name: 'Quitar evaluacion.pdf' }))
 
-    expect(await screen.findByText('¿Quitar "evaluacion.pdf"?')).toBeTruthy()
-    expect(screen.getByText(/queda registrado quién lo quitó/i)).toBeTruthy()
-  })
+      expect(await screen.findByText('¿Quitar "evaluacion.pdf"?')).toBeTruthy()
+      expect(screen.getByText(/queda registrado quién lo quitó/i)).toBeTruthy()
+    }
+  )
 })
