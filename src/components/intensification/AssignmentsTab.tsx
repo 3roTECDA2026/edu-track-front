@@ -25,6 +25,7 @@ import {
   Typography,
 } from '@mui/material'
 import AddIcon from '@mui/icons-material/Add'
+import AttachFileIcon from '@mui/icons-material/AttachFile'
 import AssignmentTurnedInOutlinedIcon from '@mui/icons-material/AssignmentTurnedInOutlined'
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined'
 
@@ -33,6 +34,7 @@ import { AddButton } from '@/components/common/AddButton'
 import { EditButton } from '@/components/common/EditButton'
 import { StandardTablePagination } from '@/components/common/StandardTablePagination'
 import AssignmentDialog from '@/components/intensification/AssignmentDialog'
+import EvidenceDialog from '@/components/intensification/EvidenceDialog'
 import ResultDialog from '@/components/intensification/ResultDialog'
 import {
   MODEL_SHORT_LABELS,
@@ -90,6 +92,7 @@ type DialogState =
   | { mode: 'assign' }
   | { mode: 'edit'; assignment: IntensificationAssignment }
   | { mode: 'result'; assignment: IntensificationAssignment }
+  | { mode: 'evidence'; assignment: IntensificationAssignment }
 
 // Asignación de alumnos a los períodos (E3-RF-05, 06 y 07) y carga de resultados (E3-RF-08)
 export const AssignmentsTab = ({
@@ -163,8 +166,13 @@ export const AssignmentsTab = ({
   // Cargar resultado: la dirección, la administración y la preceptoría, o el docente responsable de esa fila.
   // Con AA la materia ya quedó acreditada y el resultado no se cambia.
   const canLoadResult = (item: IntensificationAssignment) =>
-  item.resultCode !== 'AA' &&
-  (canEdit || isPreceptor || (isTeacher && item.responsibleTeacher?.id === user.userId))
+    item.resultCode !== 'AA' && canUploadEvidence(item)
+
+  // Adjuntar evidencias (CRM-060): los mismos que cargan el resultado, pero también con AA
+  // (la evidencia suele llegar después) y sin tocar el resultado. Igual que en el back.
+  function canUploadEvidence(item: IntensificationAssignment) {
+    return canEdit || isPreceptor || (isTeacher && item.responsibleTeacher?.id === user.userId)
+  }
 
   function refresh(message: string) {
     onMessage(message, 'success')
@@ -328,6 +336,7 @@ export const AssignmentsTab = ({
               ) : (
                 pageItems.map((item) => {
                   const loadResult = canLoadResult(item)
+                  const uploadEvidence = canUploadEvidence(item)
                   // Editar y quitar: dirección o administración, y solo sin resultado
                   const manage = canEdit && !item.resultCode
                   return (
@@ -363,7 +372,7 @@ export const AssignmentsTab = ({
                       </TableCell>
                       {showActions && (
                         <TableCell align="right">
-                          {!loadResult && !manage ? (
+                          {!loadResult && !uploadEvidence && !manage ? (
                             <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                               —
                             </Typography>
@@ -380,6 +389,19 @@ export const AssignmentsTab = ({
                                     onClick={() => setDialog({ mode: 'result', assignment: item })}
                                   >
                                     <AssignmentTurnedInOutlinedIcon fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              )}
+                              {uploadEvidence && (
+                                <Tooltip title="Adjuntar evidencias" arrow>
+                                  <IconButton
+                                    size="small"
+                                    aria-label={`Adjuntar evidencias de ${studentName(item)}`}
+                                    onClick={() =>
+                                      setDialog({ mode: 'evidence', assignment: item })
+                                    }
+                                  >
+                                    <AttachFileIcon fontSize="small" />
                                   </IconButton>
                                 </Tooltip>
                               )}
@@ -441,6 +463,13 @@ export const AssignmentsTab = ({
       <ResultDialog
         open={dialog?.mode === 'result'}
         assignment={dialog?.mode === 'result' ? dialog.assignment : null}
+        onClose={() => setDialog(null)}
+        onSaved={refresh}
+      />
+
+      <EvidenceDialog
+        open={dialog?.mode === 'evidence'}
+        assignment={dialog?.mode === 'evidence' ? dialog.assignment : null}
         onClose={() => setDialog(null)}
         onSaved={refresh}
       />

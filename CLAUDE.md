@@ -29,7 +29,9 @@ formulario con `?studentId=`, que suma a ese alumno a los tratados (`newMeetingP
 comunes son `AttachmentPicker` y `AttachmentList` (`components/common/`, ver
 `docs/standard-mui.md`). Las evidencias se suben desde el diálogo del resultado (`ResultDialog`):
 primero el resultado y después los archivos; si falla la subida, "Reintentar subida" no vuelve a
-mandar el resultado. Se ven en el historial de intentos de la ficha. Quitarlas: dirección y
+mandar el resultado. También hay una acción aparte, "Adjuntar evidencias" (`EvidenceDialog`), que
+sube archivos sin tocar el resultado: sirve con AA (que no se vuelve a abrir), antes de cargarlo o
+para recuperar una subida que falló. Se ven en el historial de intentos de la ficha. Quitarlas: dirección y
 administración (`ATTACHMENT_DELETE_ROLES`, el back lo valida igual).
 
 ## 2. Stack
