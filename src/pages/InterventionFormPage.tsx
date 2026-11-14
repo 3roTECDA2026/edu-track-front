@@ -19,11 +19,11 @@ import { PageContainer } from '@/components/common/PageContainer'
 import { PageHeader } from '@/components/common/PageHeader'
 import { ContentCard } from '@/components/common/ContentCard'
 import { AddButton } from '@/components/common/AddButton'
-import { AttachmentPicker } from '@/components/interventions/AttachmentPicker'
+import { AttachmentPicker } from '@/components/common/AttachmentPicker'
 import {
   getAttachmentErrorMessage,
   validateAttachmentFiles,
-} from '@/components/interventions/attachmentRules'
+} from '@/components/common/attachmentRules'
 import { useClassSections } from '@/hooks/useClassSections'
 import { useStudents } from '@/hooks/useStudents'
 import { useDebounce } from '@/hooks/useDebounce'
