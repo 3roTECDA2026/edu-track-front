@@ -5,7 +5,7 @@ import {
   isImageFile,
   MAX_ATTACHMENT_SIZE_BYTES,
   validateAttachmentFiles,
-} from '@/components/interventions/attachmentRules'
+} from '@/components/common/attachmentRules'
 
 // Crea un File de prueba con el tamaño indicado (sin ocupar esa memoria de verdad).
 function fakeFile(name: string, size = 100): File {

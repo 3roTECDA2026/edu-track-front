@@ -11,3 +11,12 @@ export function saveBlob(blob: Blob, fileName: string): void {
   // Se libera después de un momento, para que el navegador llegue a empezar la descarga
   window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
+
+// Abre un archivo en memoria (PDF o imagen) en una pestaña nueva, con el visor del navegador.
+// Igual que saveBlob, para archivos que se pidieron con token.
+export function openBlob(blob: Blob): void {
+  const url = URL.createObjectURL(blob)
+  window.open(url, '_blank', 'noopener')
+  // Se libera después de un rato, cuando la pestaña nueva ya cargó el archivo
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000)
+}

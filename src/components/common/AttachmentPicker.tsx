@@ -10,7 +10,7 @@ import {
   ATTACHMENT_RULES_TEXT,
   formatFileSize,
   isImageFile,
-} from '@/components/interventions/attachmentRules'
+} from '@/components/common/attachmentRules'
 
 interface AttachmentPickerProps {
   files: File[]
