@@ -20,8 +20,10 @@ const repeat = (overrides: Partial<SubjectRepeat> = {}): SubjectRepeat => ({
   ...overrides,
 })
 
-const options: RepeatOptions = {
+const options = (subjectCount = 10): RepeatOptions => ({
   activeCycle: { id: 'y2026', year: 2026 },
+  subjectCount,
+  maxSubjects: 12,
   options: [
     {
       pendingSubjectId: 'p-geo',
@@ -45,10 +47,10 @@ const options: RepeatOptions = {
       sections: [],
     },
   ],
-}
+})
 
 // Responde como el back ({ success, data }) y guarda cada pedido para revisarlo
-function stubBack({ repeats = [] as SubjectRepeat[], failDelete = false } = {}) {
+function stubBack({ repeats = [] as SubjectRepeat[], failDelete = false, subjectCount = 10 } = {}) {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     const method = init?.method ?? 'GET'
     if (method === 'DELETE' && failDelete) {
@@ -58,7 +60,7 @@ function stubBack({ repeats = [] as SubjectRepeat[], failDelete = false } = {}) 
         json: async () => ({ error: 'El recursado ya tiene notas cargadas: no se puede quitar' }),
       }
     }
-    const data = url.includes('/options') ? options : method === 'GET' ? repeats : {}
+    const data = url.includes('/options') ? options(subjectCount) : method === 'GET' ? repeats : {}
     return { ok: true, status: 200, json: async () => ({ success: true, data, message: '' }) }
   })
   vi.stubGlobal('fetch', fetchMock)
@@ -87,12 +89,40 @@ describe('pestaña de recursados (CRM-082)', () => {
     expect(await screen.findByText('Sin recursados')).toBeTruthy()
   })
 
-  it('lista la materia, el ciclo, la sección con su turno y la MPAA de origen', async () => {
+  it('lista materia, año, sección, turno, ciclo, origen y la MPAA (CRM-083)', async () => {
     stubBack({ repeats: [repeat()] })
     renderTab()
-    expect(await screen.findByText('Geografía')).toBeTruthy()
-    expect(screen.getByText('2° B · Tarde')).toBeTruthy()
-    expect(screen.getByText('Pendiente de 2025')).toBeTruthy()
+    expect(await screen.findByText('Materias a recursar')).toBeTruthy()
+    const row = (await screen.findByText('Geografía')).closest('tr') as HTMLElement
+    expect(within(row).getByText('2°')).toBeTruthy()
+    expect(within(row).getByText('2° B')).toBeTruthy()
+    expect(within(row).getByText('Tarde')).toBeTruthy()
+    expect(within(row).getByText('2026')).toBeTruthy()
+    expect(within(row).getByText('Manual')).toBeTruthy()
+    expect(within(row).getByText('Pendiente de 2025')).toBeTruthy()
+  })
+
+  it('el recursado que creó un PATE figura con origen PATE (CRM-083)', async () => {
+    stubBack({ repeats: [repeat({ pateId: 'pate1' })] })
+    renderTab()
+    const row = (await screen.findByText('Geografía')).closest('tr') as HTMLElement
+    expect(within(row).getByText('PATE')).toBeTruthy()
+  })
+
+  it('muestra el contador de materias del ciclo (CRM-083)', async () => {
+    stubBack({ subjectCount: 10 })
+    renderTab()
+    expect(await screen.findByText('Materias del ciclo: 10/12')).toBeTruthy()
+    const button = screen.getByRole('button', { name: /asignar recursado/i })
+    expect((button as HTMLButtonElement).disabled).toBe(false)
+  })
+
+  it('con 12 materias en el ciclo no deja asignar otro recursado (CRM-083)', async () => {
+    stubBack({ subjectCount: 12 })
+    renderTab()
+    expect(await screen.findByText('Materias del ciclo: 12/12')).toBeTruthy()
+    const button = screen.getByRole('button', { name: /asignar recursado/i })
+    expect((button as HTMLButtonElement).disabled).toBe(true)
   })
 
   it('quien solo ve no tiene el botón de asignar ni las acciones', async () => {
@@ -100,6 +130,7 @@ describe('pestaña de recursados (CRM-082)', () => {
     renderTab(false)
     await screen.findByText('Geografía')
     expect(screen.queryByRole('button', { name: /asignar recursado/i })).toBeNull()
+    expect(screen.queryByText(/materias del ciclo/i)).toBeNull()
     expect(screen.queryByRole('button', { name: /quitar/i })).toBeNull()
   })
 
@@ -170,6 +201,23 @@ describe('diálogo de alta del recursado (CRM-082)', () => {
     expect(within(blocked).getByText(/intensificación sin resultado/)).toBeTruthy()
   })
 
+  it('el año sale de la materia y las secciones se filtran por turno (CRM-083)', async () => {
+    stubBack()
+    renderTab()
+    const dialog = await openDialog()
+    await within(dialog).findByText(/ciclo lectivo 2026/i)
+
+    fireEvent.mouseDown(within(dialog).getByRole('combobox', { name: /materia pendiente/i }))
+    fireEvent.click(await screen.findByRole('option', { name: /geografía/i }))
+    expect((within(dialog).getByLabelText('Año') as HTMLInputElement).value).toBe('2.º año')
+
+    fireEvent.mouseDown(within(dialog).getByRole('combobox', { name: /^turno/i }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Mañana' }))
+    fireEvent.mouseDown(within(dialog).getByRole('combobox', { name: /sección donde recursa/i }))
+    expect(await screen.findByRole('option', { name: '2° A' })).toBeTruthy()
+    expect(screen.queryByRole('option', { name: '2° B' })).toBeNull()
+  })
+
   it('asigna la MPAA en la sección elegida, aunque sea de otro turno', async () => {
     const fetchMock = stubBack()
     renderTab()
@@ -178,8 +226,10 @@ describe('diálogo de alta del recursado (CRM-082)', () => {
 
     fireEvent.mouseDown(within(dialog).getByRole('combobox', { name: /materia pendiente/i }))
     fireEvent.click(await screen.findByRole('option', { name: /geografía/i }))
+    fireEvent.mouseDown(within(dialog).getByRole('combobox', { name: /^turno/i }))
+    fireEvent.click(await screen.findByRole('option', { name: 'Tarde' }))
     fireEvent.mouseDown(within(dialog).getByRole('combobox', { name: /sección donde recursa/i }))
-    fireEvent.click(await screen.findByRole('option', { name: '2° B · Tarde' }))
+    fireEvent.click(await screen.findByRole('option', { name: '2° B' }))
     fireEvent.click(within(dialog).getByRole('button', { name: 'Asignar' }))
 
     await waitFor(() => expect(calls(fetchMock, 'POST')).toHaveLength(1))

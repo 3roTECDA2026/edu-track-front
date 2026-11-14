@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   Box,
   Button,
+  Chip,
   Dialog,
   DialogActions,
   DialogContent,
@@ -24,10 +25,18 @@ import { useNotify } from '@/components/layout/NotificationProvider'
 import { TabEmpty, TabError, TabLoading } from '@/components/studentProfile/TabStates'
 import { bodyCellSx, cardSx, headerCellSx } from '@/components/studentProfile/profileStyles'
 import { SubjectRepeatDialog } from '@/components/subjectRepeats/SubjectRepeatDialog'
-import { sectionLabel } from '@/components/subjectRepeats/subjectRepeatLabels'
+import { SHIFT_LABELS } from '@/components/students/studentLabels'
+import {
+  repeatOrigin,
+  sectionLabel,
+  sectionName,
+  subjectCountLabel,
+  subjectLimitReached,
+} from '@/components/subjectRepeats/subjectRepeatLabels'
 import { useLazyResource } from '@/hooks/useLazyResource'
 import {
   deleteRepeat,
+  getRepeatOptions,
   listStudentRepeats,
   type SubjectRepeat,
 } from '@/services/subjectRepeats.service'
@@ -49,7 +58,7 @@ const deleteBlockReason = (repeat: SubjectRepeat) =>
         ? 'Ya tiene asistencias cargadas'
         : null
 
-// Materias que recursa el alumno (CRM-082, E4-RF-09)
+// Materias a recursar del alumno (CRM-082, CRM-083, E4-RF-09)
 export const SubjectRepeatsTab = ({
   studentId,
   studentName,
@@ -59,14 +68,25 @@ export const SubjectRepeatsTab = ({
   const repeats = useLazyResource(`subject-repeats:${studentId}`, (signal) =>
     listStudentRepeats(studentId, signal)
   )
+  // Contador de materias del ciclo (CRM-083): solo quien gestiona puede pedir las opciones
+  const counter = useLazyResource(canManage ? `repeat-counter:${studentId}` : null, (signal) =>
+    getRepeatOptions(studentId, signal)
+  )
+  const limitReached = counter.data ? subjectLimitReached(counter.data) : false
   // null: cerrado · 'new': alta · un recursado: cambio de sección
   const [dialog, setDialog] = useState<SubjectRepeat | 'new' | null>(null)
   const [removing, setRemoving] = useState<SubjectRepeat | null>(null)
   const [removingWorking, setRemovingWorking] = useState(false)
 
+  // Después de asignar o quitar cambia el total de materias del ciclo
+  const reloadAll = () => {
+    repeats.reload()
+    if (canManage) counter.reload()
+  }
+
   const handleSaved = (message: string) => {
     notify.success(message)
-    repeats.reload()
+    reloadAll()
   }
 
   async function handleRemove() {
@@ -76,7 +96,7 @@ export const SubjectRepeatsTab = ({
       await deleteRepeat(removing.id)
       notify.success(`Se quitó el recursado de ${removing.subject.name}.`)
       setRemoving(null)
-      repeats.reload()
+      reloadAll()
     } catch (err: unknown) {
       notify.error(err instanceof Error ? err.message : 'No se pudo quitar el recursado.')
     } finally {
@@ -103,9 +123,14 @@ export const SubjectRepeatsTab = ({
             <TableRow>
               <TableCell sx={headerCellSx}>Materia</TableCell>
               <TableCell align="center" sx={headerCellSx}>
+                Año
+              </TableCell>
+              <TableCell sx={headerCellSx}>Sección</TableCell>
+              <TableCell sx={headerCellSx}>Turno</TableCell>
+              <TableCell align="center" sx={headerCellSx}>
                 Ciclo
               </TableCell>
-              <TableCell sx={headerCellSx}>Sección donde recursa</TableCell>
+              <TableCell sx={headerCellSx}>Origen</TableCell>
               <TableCell sx={headerCellSx}>MPAA</TableCell>
               {canManage && (
                 <TableCell align="right" sx={headerCellSx}>
@@ -124,9 +149,21 @@ export const SubjectRepeatsTab = ({
                     {repeat.subject.name}
                   </TableCell>
                   <TableCell align="center" sx={bodyCellSx}>
+                    {repeat.subject.gradeLevel}°
+                  </TableCell>
+                  <TableCell sx={bodyCellSx}>{sectionName(repeat.classSection)}</TableCell>
+                  <TableCell sx={bodyCellSx}>{SHIFT_LABELS[repeat.classSection.shift]}</TableCell>
+                  <TableCell align="center" sx={bodyCellSx}>
                     {repeat.academicYear.year}
                   </TableCell>
-                  <TableCell sx={bodyCellSx}>{sectionLabel(repeat.classSection)}</TableCell>
+                  <TableCell sx={bodyCellSx}>
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      color={repeat.pateId ? 'primary' : 'default'}
+                      label={repeatOrigin(repeat)}
+                    />
+                  </TableCell>
                   <TableCell sx={bodyCellSx}>
                     {repeat.pendingSubject
                       ? `Pendiente de ${repeat.pendingSubject.originYear}${accredited ? ' · acreditada' : ''}`
@@ -138,7 +175,7 @@ export const SubjectRepeatsTab = ({
                       {!accredited && (
                         <Box sx={{ display: 'inline-flex', gap: 1, alignItems: 'center' }}>
                           <EditButton
-                            label={`Cambiar sección de ${repeat.subject.name}`}
+                            label={`Editar recursado de ${repeat.subject.name}`}
                             onClick={() => setDialog(repeat)}
                           />
                           <Tooltip title={blockReason ?? ''}>
@@ -170,13 +207,39 @@ export const SubjectRepeatsTab = ({
     <Box sx={{ display: 'grid', gap: 2 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
         <Box sx={{ flexGrow: 1 }}>
-          <Typography variant="h6">Materias que recursa</Typography>
+          <Typography variant="h6">Materias a recursar</Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             Se califican y se toma asistencia como cualquier materia. En la grilla y en el RITE
             figuran con la marca R.
           </Typography>
         </Box>
-        {canManage && <AddButton label="Asignar recursado" onClick={() => setDialog('new')} />}
+        {canManage && counter.data && (
+          <Tooltip title="Materias del alumno en el ciclo activo, cursadas y recursadas">
+            <Chip
+              label={`Materias del ciclo: ${subjectCountLabel(counter.data)}`}
+              color={limitReached ? 'error' : 'default'}
+              variant="outlined"
+            />
+          </Tooltip>
+        )}
+        {canManage && (
+          <Tooltip
+            title={
+              limitReached
+                ? `Llegó al máximo de ${counter.data?.maxSubjects} materias del ciclo`
+                : ''
+            }
+          >
+            <span>
+              <AddButton
+                label="Asignar recursado"
+                onClick={() => setDialog('new')}
+                // Si el contador no llega, el alta sigue disponible: el back igual valida el límite
+                disabled={limitReached}
+              />
+            </span>
+          </Tooltip>
+        )}
       </Box>
 
       {renderList()}

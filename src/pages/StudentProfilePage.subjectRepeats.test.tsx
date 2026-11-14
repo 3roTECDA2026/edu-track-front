@@ -38,7 +38,15 @@ function stubBack() {
     vi.fn(async (url: string) => {
       let body: unknown = []
       if (url.includes('/api/subject-repeats/options')) {
-        body = { success: true, data: { activeCycle: { id: 'y', year: 2026 }, options: [] } }
+        body = {
+          success: true,
+          data: {
+            activeCycle: { id: 'y', year: 2026 },
+            subjectCount: 0,
+            maxSubjects: 12,
+            options: [],
+          },
+        }
       } else if (url.includes('/api/subject-repeats')) {
         body = { success: true, data: [], message: '' }
       } else if (url.includes('/api/students/s1')) body = student('s1', 'Mateo')
@@ -73,5 +81,34 @@ describe('pestaña Recursados al cambiar de alumno (CRM-082)', () => {
     await act(() => router.navigate('/students/s2'))
     await screen.findAllByText(/García, Sofía/)
     expect(screen.queryByText(/Asignar recursado · García, Mateo/)).toBeNull()
+  })
+})
+
+// Solo Gestión Escolar, EOE/Directivos y Administración ven la pestaña (CRM-083)
+describe('quién ve la pestaña Recursados (CRM-083)', () => {
+  const renderProfile = () => {
+    const router = createMemoryRouter(
+      [{ path: '/students/:id', element: <StudentProfilePage /> }],
+      { initialEntries: ['/students/s1'] }
+    )
+    render(withNotifications(<RouterProvider router={router} />))
+  }
+
+  it.each(['ADMINISTRATOR', 'SCHOOL_MANAGEMENT', 'EOE_DIRECTIVE', 'PRECEPTOR'])(
+    '%s la ve',
+    async (role) => {
+      loginAs(role)
+      stubBack()
+      renderProfile()
+      expect(await screen.findByRole('tab', { name: 'Recursados' })).toBeTruthy()
+    }
+  )
+
+  it('el docente no la ve', async () => {
+    loginAs('TEACHER')
+    stubBack()
+    renderProfile()
+    await screen.findByRole('tab', { name: 'Datos personales' })
+    expect(screen.queryByRole('tab', { name: 'Recursados' })).toBeNull()
   })
 })
