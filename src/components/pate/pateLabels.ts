@@ -20,3 +20,18 @@ export const MAX_SUBJECTS_TOTAL = 12
 export function isSectionRequiredForModel(model: IntensificationModel): boolean {
   return model === 'MODEL_2' || model === 'MODEL_3'
 }
+
+export const EVALUATION_LABELS: Record<'FAVORABLE' | 'PARTIAL' | 'UNFAVORABLE', string> = {
+  FAVORABLE: 'Favorable',
+  PARTIAL: 'Parcial',
+  UNFAVORABLE: 'Desfavorable',
+}
+
+export const EVALUATION_COLORS: Record<
+  'FAVORABLE' | 'PARTIAL' | 'UNFAVORABLE',
+  'success' | 'warning' | 'error'
+> = {
+  FAVORABLE: 'success',
+  PARTIAL: 'warning',
+  UNFAVORABLE: 'error',
+}
