@@ -17,6 +17,9 @@ export const MODEL_SHORT_LABELS: Record<IntensificationModel, string> = {
 export const MAX_SUBJECTS_TO_INTENSIFY = 4
 export const MAX_SUBJECTS_TOTAL = 12
 
+// Roles con permiso para gestionar y crear PATE (mismos que en el backend)
+export const PATE_MANAGER_ROLES = ['ADMINISTRATOR', 'SCHOOL_MANAGEMENT', 'EOE_DIRECTIVE']
+
 export function isSectionRequiredForModel(model: IntensificationModel): boolean {
   return model === 'MODEL_2' || model === 'MODEL_3'
 }

@@ -191,4 +191,49 @@ describe('PateFormPage (CRM-079)', () => {
     expect(stratInput.value).toBe('Estrategias persistentes')
     expect(schedInput.value).toBe('Cronograma persistente')
   })
+
+  it('muestra aviso y deshabilita guardado si el alumno ya tiene un PATE en el ciclo', async () => {
+    vi.spyOn(pateService, 'getPateOptions').mockResolvedValue({
+      ...mockOptions,
+      existingPate: { id: 'pate-existente', status: 'IN_PROGRESS' },
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/pates/new?studentId=std-1']}>
+        <Routes>
+          <Route path="/pates/new" element={<PateFormPage />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    await screen.findByText('Pérez, Juan')
+    expect(
+      screen.getByText(/El estudiante ya cuenta con un PATE registrado para el ciclo lectivo/i)
+    ).toBeTruthy()
+
+    const saveButton = screen.getByRole('button', { name: /Crear PATE/i }) as HTMLButtonElement
+    expect(saveButton.disabled).toBe(true)
+  })
+
+  it('muestra aviso si el alumno no fue derivado al EDTE', async () => {
+    vi.spyOn(pateService, 'getPateOptions').mockResolvedValue({
+      ...mockOptions,
+      referred: false,
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/pates/new?studentId=std-1']}>
+        <Routes>
+          <Route path="/pates/new" element={<PateFormPage />} />
+        </Routes>
+      </MemoryRouter>
+    )
+
+    await screen.findByText('Pérez, Juan')
+    expect(
+      screen.getByText(
+        /Atención: El estudiante no fue derivado al EDTE en el cierre del ciclo lectivo anterior/i
+      )
+    ).toBeTruthy()
+  })
 })

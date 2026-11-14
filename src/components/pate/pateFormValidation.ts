@@ -35,11 +35,13 @@ export function validatePateClientState(
   options: {
     currentSubjectsCount: number
     maxSubjectsPerCycle: number
+    maxSubjectsToIntensify?: number
     pendingSubjects: PatePendingSubjectOption[]
     sections: PateSectionOption[]
   }
 ): ClientValidationResult {
   const errors: string[] = []
+  const maxIntensify = options.maxSubjectsToIntensify ?? MAX_SUBJECTS_TO_INTENSIFY
 
   if (!state.edteMeetingId.trim()) {
     errors.push('Elegí la reunión del EDTE donde se trató al alumno')
@@ -54,9 +56,9 @@ export function validatePateClientState(
   }
 
   const intensifyCount = state.intensifyMap.size
-  if (intensifyCount > MAX_SUBJECTS_TO_INTENSIFY) {
+  if (intensifyCount > maxIntensify) {
     errors.push(
-      `Se pueden intensificar hasta ${MAX_SUBJECTS_TO_INTENSIFY} materias (elegiste ${intensifyCount})`
+      `Se pueden intensificar hasta ${maxIntensify} materias (elegiste ${intensifyCount})`
     )
   }
 

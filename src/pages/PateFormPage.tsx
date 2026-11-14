@@ -28,6 +28,7 @@ import {
   type PateOptionsResponse,
 } from '@/services/pate.service'
 import { listEdteMeetings, type EdteMeetingSummary } from '@/services/edteMeeting.service'
+import { formatMeetingDate, MEETING_PERIOD_LABELS } from '@/components/edte/edteLabels'
 import { ApiError } from '@/services/api'
 import { PateHeaderSummary } from '@/components/pate/PateHeaderSummary'
 import { PateIntensifySection } from '@/components/pate/PateIntensifySection'
@@ -46,9 +47,11 @@ export const PateFormPage: React.FC = () => {
   const initialMeetingId = searchParams.get('edteMeetingId') || ''
 
   // Datos del backend
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(Boolean(studentId))
   const [submitting, setSubmitting] = useState(false)
-  const [loadError, setLoadError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(
+    studentId ? null : 'No se especificó el ID del estudiante para crear el PATE.'
+  )
   const [submitErrors, setSubmitErrors] = useState<string[]>([])
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
@@ -71,25 +74,18 @@ export const PateFormPage: React.FC = () => {
 
   // Carga inicial
   useEffect(() => {
+    let isMounted = true
+
     if (!studentId) {
-      setLoadError('No se especificó el ID del estudiante para crear el PATE.')
-      setLoading(false)
       return
     }
-
-    let isMounted = true
 
     async function loadData() {
       try {
         setLoading(true)
         setLoadError(null)
 
-        const [studentData, optionsData, meetingsData] = await Promise.all([
-          getStudentById(studentId),
-          getPateOptions(studentId, initialMeetingId || undefined),
-          listEdteMeetings({}),
-        ])
-
+        const studentData = await getStudentById(studentId)
         if (!isMounted) return
 
         setStudent({
@@ -97,7 +93,14 @@ export const PateFormPage: React.FC = () => {
           lastName: studentData.lastName,
           dni: studentData.dni,
         })
+
+        const optionsData = await getPateOptions(studentId, initialMeetingId || undefined)
+        if (!isMounted) return
         setPateOptions(optionsData)
+
+        // Filtrar reuniones por el ciclo de las opciones del PATE
+        const meetingsData = await listEdteMeetings({ year: optionsData.year })
+        if (!isMounted) return
         setEdteMeetings(meetingsData)
 
         if (initialMeetingId) {
@@ -118,6 +121,53 @@ export const PateFormPage: React.FC = () => {
       isMounted = false
     }
   }, [studentId, initialMeetingId])
+
+  // Recargar opciones al cambiar la reunión del EDTE seleccionada
+  const handleMeetingChange = async (newMeetingId: string) => {
+    setEdteMeetingId(newMeetingId)
+    setSubmitErrors([])
+
+    if (!studentId) return
+
+    try {
+      const refreshedOptions = await getPateOptions(studentId, newMeetingId || undefined)
+      setPateOptions(refreshedOptions)
+
+      // Limpiar selecciones que pudieran haber quedado inválidas
+      setIntensifyMap((prev) => {
+        const next = new Map(prev)
+        for (const [subId, item] of next.entries()) {
+          if (!refreshedOptions.pendingSubjects.some((p) => p.pendingSubjectId === subId)) {
+            next.delete(subId)
+          } else if (
+            item.targetClassSectionId &&
+            !refreshedOptions.sections.some((s) => s.id === item.targetClassSectionId)
+          ) {
+            next.set(subId, { ...item, targetClassSectionId: '' })
+          }
+        }
+        return next
+      })
+
+      setRepeatMap((prev) => {
+        const next = new Map(prev)
+        for (const [subId, item] of next.entries()) {
+          if (!refreshedOptions.pendingSubjects.some((p) => p.pendingSubjectId === subId)) {
+            next.delete(subId)
+          } else if (
+            item.classSectionId &&
+            !refreshedOptions.sections.some((s) => s.id === item.classSectionId)
+          ) {
+            next.set(subId, { ...item, classSectionId: '' })
+          }
+        }
+        return next
+      })
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Error al actualizar opciones de la reunión'
+      setSubmitErrors([msg])
+    }
+  }
 
   // Manejadores para intensificación
   const handleToggleIntensify = (subjectId: string) => {
@@ -214,6 +264,7 @@ export const PateFormPage: React.FC = () => {
     const validation = validatePateClientState(currentState, {
       currentSubjectsCount: pateOptions.currentSubjectsCount,
       maxSubjectsPerCycle: pateOptions.maxSubjectsPerCycle,
+      maxSubjectsToIntensify: pateOptions.maxSubjectsToIntensify,
       pendingSubjects: pateOptions.pendingSubjects,
       sections: pateOptions.sections,
     })
@@ -303,13 +354,28 @@ export const PateFormPage: React.FC = () => {
                   <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                     Por favor revisá los siguientes errores antes de guardar:
                   </Typography>
-                  <ul style={{ margin: '4px 0 0 0', paddingLeft: 20 }}>
+                  <Box component="ul" sx={{ m: '4px 0 0 0', pl: 2.5 }}>
                     {submitErrors.map((msg, idx) => (
                       <li key={idx}>
                         <Typography variant="body2">{msg}</Typography>
                       </li>
                     ))}
-                  </ul>
+                  </Box>
+                </Alert>
+              )}
+
+              {pateOptions.existingPate && (
+                <Alert severity="warning" sx={{ mb: 3 }}>
+                  El estudiante ya cuenta con un PATE registrado para el ciclo lectivo{' '}
+                  {pateOptions.year} (Estado: {pateOptions.existingPate.status}). No es posible
+                  crear más de un plan por ciclo.
+                </Alert>
+              )}
+
+              {!pateOptions.referred && (
+                <Alert severity="info" sx={{ mb: 3 }}>
+                  Atención: El estudiante no fue derivado al EDTE en el cierre del ciclo lectivo
+                  anterior.
                 </Alert>
               )}
 
@@ -338,23 +404,22 @@ export const PateFormPage: React.FC = () => {
                   size="small"
                   required
                   error={!edteMeetingId && submitErrors.length > 0}
+                  disabled={Boolean(pateOptions.existingPate)}
                 >
                   <InputLabel id="meeting-select-label">Reunión del EDTE</InputLabel>
                   <Select
                     labelId="meeting-select-label"
                     value={edteMeetingId}
                     label="Reunión del EDTE"
-                    onChange={(e) => {
-                      setEdteMeetingId(e.target.value)
-                      setSubmitErrors([])
-                    }}
+                    onChange={(e) => handleMeetingChange(e.target.value)}
                   >
                     <MenuItem value="">
                       <em>Seleccionar reunión...</em>
                     </MenuItem>
                     {edteMeetings.map((m) => (
                       <MenuItem key={m.id} value={m.id}>
-                        {m.date} — Período: {m.period} (Ciclo {m.year})
+                        {formatMeetingDate(m.date)} — Período:{' '}
+                        {MEETING_PERIOD_LABELS[m.period] ?? m.period} (Ciclo {m.year})
                       </MenuItem>
                     ))}
                   </Select>
@@ -368,6 +433,7 @@ export const PateFormPage: React.FC = () => {
                 pendingSubjects={pateOptions.pendingSubjects}
                 sections={pateOptions.sections}
                 allowedModels={pateOptions.allowedModels}
+                maxSubjectsToIntensify={pateOptions.maxSubjectsToIntensify}
                 selectedMap={intensifyMap}
                 repeatSubjectIds={new Set(repeatMap.keys())}
                 onToggleSubject={handleToggleIntensify}
@@ -439,7 +505,7 @@ export const PateFormPage: React.FC = () => {
                   startIcon={
                     submitting ? <CircularProgress size={20} color="inherit" /> : <SaveIcon />
                   }
-                  disabled={submitting}
+                  disabled={submitting || Boolean(pateOptions.existingPate)}
                 >
                   {submitting ? 'Guardando...' : 'Crear PATE'}
                 </Button>

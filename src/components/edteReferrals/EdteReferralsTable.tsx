@@ -14,10 +14,6 @@ import {
 } from '@mui/material'
 
 import { PateStatusChip } from '@/components/edteReferrals/PateStatusChip'
-import {
-  CREATE_PATE_PATH,
-  CREATE_PATE_UNAVAILABLE,
-} from '@/components/edteReferrals/referralLabels'
 import type { ReferralRow } from '@/components/edteReferrals/referralRows'
 import { SHIFT_LABELS } from '@/components/students/studentLabels'
 
@@ -119,22 +115,14 @@ export function EdteReferralsTable({
                       </Tooltip>
 
                       {row.pate === null && !pateUnavailable && (
-                        <Tooltip
-                          title={
-                            CREATE_PATE_PATH(row.studentId) ? 'Crear PATE' : CREATE_PATE_UNAVAILABLE
-                          }
-                        >
-                          {/* El span permite que el tooltip funcione con el botón deshabilitado */}
-                          <span>
-                            <IconButton
-                              size="small"
-                              aria-label={`Crear PATE de ${name}`}
-                              disabled={!CREATE_PATE_PATH(row.studentId)}
-                              onClick={() => onCreatePate(row)}
-                            >
-                              <NoteAddOutlined fontSize="small" />
-                            </IconButton>
-                          </span>
+                        <Tooltip title="Crear PATE">
+                          <IconButton
+                            size="small"
+                            aria-label={`Crear PATE de ${name}`}
+                            onClick={() => onCreatePate(row)}
+                          >
+                            <NoteAddOutlined fontSize="small" />
+                          </IconButton>
                         </Tooltip>
                       )}
 

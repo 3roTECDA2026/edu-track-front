@@ -32,6 +32,7 @@ export interface PateOptionsResponse {
   studentShift: Shift | null
   currentSubjectsCount: number
   maxSubjectsPerCycle: number
+  maxSubjectsToIntensify?: number
 }
 
 export interface PateSubjectToIntensifyInput {

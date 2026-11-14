@@ -32,6 +32,7 @@ interface PateIntensifySectionProps {
   pendingSubjects: PatePendingSubjectOption[]
   sections: PateSectionOption[]
   allowedModels: IntensificationModel[]
+  maxSubjectsToIntensify?: number
   selectedMap: Map<string, SelectedIntensifyItem>
   repeatSubjectIds: Set<string>
   onToggleSubject: (subjectId: string) => void
@@ -43,6 +44,7 @@ export const PateIntensifySection: React.FC<PateIntensifySectionProps> = ({
   pendingSubjects,
   sections,
   allowedModels,
+  maxSubjectsToIntensify = MAX_SUBJECTS_TO_INTENSIFY,
   selectedMap,
   repeatSubjectIds,
   onToggleSubject,
@@ -50,7 +52,7 @@ export const PateIntensifySection: React.FC<PateIntensifySectionProps> = ({
   onChangeSection,
 }) => {
   const selectedCount = selectedMap.size
-  const isMaxReached = selectedCount >= MAX_SUBJECTS_TO_INTENSIFY
+  const isMaxReached = selectedCount >= maxSubjectsToIntensify
 
   return (
     <Box sx={{ mb: 4 }}>
@@ -59,22 +61,22 @@ export const PateIntensifySection: React.FC<PateIntensifySectionProps> = ({
           1. Materias a Intensificar
         </Typography>
         <Chip
-          label={`${selectedCount} de ${MAX_SUBJECTS_TO_INTENSIFY} seleccionadas`}
+          label={`${selectedCount} de ${maxSubjectsToIntensify} seleccionadas`}
           size="small"
-          color={selectedCount > MAX_SUBJECTS_TO_INTENSIFY ? 'error' : 'primary'}
+          color={selectedCount > maxSubjectsToIntensify ? 'error' : 'primary'}
           variant="outlined"
         />
       </Box>
 
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        Seleccioná hasta 4 materias para intensificar. Para los Modelos 2 y 3 es obligatorio
-        seleccionar año, sección y turno.
+        Seleccioná hasta {maxSubjectsToIntensify} materias para intensificar. Para los Modelos 2 y 3
+        es obligatorio seleccionar año, sección y turno.
       </Typography>
 
       {isMaxReached && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          Alcanzaste el máximo de {MAX_SUBJECTS_TO_INTENSIFY} materias a intensificar. El resto de
-          las materias pendientes debe ser asignado a recursado.
+          Alcanzaste el máximo de {maxSubjectsToIntensify} materias a intensificar. El resto de las
+          materias pendientes debe ser asignado a recursado.
         </Alert>
       )}
 

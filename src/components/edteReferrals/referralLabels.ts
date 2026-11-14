@@ -36,5 +36,3 @@ export const PATE_STATE_CONFIG: Record<
 
 // Pantalla del PATE en el front (CRM-079)
 export const CREATE_PATE_PATH = (studentId: string) => `/pates/new?studentId=${studentId}`
-
-export const CREATE_PATE_UNAVAILABLE = 'Crear PATE'
