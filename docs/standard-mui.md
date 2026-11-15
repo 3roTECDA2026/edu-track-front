@@ -138,6 +138,46 @@ Props: `sx?` (se mezcla con el estilo por defecto).
 
 ---
 
+### `AttachmentPicker`
+Selector de archivos adjuntos antes de guardar (intervenciones, CRM-087; evidencias de
+intensificación, CRM-060). Muestra una miniatura de las fotos y un ícono para PDF y DOCX, y deja
+quitar cada archivo. Las reglas (tipos, 10 MB, hasta 10) están en `attachmentRules.ts`.
+
+```tsx
+import { AttachmentPicker } from '@/components/common/AttachmentPicker'
+
+<AttachmentPicker files={files} onChange={setFiles} error={filesError} checkPdfs allowMergePhotos />
+```
+
+Props: `files`, `onChange`, `disabled?`, `error?`, `checkPdfs?` (abre cada PDF con `pdf-lib`: rechaza
+los dañados o protegidos y muestra las páginas) y `allowMergePhotos?` (con dos o más fotos, ofrece
+"Unir fotos en un PDF"). Las dos últimas vienen apagadas.
+
+---
+
+### `AttachmentList`
+Lista de adjuntos ya guardados, con "Descargar". Los pide recién al tocar el botón, para no hacer
+un pedido por cada registro. Contempla cargando, error, vacío y datos.
+
+```tsx
+import { AttachmentList } from '@/components/common/AttachmentList'
+
+<AttachmentList
+  resourceKey={`intensification-attachments:${id}`}
+  load={(signal) => service.listAttachments(id, signal)}
+  download={(file) => service.downloadAttachment(id, file.id)}
+  openLabel="Ver evidencias (2)"
+  allowPreview
+  onDelete={canDelete ? (file) => service.deleteAttachment(id, file.id) : undefined}
+/>
+```
+
+Props: `resourceKey`, `load`, `download`, `openLabel?`, `emptyText?`, `allowPreview?` ("Ver" abre PDF
+e imágenes en una pestaña nueva) y `onDelete?` (muestra "Quitar", con el diálogo de confirmación del
+estándar).
+
+---
+
 ### `StandardTablePagination`
 Paginado de tablas, con textos en castellano y opciones iguales para todos.
 

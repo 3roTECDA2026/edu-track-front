@@ -16,6 +16,7 @@ import ExpandLessIcon from '@mui/icons-material/ExpandLess'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import HistoryIcon from '@mui/icons-material/History'
 
+import { AttachmentList } from '@/components/common/AttachmentList'
 import {
   MODEL_SHORT_LABELS,
   PERIOD_LABELS,
@@ -24,10 +25,12 @@ import {
 import { SoftBadge } from '@/components/studentProfile/SoftBadge'
 import { TabEmpty, TabError, TabLoading } from '@/components/studentProfile/TabStates'
 import { useLazyResource } from '@/hooks/useLazyResource'
+import { ATTACHMENT_DELETE_ROLES, intensificationService } from '@/services/intensification.service'
 import {
   getPendingSubjectAttempts,
   type PendingSubjectAttempt,
 } from '@/services/pendingSubject.service'
+import { getRole } from '@/services/session'
 
 // Resultado en blanco y negro: el estándar del proyecto no usa colores para el estado
 const RESULT_BADGE = { color: '#111827', background: '#f3f4f6' }
@@ -53,6 +56,9 @@ interface AttemptsHistoryProps {
 // Los intentos se piden la primera vez que se abre el bloque.
 export const AttemptsHistory = ({ pendingSubjectId }: AttemptsHistoryProps) => {
   const [open, setOpen] = useState(false)
+  // Quitar una evidencia: dirección y administración (el back lo valida igual)
+  const role = getRole()
+  const canDeleteEvidence = role !== undefined && ATTACHMENT_DELETE_ROLES.includes(role)
   const [requested, setRequested] = useState(false)
 
   const attempts = useLazyResource(
@@ -87,6 +93,7 @@ export const AttemptsHistory = ({ pendingSubjectId }: AttemptsHistoryProps) => {
               <TableCell>Modelo</TableCell>
               <TableCell>Resultado</TableCell>
               <TableCell align="right">Nota</TableCell>
+              <TableCell>Evidencias</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -117,6 +124,34 @@ export const AttemptsHistory = ({ pendingSubjectId }: AttemptsHistoryProps) => {
                   )}
                 </TableCell>
                 <TableCell align="right">{attempt.score ?? '—'}</TableCell>
+                <TableCell>
+                  {attempt.attachmentsCount > 0 ? (
+                    <AttachmentList
+                      resourceKey={`intensification-attachments:${attempt.id}`}
+                      load={(signal) => intensificationService.listAttachments(attempt.id, signal)}
+                      download={(file) =>
+                        intensificationService.downloadAttachment(attempt.id, file.id)
+                      }
+                      openLabel={`Ver evidencias (${attempt.attachmentsCount})`}
+                      emptyText="Este intento ya no tiene evidencias."
+                      allowPreview
+                      onDelete={
+                        canDeleteEvidence
+                          ? async (file) => {
+                              await intensificationService.deleteAttachment(attempt.id, file.id)
+                              // Se recargan los intentos para actualizar el contador (N). Mientras
+                              // tanto se siguen mostrando los datos anteriores, sin parpadeo
+                              attempts.reload()
+                            }
+                          : undefined
+                      }
+                    />
+                  ) : (
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      Sin evidencias
+                    </Typography>
+                  )}
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
