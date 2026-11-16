@@ -50,7 +50,13 @@ const options = (subjectCount = 10): RepeatOptions => ({
 })
 
 // Responde como el back ({ success, data }) y guarda cada pedido para revisarlo
-function stubBack({ repeats = [] as SubjectRepeat[], failDelete = false, subjectCount = 10 } = {}) {
+function stubBack({
+  repeats = [] as SubjectRepeat[],
+  failDelete = false,
+  subjectCount = 10,
+  // false: simula un back anterior a CRM-083, que no manda subjectCount ni maxSubjects
+  withCounter = true,
+} = {}) {
   const fetchMock = vi.fn(async (url: string, init?: RequestInit) => {
     const method = init?.method ?? 'GET'
     if (method === 'DELETE' && failDelete) {
@@ -60,7 +66,13 @@ function stubBack({ repeats = [] as SubjectRepeat[], failDelete = false, subject
         json: async () => ({ error: 'El recursado ya tiene notas cargadas: no se puede quitar' }),
       }
     }
-    const data = url.includes('/options') ? options(subjectCount) : method === 'GET' ? repeats : {}
+    const data = url.includes('/options')
+      ? withCounter
+        ? options(subjectCount)
+        : { ...options(subjectCount), subjectCount: undefined, maxSubjects: undefined }
+      : method === 'GET'
+        ? repeats
+        : {}
     return { ok: true, status: 200, json: async () => ({ success: true, data, message: '' }) }
   })
   vi.stubGlobal('fetch', fetchMock)
@@ -107,6 +119,15 @@ describe('pestaña de recursados (CRM-082)', () => {
     renderTab()
     const row = (await screen.findByText('Geografía')).closest('tr') as HTMLElement
     expect(within(row).getByText('PATE')).toBeTruthy()
+  })
+
+  it('con un back sin el contador, no muestra el chip ni bloquea el alta (CRM-083)', async () => {
+    stubBack({ withCounter: false })
+    renderTab()
+    await screen.findByText('Sin recursados')
+    expect(screen.queryByText(/materias del ciclo/i)).toBeNull()
+    const button = screen.getByRole('button', { name: /asignar recursado/i })
+    expect((button as HTMLButtonElement).disabled).toBe(false)
   })
 
   it('muestra el contador de materias del ciclo (CRM-083)', async () => {

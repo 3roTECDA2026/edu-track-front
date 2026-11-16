@@ -75,7 +75,9 @@ export const SubjectRepeatDialog = ({
   const unchanged = editing && validSectionId === repeat.classSection.id
   // Al asignar, si el alumno ya tiene el máximo de materias del ciclo no se puede (CRM-083).
   // Al editar no cambia el total: solo se mueve de sección
-  const limitReached = !editing && options.data !== undefined && subjectLimitReached(options.data)
+  const hasCounter = typeof options.data?.subjectCount === 'number'
+  const limitReached =
+    !editing && options.data !== undefined && hasCounter && subjectLimitReached(options.data)
   const canSave = Boolean(selected && validSectionId) && !unchanged && !saving && !limitReached
   const loadingOptions = options.loading && !options.data
   // Al editar, la MPAA tiene que seguir entre las opciones (pendiente) para ofrecer secciones
@@ -113,8 +115,9 @@ export const SubjectRepeatDialog = ({
         <Stack spacing={2} sx={{ mt: 1 }}>
           {options.data && (
             <Alert severity="info">
-              Ciclo lectivo {options.data.activeCycle.year}. Materias del ciclo:{' '}
-              {subjectCountLabel(options.data)}. La sección puede ser de otro turno (contraturno).
+              Ciclo lectivo {options.data.activeCycle.year}.
+              {hasCounter && ` Materias del ciclo: ${subjectCountLabel(options.data)}.`} La sección
+              puede ser de otro turno (contraturno).
             </Alert>
           )}
           {limitReached && options.data && (

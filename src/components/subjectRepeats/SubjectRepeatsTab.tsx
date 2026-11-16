@@ -72,7 +72,10 @@ export const SubjectRepeatsTab = ({
   const counter = useLazyResource(canManage ? `repeat-counter:${studentId}` : null, (signal) =>
     getRepeatOptions(studentId, signal)
   )
-  const limitReached = counter.data ? subjectLimitReached(counter.data) : false
+  // Solo con un back que ya manda el contador (CRM-083): con uno anterior llegaría undefined/undefined
+  const counterData =
+    counter.data && typeof counter.data.subjectCount === 'number' ? counter.data : undefined
+  const limitReached = counterData ? subjectLimitReached(counterData) : false
   // null: cerrado · 'new': alta · un recursado: cambio de sección
   const [dialog, setDialog] = useState<SubjectRepeat | 'new' | null>(null)
   const [removing, setRemoving] = useState<SubjectRepeat | null>(null)
@@ -157,12 +160,7 @@ export const SubjectRepeatsTab = ({
                     {repeat.academicYear.year}
                   </TableCell>
                   <TableCell sx={bodyCellSx}>
-                    <Chip
-                      size="small"
-                      variant="outlined"
-                      color={repeat.pateId ? 'primary' : 'default'}
-                      label={repeatOrigin(repeat)}
-                    />
+                    <Chip size="small" variant="outlined" label={repeatOrigin(repeat)} />
                   </TableCell>
                   <TableCell sx={bodyCellSx}>
                     {repeat.pendingSubject
@@ -213,10 +211,10 @@ export const SubjectRepeatsTab = ({
             figuran con la marca R.
           </Typography>
         </Box>
-        {canManage && counter.data && (
+        {canManage && counterData && (
           <Tooltip title="Materias del alumno en el ciclo activo, cursadas y recursadas">
             <Chip
-              label={`Materias del ciclo: ${subjectCountLabel(counter.data)}`}
+              label={`Materias del ciclo: ${subjectCountLabel(counterData)}`}
               color={limitReached ? 'error' : 'default'}
               variant="outlined"
             />
@@ -226,7 +224,7 @@ export const SubjectRepeatsTab = ({
           <Tooltip
             title={
               limitReached
-                ? `Llegó al máximo de ${counter.data?.maxSubjects} materias del ciclo`
+                ? `Llegó al máximo de ${counterData?.maxSubjects} materias del ciclo`
                 : ''
             }
           >
