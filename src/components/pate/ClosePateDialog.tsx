@@ -44,8 +44,9 @@ export const ClosePateDialog: React.FC<ClosePateDialogProps> = ({
         finalObservations: observations.trim() || undefined,
       })
       onClose()
-    } catch (err: any) {
-      setError(err?.message || 'Error al cerrar el PATE.')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al cerrar el PATE.'
+      setError(msg)
     }
   }
 

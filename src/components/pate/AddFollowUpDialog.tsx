@@ -16,6 +16,7 @@ import {
 } from '@mui/material'
 import type { EdteMeetingSummary } from '@/services/edteMeeting.service'
 import type { PateEvaluation } from '@/services/pate.service'
+import { formatMeetingDate, MEETING_PERIOD_LABELS } from '@/components/edte/edteLabels'
 import { EVALUATION_LABELS } from '@/components/pate/pateLabels'
 
 interface AddFollowUpDialogProps {
@@ -69,8 +70,9 @@ export const AddFollowUpDialog: React.FC<AddFollowUpDialogProps> = ({
       setEvaluation('PARTIAL')
       setObservations('')
       onClose()
-    } catch (err: any) {
-      setError(err?.message || 'Error al guardar el seguimiento.')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Error al guardar el seguimiento.'
+      setError(msg)
     }
   }
 
@@ -95,7 +97,8 @@ export const AddFollowUpDialog: React.FC<AddFollowUpDialogProps> = ({
                 </MenuItem>
                 {meetings.map((m) => (
                   <MenuItem key={m.id} value={m.id}>
-                    {m.date} — Período: {m.period} (Ciclo {m.year})
+                    {formatMeetingDate(m.date)} — Período:{' '}
+                    {MEETING_PERIOD_LABELS[m.period] ?? m.period} (Ciclo {m.year})
                   </MenuItem>
                 ))}
               </Select>

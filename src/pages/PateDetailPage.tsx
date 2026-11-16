@@ -9,6 +9,11 @@ import {
   Alert,
   Stack,
   Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import AddIcon from '@mui/icons-material/Add'
@@ -29,18 +34,22 @@ import {
   type PateEvaluation,
 } from '@/services/pate.service'
 import { listEdteMeetings, type EdteMeetingSummary } from '@/services/edteMeeting.service'
+import { formatMeetingDate, MEETING_PERIOD_LABELS } from '@/components/edte/edteLabels'
 import { canManageTrajectories } from '@/services/session'
 import { FollowUpHistoryTable } from '@/components/pate/FollowUpHistoryTable'
 import { AddFollowUpDialog } from '@/components/pate/AddFollowUpDialog'
 import { ClosePateDialog } from '@/components/pate/ClosePateDialog'
-import { EVALUATION_COLORS, EVALUATION_LABELS } from '@/components/pate/pateLabels'
+import { PateStatusChip } from '@/components/edteReferrals/PateStatusChip'
+import { EVALUATION_LABELS } from '@/components/pate/pateLabels'
 
 export const PateDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
 
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [loadError, setLoadError] = useState<string | null>(null)
+  const [actionErrors, setActionErrors] = useState<string[]>([])
+  const [followUpError, setFollowUpError] = useState<string | null>(null)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
 
   const [pate, setPate] = useState<PateResponse | null>(null)
@@ -49,41 +58,62 @@ export const PateDetailPage: React.FC = () => {
 
   const [addDialogOpen, setAddDialogOpen] = useState(false)
   const [closeDialogOpen, setCloseDialogOpen] = useState(false)
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
   const [submittingAction, setSubmittingAction] = useState(false)
 
   const canManage = canManageTrajectories()
 
-  const loadData = async () => {
-    if (!id) return
-    try {
-      setLoading(true)
-      setError(null)
-      const [pateData, followUpsData] = await Promise.all([
-        getPate(id),
-        getPateFollowUps(id).catch(() => []),
-      ])
-      setPate(pateData)
-      setFollowUps(followUpsData)
-
-      // Cargar reuniones para el select de seguimientos
-      if (canManage) {
-        try {
-          const meetingsData = await listEdteMeetings({ year: pateData.year })
-          setMeetings(meetingsData)
-        } catch {
-          // No bloqueante
-        }
-      }
-    } catch (err: any) {
-      setError(err?.message || 'Error al cargar los datos del PATE.')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
-    loadData()
-  }, [id])
+    let isMounted = true
+
+    if (!id) return
+
+    async function fetchData() {
+      try {
+        setLoading(true)
+        setLoadError(null)
+        setFollowUpError(null)
+        const pateData = await getPate(id)
+        if (!isMounted) return
+        setPate(pateData)
+
+        try {
+          const followUpsData = await getPateFollowUps(id)
+          if (!isMounted) return
+          setFollowUps(followUpsData)
+        } catch (err: unknown) {
+          if (!isMounted) return
+          setFollowUps([])
+          const msg =
+            err instanceof Error ? err.message : 'No se pudo cargar el historial de seguimientos.'
+          setFollowUpError(msg)
+        }
+
+        // Cargar reuniones para el select de seguimientos
+        if (canManage) {
+          try {
+            const meetingsData = await listEdteMeetings({ year: pateData.year })
+            if (!isMounted) return
+            setMeetings(meetingsData)
+          } catch {
+            // No bloqueante
+          }
+        }
+      } catch (err: unknown) {
+        if (!isMounted) return
+        const msg = err instanceof Error ? err.message : 'Error al cargar los datos del PATE.'
+        setLoadError(msg)
+      } finally {
+        if (isMounted) setLoading(false)
+      }
+    }
+
+    void fetchData()
+
+    return () => {
+      isMounted = false
+    }
+  }, [id, canManage])
 
   const handleAddFollowUp = async (data: {
     edteMeetingId: string
@@ -127,12 +157,24 @@ export const PateDetailPage: React.FC = () => {
     if (!id) return
     try {
       setSubmittingAction(true)
+      setActionErrors([])
       const updated = await changePateStatus(id, { status: 'IN_PROGRESS' })
       setPate(updated)
+      setConfirmDialogOpen(false)
       setSuccessMessage('PATE confirmado y puesto en curso.')
       setTimeout(() => setSuccessMessage(null), 4000)
-    } catch (err: any) {
-      setError(err?.message || 'Error al confirmar el PATE.')
+    } catch (err: unknown) {
+      let messages: string[] = []
+      if (err && typeof err === 'object' && 'details' in err) {
+        const details = (err as { details?: { errors?: string[] } }).details
+        if (Array.isArray(details?.errors)) {
+          messages = details.errors
+        }
+      }
+      if (messages.length === 0) {
+        messages = [err instanceof Error ? err.message : 'Error al confirmar el PATE.']
+      }
+      setActionErrors(messages)
     } finally {
       setSubmittingAction(false)
     }
@@ -150,12 +192,12 @@ export const PateDetailPage: React.FC = () => {
     )
   }
 
-  if (error || !pate) {
+  if (loadError || !pate) {
     return (
       <MainLayout>
         <PageContainer>
           <Alert severity="error" sx={{ mb: 3 }}>
-            {error || 'No se encontró el PATE solicitado.'}
+            {loadError || 'No se encontró el PATE solicitado.'}
           </Alert>
           <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)}>
             Volver
@@ -191,7 +233,7 @@ export const PateDetailPage: React.FC = () => {
                   color="primary"
                   startIcon={<CheckCircleIcon />}
                   disabled={submittingAction}
-                  onClick={handleConfirmPate}
+                  onClick={() => setConfirmDialogOpen(true)}
                 >
                   Confirmar PATE
                 </Button>
@@ -208,7 +250,6 @@ export const PateDetailPage: React.FC = () => {
                   </Button>
                   <Button
                     variant="outlined"
-                    color="warning"
                     startIcon={<LockIcon />}
                     onClick={() => setCloseDialogOpen(true)}
                   >
@@ -226,28 +267,28 @@ export const PateDetailPage: React.FC = () => {
           </Alert>
         )}
 
+        {actionErrors.length > 0 && (
+          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setActionErrors([])}>
+            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+              No se pudo confirmar el PATE:
+            </Typography>
+            <Box component="ul" sx={{ m: '4px 0 0 0', pl: 2.5 }}>
+              {actionErrors.map((msg, idx) => (
+                <li key={idx}>
+                  <Typography variant="body2">{msg}</Typography>
+                </li>
+              ))}
+            </Box>
+          </Alert>
+        )}
+
         {/* Resumen del estado y datos generales */}
         <ContentCard sx={{ mb: 3 }}>
           <Box
             sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
           >
             <Typography variant="h6">Estado del Plan</Typography>
-            <Chip
-              label={
-                pate.status === 'DRAFT'
-                  ? 'Borrador'
-                  : pate.status === 'IN_PROGRESS'
-                    ? 'En Curso'
-                    : 'Cerrado'
-              }
-              color={
-                pate.status === 'DRAFT'
-                  ? 'default'
-                  : pate.status === 'IN_PROGRESS'
-                    ? 'info'
-                    : 'success'
-              }
-            />
+            <PateStatusChip state={pate.status} />
           </Box>
 
           <Box
@@ -274,7 +315,9 @@ export const PateDetailPage: React.FC = () => {
                 Reunión EDTE de Origen
               </Typography>
               <Typography variant="body1">
-                {pate.edteMeeting ? `${pate.edteMeeting.date} (${pate.edteMeeting.period})` : '—'}
+                {pate.edteMeeting
+                  ? `${formatMeetingDate(pate.edteMeeting.date)} (${MEETING_PERIOD_LABELS[pate.edteMeeting.period as keyof typeof MEETING_PERIOD_LABELS] ?? pate.edteMeeting.period})`
+                  : '—'}
               </Typography>
             </Box>
 
@@ -295,8 +338,13 @@ export const PateDetailPage: React.FC = () => {
                 <Typography variant="body2">Resultado:</Typography>
                 <Chip
                   label={EVALUATION_LABELS[pate.finalEvaluation]}
-                  color={EVALUATION_COLORS[pate.finalEvaluation]}
                   size="small"
+                  variant="outlined"
+                  sx={{
+                    fontWeight: 600,
+                    color: 'text.primary',
+                    borderColor: 'divider',
+                  }}
                 />
                 {pate.closedBy && (
                   <Typography variant="caption" color="text.secondary">
@@ -370,6 +418,12 @@ export const PateDetailPage: React.FC = () => {
             )}
           </Box>
 
+          {followUpError && (
+            <Alert severity="warning" sx={{ mb: 2 }}>
+              {followUpError}
+            </Alert>
+          )}
+
           <FollowUpHistoryTable followUps={followUps} />
         </ContentCard>
 
@@ -388,6 +442,45 @@ export const PateDetailPage: React.FC = () => {
           onClose={() => setCloseDialogOpen(false)}
           onSubmit={handleClosePate}
         />
+
+        {/* Confirmación para confirmar PATE (irreversible) */}
+        <Dialog
+          open={confirmDialogOpen}
+          onClose={submittingAction ? undefined : () => setConfirmDialogOpen(false)}
+          maxWidth="xs"
+          fullWidth
+        >
+          <DialogTitle>Confirmar y poner en curso el PATE</DialogTitle>
+          <DialogContent>
+            <DialogContentText variant="body2">
+              Al confirmar el PATE se crean automáticamente las inscripciones a las materias que el
+              alumno debe recursar y el plan dejará de ser editable. ¿Deseas continuar?
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              variant="outlined"
+              onClick={() => setConfirmDialogOpen(false)}
+              disabled={submittingAction}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleConfirmPate}
+              disabled={submittingAction}
+              startIcon={
+                submittingAction ? (
+                  <CircularProgress size={18} color="inherit" />
+                ) : (
+                  <CheckCircleIcon />
+                )
+              }
+            >
+              Confirmar
+            </Button>
+          </DialogActions>
+        </Dialog>
       </PageContainer>
     </MainLayout>
   )

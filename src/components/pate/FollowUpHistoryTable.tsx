@@ -12,7 +12,8 @@ import {
   TableRow,
 } from '@mui/material'
 import type { PateFollowUp } from '@/services/pate.service'
-import { EVALUATION_COLORS, EVALUATION_LABELS } from '@/components/pate/pateLabels'
+import { formatMeetingDate, MEETING_PERIOD_LABELS } from '@/components/edte/edteLabels'
+import { EVALUATION_LABELS } from '@/components/pate/pateLabels'
 
 interface FollowUpHistoryTableProps {
   followUps: PateFollowUp[]
@@ -55,17 +56,24 @@ export const FollowUpHistoryTable: React.FC<FollowUpHistoryTableProps> = ({ foll
                 )}
               </TableCell>
               <TableCell>
-                <Typography variant="body2">{f.edteMeeting.date}</Typography>
+                <Typography variant="body2">{formatMeetingDate(f.edteMeeting.date)}</Typography>
                 <Typography variant="caption" color="text.secondary">
-                  Período: {f.edteMeeting.period}
+                  Período:{' '}
+                  {MEETING_PERIOD_LABELS[
+                    f.edteMeeting.period as keyof typeof MEETING_PERIOD_LABELS
+                  ] ?? f.edteMeeting.period}
                 </Typography>
               </TableCell>
               <TableCell>
                 <Chip
                   label={EVALUATION_LABELS[f.evaluation]}
-                  color={EVALUATION_COLORS[f.evaluation]}
                   size="small"
                   variant="outlined"
+                  sx={{
+                    fontWeight: 600,
+                    color: 'text.primary',
+                    borderColor: 'divider',
+                  }}
                 />
               </TableCell>
               <TableCell sx={{ whiteSpace: 'pre-line' }}>

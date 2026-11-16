@@ -72,7 +72,6 @@ const mockFollowUps: pateService.PateFollowUp[] = [
   {
     id: 'fu-1',
     pateId: 'pate-1',
-    edteMeetingId: 'meet-2',
     date: '2026-05-10T10:00:00.000Z',
     progress: 'El alumno asistió a todas las clases de apoyo.',
     evaluation: 'FAVORABLE',
@@ -150,7 +149,6 @@ describe('PateDetailPage', () => {
     const createSpy = vi.spyOn(pateService, 'createPateFollowUp').mockResolvedValue({
       id: 'fu-2',
       pateId: 'pate-1',
-      edteMeetingId: 'meet-2',
       date: '2026-06-15T00:00:00.000Z',
       progress: 'Nuevo progreso verificado',
       evaluation: 'PARTIAL',
@@ -176,7 +174,7 @@ describe('PateDetailPage', () => {
     // Seleccionar reunión
     const meetingSelect = screen.getByLabelText(/reunión del edte/i)
     fireEvent.mouseDown(meetingSelect)
-    const meetingOption = await screen.findByRole('option', { name: /2026-05-10/i })
+    const meetingOption = await screen.findByRole('option', { name: /10\/05\/2026/i })
     fireEvent.click(meetingOption)
 
     // Llenar avances
