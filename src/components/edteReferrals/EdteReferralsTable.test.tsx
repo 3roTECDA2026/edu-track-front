@@ -104,12 +104,14 @@ describe('EdteReferralsTable', () => {
     expect(rowOf('García, Mateo').dataset.withoutPate).toBeUndefined()
   })
 
-  it('"Crear PATE" aparece solo sin PATE y queda deshabilitado mientras no exista la pantalla', () => {
-    renderTable()
+  it('"Crear PATE" aparece solo sin PATE y navega al formulario de creación (CRM-079)', () => {
+    const handlers = renderTable()
     const create = screen.getByRole('button', {
       name: 'Crear PATE de Pérez, Sofía',
     }) as HTMLButtonElement
-    expect(create.disabled).toBe(true)
+    expect(create.disabled).toBe(false)
+    fireEvent.click(create)
+    expect(handlers.onCreatePate).toHaveBeenCalledWith(rows[0])
     expect(screen.queryByRole('button', { name: 'Crear PATE de García, Mateo' })).toBeNull()
   })
 
