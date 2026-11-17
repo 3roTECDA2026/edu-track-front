@@ -34,6 +34,7 @@ import {
   uploadInterventionAttachments,
   type InterventionEventType,
 } from '@/services/interventions.service'
+import { getApiErrorMessage } from '@/utils/apiErrorMessage'
 
 // Opciones del selector de tipo (texto en castellano, valor = enum del back).
 const EVENT_TYPE_OPTIONS: { value: InterventionEventType; label: string }[] = [
@@ -134,6 +135,7 @@ const InterventionFormPage = () => {
     if (!eventType) next.eventType = 'Elegí el tipo de evento'
     if (!description.trim()) next.description = 'Describí la situación detectada'
     if (!date) next.date = 'Elegí la fecha'
+    else if (date > todayIso()) next.date = 'La fecha no puede ser posterior a hoy.'
     const fileErrors = validateAttachmentFiles(files)
     if (fileErrors.length > 0) next.files = fileErrors.join(' ')
     setErrors(next)
@@ -185,7 +187,7 @@ const InterventionFormPage = () => {
     } catch (err: unknown) {
       setNotice({
         type: 'error',
-        text: err instanceof Error ? err.message : 'No se pudo registrar la intervención.',
+        text: getApiErrorMessage(err, 'No se pudo registrar la intervención.'),
       })
     }
   }
@@ -261,7 +263,8 @@ const InterventionFormPage = () => {
                   disabled={alreadyCreated}
                   error={Boolean(errors.date)}
                   helperText={errors.date ?? ' '}
-                  slotProps={{ inputLabel: { shrink: true } }}
+                  // No deja elegir días futuros en el calendario
+                  slotProps={{ inputLabel: { shrink: true }, htmlInput: { max: todayIso() } }}
                   sx={{ flex: 1 }}
                 />
                 <FormControl

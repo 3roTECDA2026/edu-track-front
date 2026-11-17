@@ -1,90 +1,128 @@
-import { Box, Paper, Typography } from '@mui/material'
+import { useState } from 'react'
+import { Alert, Box, Button, Typography } from '@mui/material'
 import EventNoteIcon from '@mui/icons-material/EventNote'
+import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined'
 
-import { InterventionAttachments } from '@/components/interventions/InterventionAttachments'
-import { SoftBadge } from '@/components/studentProfile/SoftBadge'
+import { getAttachmentErrorMessage } from '@/components/common/attachmentRules'
+import { InterventionDetailDialog } from '@/components/interventions/InterventionDetailDialog'
+import { InterventionTimeline } from '@/components/interventions/InterventionTimeline'
+import { InterventionTimelineFilters } from '@/components/interventions/InterventionTimelineFilters'
+import { validateDateRange } from '@/components/interventions/interventionTimelineConfig'
+import { useNotify } from '@/components/layout/NotificationProvider'
 import { TabEmpty, TabError, TabLoading } from '@/components/studentProfile/TabStates'
-import { COLORS, cardSx, labelSx } from '@/components/studentProfile/profileStyles'
-import { formatDate } from '@/components/studentProfile/profileLabels'
 import { useLazyResource } from '@/hooks/useLazyResource'
 import {
+  INTERVENTIONS_PAGE_LIMIT,
+  downloadInterventionTimelinePdf,
   listStudentInterventions,
-  type InterventionEventType,
+  type InterventionFilters,
+  type InterventionListItem,
 } from '@/services/interventions.service'
-
-// Etiquetas de los tipos de evento (el back manda el enum en inglés).
-const EVENT_TYPE_LABELS: Record<InterventionEventType, string> = {
-  PEDAGOGICAL: 'Pedagógico',
-  CONDUCT: 'Conductual',
-  HEALTH: 'Salud',
-}
+import { saveBlob } from '@/utils/saveBlob'
 
 interface InterventionsTabProps {
   studentId: string
 }
 
-// Bloque etiqueta + texto; no se muestra si el campo viene vacío.
-const Field = ({ label, value }: { label: string; value: string | null }) => {
-  if (!value) return null
-  return (
-    <Box>
-      <Typography sx={{ ...labelSx, mb: 0.25 }}>{label}</Typography>
-      <Typography variant="body2" sx={{ color: COLORS.ink, whiteSpace: 'pre-wrap' }}>
-        {value}
-      </Typography>
-    </Box>
-  )
-}
-
+// Pestaña "Intervenciones" de la ficha del alumno (CRM-088, E4-RF-13): línea de tiempo con
+// filtros, detalle al hacer clic y exportación a PDF para las entrevistas con las familias.
 export const InterventionsTab = ({ studentId }: InterventionsTabProps) => {
-  const interventions = useLazyResource(`interventions:${studentId}`, (signal) =>
-    listStudentInterventions(studentId, signal)
+  const notify = useNotify()
+  const [filters, setFilters] = useState<InterventionFilters>({})
+  const [selected, setSelected] = useState<InterventionListItem | null>(null)
+  const [exporting, setExporting] = useState(false)
+
+  // Con un rango de fechas inválido no se pide nada: se muestra el error en los filtros
+  const rangeError = validateDateRange(filters.from, filters.to)
+  const resourceKey = rangeError
+    ? null
+    : `interventions:${studentId}:${filters.eventType ?? ''}:${filters.from ?? ''}:${filters.to ?? ''}`
+
+  const interventions = useLazyResource(resourceKey, (signal) =>
+    listStudentInterventions(studentId, filters, signal)
   )
 
-  if (interventions.loading && !interventions.data) return <TabLoading />
-  if (interventions.error)
-    return <TabError message={interventions.error} onRetry={interventions.reload} />
+  const items = interventions.data?.items ?? []
+  const total = interventions.data?.total ?? 0
+  const hasFilters = Boolean(filters.eventType || filters.from || filters.to)
 
-  const items = interventions.data ?? []
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const pdf = await downloadInterventionTimelinePdf(studentId, filters)
+      saveBlob(pdf, 'intervenciones.pdf')
+    } catch (err: unknown) {
+      notify.error(getAttachmentErrorMessage(err, 'No se pudo generar el PDF.'))
+    } finally {
+      setExporting(false)
+    }
+  }
 
-  if (items.length === 0) {
+  const renderContent = () => {
+    if (rangeError) return null
+    if (interventions.loading && !interventions.data) return <TabLoading />
+    if (interventions.error) {
+      return <TabError message={interventions.error} onRetry={interventions.reload} />
+    }
+    if (items.length === 0) {
+      return hasFilters ? (
+        <TabEmpty
+          icon={<EventNoteIcon />}
+          title="Sin resultados"
+          text="No hay intervenciones con los filtros elegidos."
+        />
+      ) : (
+        <TabEmpty
+          icon={<EventNoteIcon />}
+          title="Sin intervenciones"
+          text="Todavía no se registraron intervenciones para este estudiante."
+        />
+      )
+    }
     return (
-      <TabEmpty
-        icon={<EventNoteIcon />}
-        title="Sin intervenciones"
-        text="Todavía no se registraron intervenciones para este estudiante."
-      />
+      <>
+        {total > items.length && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Se muestran las {INTERVENTIONS_PAGE_LIMIT} intervenciones más recientes de {total}. Usá
+            los filtros para ver las anteriores.
+          </Alert>
+        )}
+        <InterventionTimeline items={items} onSelect={setSelected} />
+      </>
     )
   }
 
   return (
     <Box sx={{ display: 'grid', gap: 2 }}>
-      {items.map((item) => (
-        <Paper key={item.id} variant="outlined" sx={{ ...cardSx, p: 2.5 }}>
-          {/* Encabezado: fecha, tipo y quién la registró */}
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 1, mb: 1.5 }}>
-            <Typography variant="body2" sx={{ fontWeight: 700, color: COLORS.ink }}>
-              {formatDate(item.date)}
-            </Typography>
-            <SoftBadge
-              label={EVENT_TYPE_LABELS[item.eventType]}
-              color={COLORS.ink}
-              background="#f3f4f6"
-            />
-            <Box sx={{ flexGrow: 1 }} />
-            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              Registró: {item.author.lastName}, {item.author.firstName}
-            </Typography>
-          </Box>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 2 }}>
+        <InterventionTimelineFilters filters={filters} onChange={setFilters} error={rangeError} />
+        <Box sx={{ flexGrow: 1 }} />
+        <Button
+          variant="outlined"
+          color="inherit"
+          startIcon={<PictureAsPdfOutlinedIcon />}
+          onClick={handleExport}
+          disabled={exporting || Boolean(rangeError) || items.length === 0}
+          sx={{ textTransform: 'none' }}
+        >
+          {exporting ? 'Generando PDF…' : 'Exportar a PDF'}
+        </Button>
+      </Box>
 
-          <Box sx={{ display: 'grid', gap: 1.5 }}>
-            <Field label="Situación detectada" value={item.description} />
-            <Field label="Propuesta de intervención" value={item.interventionProposal} />
-            <Field label="Actores involucrados" value={item.involvedActors} />
-            <InterventionAttachments interventionId={item.id} />
-          </Box>
-        </Paper>
-      ))}
+      {hasFilters && !rangeError && interventions.data && (
+        <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+          El PDF incluye solo las intervenciones que coinciden con los filtros.
+        </Typography>
+      )}
+
+      {renderContent()}
+
+      <InterventionDetailDialog
+        key={selected?.id ?? 'none'}
+        intervention={selected}
+        onClose={() => setSelected(null)}
+        onAttachmentsAdded={interventions.reload}
+      />
     </Box>
   )
 }
