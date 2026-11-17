@@ -278,6 +278,51 @@ describe('PateDetailPage', () => {
     expect(screen.queryByRole('option', { name: /01\/04\/2026/i })).toBeNull()
   })
 
+  it('muestra un aviso si no se pudo cargar el historial de seguimientos', async () => {
+    vi.spyOn(pateService, 'getPateFollowUps').mockRejectedValue(
+      new Error('Falló la carga del historial.')
+    )
+
+    renderComponent()
+    await screen.findByText('Plan de Acompañamiento a las Trayectorias (PATE)')
+
+    expect(await screen.findByText('Falló la carga del historial.')).toBeTruthy()
+    expect(screen.getByText('No hay seguimientos registrados para este PATE todavía.')).toBeTruthy()
+  })
+
+  it('muestra el error del back al guardar un seguimiento', async () => {
+    vi.spyOn(pateService, 'createPateFollowUp').mockRejectedValue(
+      new Error('El alumno no fue tratado en la reunión.')
+    )
+
+    renderComponent()
+    await screen.findByText('Plan de Acompañamiento a las Trayectorias (PATE)')
+    await waitFor(() => expect(edteMeetingService.listEdteMeetings).toHaveBeenCalled())
+
+    fireEvent.click(screen.getByRole('button', { name: /agregar seguimiento/i }))
+    fireEvent.mouseDown(screen.getByLabelText(/reunión del edte/i))
+    fireEvent.click(await screen.findByRole('option', { name: /10\/05\/2026/i }))
+    fireEvent.mouseDown(screen.getByLabelText(/evaluación de resultados/i))
+    fireEvent.click(await screen.findByRole('option', { name: 'Parcial' }))
+    fireEvent.change(screen.getByLabelText(/avances observados/i), {
+      target: { value: 'Nuevo progreso verificado' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: /guardar seguimiento/i }))
+
+    expect(await screen.findByText('El alumno no fue tratado en la reunión.')).toBeTruthy()
+  })
+
+  it('oculta las acciones de gestión a quien no puede gestionar trayectorias', async () => {
+    vi.spyOn(sessionService, 'canManageTrajectories').mockReturnValue(false)
+
+    renderComponent()
+    await screen.findByText('Plan de Acompañamiento a las Trayectorias (PATE)')
+
+    expect(screen.queryByRole('button', { name: /agregar seguimiento/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /cerrar pate/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /confirmar pate/i })).toBeNull()
+  })
+
   it('exige la evaluación antes de guardar un seguimiento', async () => {
     const createSpy = vi
       .spyOn(pateService, 'createPateFollowUp')
