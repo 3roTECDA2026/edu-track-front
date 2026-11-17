@@ -31,18 +31,35 @@ export const ClosePateDialog: React.FC<ClosePateDialogProps> = ({
   onClose,
   onSubmit,
 }) => {
-  const [evaluation, setEvaluation] = useState<PateEvaluation>('FAVORABLE')
+  const [evaluation, setEvaluation] = useState<PateEvaluation | ''>('')
   const [observations, setObservations] = useState('')
   const [error, setError] = useState<string | null>(null)
 
+  const reset = () => {
+    setEvaluation('')
+    setObservations('')
+    setError(null)
+  }
+
+  const handleClose = () => {
+    if (submitting) return
+    reset()
+    onClose()
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!evaluation) {
+      setError('Elegí la evaluación final de resultados.')
+      return
+    }
     try {
       setError(null)
       await onSubmit({
         finalEvaluation: evaluation,
         finalObservations: observations.trim() || undefined,
       })
+      reset()
       onClose()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al cerrar el PATE.'
@@ -51,7 +68,7 @@ export const ClosePateDialog: React.FC<ClosePateDialogProps> = ({
   }
 
   return (
-    <Dialog open={open} onClose={submitting ? undefined : onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={submitting ? undefined : handleClose} maxWidth="sm" fullWidth>
       <form onSubmit={handleSubmit}>
         <DialogTitle>Cerrar Plan de Acompañamiento (PATE)</DialogTitle>
         <DialogContent dividers>
@@ -63,7 +80,7 @@ export const ClosePateDialog: React.FC<ClosePateDialogProps> = ({
 
             {error && <Alert severity="error">{error}</Alert>}
 
-            <FormControl fullWidth required size="small">
+            <FormControl fullWidth size="small">
               <InputLabel id="close-eval-label">Evaluación Final de Resultados</InputLabel>
               <Select
                 labelId="close-eval-label"
@@ -71,6 +88,9 @@ export const ClosePateDialog: React.FC<ClosePateDialogProps> = ({
                 label="Evaluación Final de Resultados"
                 onChange={(e) => setEvaluation(e.target.value as PateEvaluation)}
               >
+                <MenuItem value="">
+                  <em>Seleccionar evaluación...</em>
+                </MenuItem>
                 <MenuItem value="FAVORABLE">{EVALUATION_LABELS.FAVORABLE}</MenuItem>
                 <MenuItem value="PARTIAL">{EVALUATION_LABELS.PARTIAL}</MenuItem>
                 <MenuItem value="UNFAVORABLE">{EVALUATION_LABELS.UNFAVORABLE}</MenuItem>
@@ -89,7 +109,7 @@ export const ClosePateDialog: React.FC<ClosePateDialogProps> = ({
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={onClose} disabled={submitting}>
+          <Button onClick={handleClose} disabled={submitting}>
             Cancelar
           </Button>
           <Button

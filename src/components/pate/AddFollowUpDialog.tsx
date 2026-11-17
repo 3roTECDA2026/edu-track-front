@@ -16,7 +16,11 @@ import {
 } from '@mui/material'
 import type { EdteMeetingSummary } from '@/services/edteMeeting.service'
 import type { PateEvaluation } from '@/services/pate.service'
-import { formatMeetingDate, MEETING_PERIOD_LABELS } from '@/components/edte/edteLabels'
+import {
+  formatMeetingDate,
+  MEETING_PERIOD_LABELS,
+  MEETING_STATUS_CONFIG,
+} from '@/components/edte/edteLabels'
 import { EVALUATION_LABELS } from '@/components/pate/pateLabels'
 
 interface AddFollowUpDialogProps {
@@ -41,14 +45,32 @@ export const AddFollowUpDialog: React.FC<AddFollowUpDialogProps> = ({
 }) => {
   const [meetingId, setMeetingId] = useState('')
   const [progress, setProgress] = useState('')
-  const [evaluation, setEvaluation] = useState<PateEvaluation>('PARTIAL')
+  const [evaluation, setEvaluation] = useState<PateEvaluation | ''>('')
   const [observations, setObservations] = useState('')
   const [error, setError] = useState<string | null>(null)
+
+  const reset = () => {
+    setMeetingId('')
+    setProgress('')
+    setEvaluation('')
+    setObservations('')
+    setError(null)
+  }
+
+  const handleClose = () => {
+    if (submitting) return
+    reset()
+    onClose()
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!meetingId) {
       setError('Elegí la reunión del EDTE asociada al seguimiento.')
+      return
+    }
+    if (!evaluation) {
+      setError('Elegí la evaluación de resultados.')
       return
     }
     if (!progress.trim()) {
@@ -64,11 +86,7 @@ export const AddFollowUpDialog: React.FC<AddFollowUpDialogProps> = ({
         evaluation,
         observations: observations.trim() || undefined,
       })
-      // Reset form
-      setMeetingId('')
-      setProgress('')
-      setEvaluation('PARTIAL')
-      setObservations('')
+      reset()
       onClose()
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al guardar el seguimiento.'
@@ -77,14 +95,20 @@ export const AddFollowUpDialog: React.FC<AddFollowUpDialogProps> = ({
   }
 
   return (
-    <Dialog open={open} onClose={submitting ? undefined : onClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={submitting ? undefined : handleClose} maxWidth="sm" fullWidth>
       <form onSubmit={handleSubmit}>
         <DialogTitle>Agregar Seguimiento del PATE</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2.5}>
             {error && <Alert severity="error">{error}</Alert>}
 
-            <FormControl fullWidth required size="small">
+            {meetings.length === 0 && (
+              <Alert severity="info">
+                No hay reuniones disponibles para registrar un seguimiento de este alumno.
+              </Alert>
+            )}
+
+            <FormControl fullWidth size="small">
               <InputLabel id="followup-meeting-label">Reunión del EDTE</InputLabel>
               <Select
                 labelId="followup-meeting-label"
@@ -98,13 +122,14 @@ export const AddFollowUpDialog: React.FC<AddFollowUpDialogProps> = ({
                 {meetings.map((m) => (
                   <MenuItem key={m.id} value={m.id}>
                     {formatMeetingDate(m.date)} — Período:{' '}
-                    {MEETING_PERIOD_LABELS[m.period] ?? m.period} (Ciclo {m.year})
+                    {MEETING_PERIOD_LABELS[m.period] ?? m.period} (Ciclo {m.year}) ·{' '}
+                    {MEETING_STATUS_CONFIG[m.status].label}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
 
-            <FormControl fullWidth required size="small">
+            <FormControl fullWidth size="small">
               <InputLabel id="followup-eval-label">Evaluación de Resultados</InputLabel>
               <Select
                 labelId="followup-eval-label"
@@ -112,6 +137,9 @@ export const AddFollowUpDialog: React.FC<AddFollowUpDialogProps> = ({
                 label="Evaluación de Resultados"
                 onChange={(e) => setEvaluation(e.target.value as PateEvaluation)}
               >
+                <MenuItem value="">
+                  <em>Seleccionar evaluación...</em>
+                </MenuItem>
                 <MenuItem value="FAVORABLE">{EVALUATION_LABELS.FAVORABLE}</MenuItem>
                 <MenuItem value="PARTIAL">{EVALUATION_LABELS.PARTIAL}</MenuItem>
                 <MenuItem value="UNFAVORABLE">{EVALUATION_LABELS.UNFAVORABLE}</MenuItem>
@@ -120,7 +148,6 @@ export const AddFollowUpDialog: React.FC<AddFollowUpDialogProps> = ({
 
             <TextField
               label="Avances Observados"
-              required
               multiline
               rows={3}
               fullWidth
@@ -141,7 +168,7 @@ export const AddFollowUpDialog: React.FC<AddFollowUpDialogProps> = ({
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
-          <Button onClick={onClose} disabled={submitting}>
+          <Button onClick={handleClose} disabled={submitting}>
             Cancelar
           </Button>
           <Button

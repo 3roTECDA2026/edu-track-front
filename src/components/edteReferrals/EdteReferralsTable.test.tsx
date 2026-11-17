@@ -35,7 +35,12 @@ const rows = [
 ]
 
 const renderTable = (props: Partial<Parameters<typeof EdteReferralsTable>[0]> = {}) => {
-  const handlers = { onViewProfile: vi.fn(), onCreatePate: vi.fn(), onAddToMeeting: vi.fn() }
+  const handlers = {
+    onViewProfile: vi.fn(),
+    onViewPate: vi.fn(),
+    onCreatePate: vi.fn(),
+    onAddToMeeting: vi.fn(),
+  }
   render(
     <EdteReferralsTable
       rows={rows}
@@ -113,6 +118,13 @@ describe('EdteReferralsTable', () => {
     fireEvent.click(create)
     expect(handlers.onCreatePate).toHaveBeenCalledWith(rows[0])
     expect(screen.queryByRole('button', { name: 'Crear PATE de García, Mateo' })).toBeNull()
+  })
+
+  it('"Ver PATE" aparece solo con PATE y navega al detalle', () => {
+    const handlers = renderTable()
+    expect(screen.queryByRole('button', { name: 'Ver PATE de Pérez, Sofía' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Ver PATE de García, Mateo' }))
+    expect(handlers.onViewPate).toHaveBeenCalledWith(rows[1])
   })
 
   it('"Ver ficha" y "Agregar a reunión" avisan con la fila', () => {

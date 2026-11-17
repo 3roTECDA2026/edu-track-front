@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import {
   Box,
   Typography,
@@ -33,20 +33,26 @@ import {
   type PateFollowUp,
   type PateEvaluation,
 } from '@/services/pate.service'
-import { listEdteMeetings, type EdteMeetingSummary } from '@/services/edteMeeting.service'
+import {
+  getEdteMeeting,
+  listEdteMeetings,
+  type EdteMeetingSummary,
+} from '@/services/edteMeeting.service'
 import { formatMeetingDate, MEETING_PERIOD_LABELS } from '@/components/edte/edteLabels'
 import { canManageTrajectories } from '@/services/session'
 import { FollowUpHistoryTable } from '@/components/pate/FollowUpHistoryTable'
 import { AddFollowUpDialog } from '@/components/pate/AddFollowUpDialog'
 import { ClosePateDialog } from '@/components/pate/ClosePateDialog'
+import { PateSubjectsSummary } from '@/components/pate/PateSubjectsSummary'
 import { PateStatusChip } from '@/components/edteReferrals/PateStatusChip'
 import { EVALUATION_LABELS } from '@/components/pate/pateLabels'
 
 export const PateDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>()
+  const pateId = id ?? ''
   const navigate = useNavigate()
 
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(Boolean(pateId))
   const [loadError, setLoadError] = useState<string | null>(null)
   const [actionErrors, setActionErrors] = useState<string[]>([])
   const [followUpError, setFollowUpError] = useState<string | null>(null)
@@ -61,24 +67,37 @@ export const PateDetailPage: React.FC = () => {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false)
   const [submittingAction, setSubmittingAction] = useState(false)
 
+  const successTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const canManage = canManageTrajectories()
+
+  useEffect(() => {
+    return () => {
+      if (successTimerRef.current) clearTimeout(successTimerRef.current)
+    }
+  }, [])
+
+  const showSuccess = (message: string) => {
+    if (successTimerRef.current) clearTimeout(successTimerRef.current)
+    setSuccessMessage(message)
+    successTimerRef.current = setTimeout(() => setSuccessMessage(null), 4000)
+  }
 
   useEffect(() => {
     let isMounted = true
 
-    if (!id) return
+    if (!pateId) return
 
     async function fetchData() {
       try {
         setLoading(true)
         setLoadError(null)
         setFollowUpError(null)
-        const pateData = await getPate(id)
+        const pateData = await getPate(pateId)
         if (!isMounted) return
         setPate(pateData)
 
         try {
-          const followUpsData = await getPateFollowUps(id)
+          const followUpsData = await getPateFollowUps(pateId)
           if (!isMounted) return
           setFollowUps(followUpsData)
         } catch (err: unknown) {
@@ -89,12 +108,29 @@ export const PateDetailPage: React.FC = () => {
           setFollowUpError(msg)
         }
 
-        // Cargar reuniones para el select de seguimientos
+        // Las reuniones firmadas donde el alumno no fue tratado no se pueden usar. Las que están
+        // en borrador sí: el back suma al alumno al registrar el seguimiento.
         if (canManage) {
           try {
             const meetingsData = await listEdteMeetings({ year: pateData.year })
+            const availableMeetings = await Promise.all(
+              meetingsData.map(async (meeting) => {
+                if (meeting.status === 'DRAFT') return meeting
+                try {
+                  const detail = await getEdteMeeting(meeting.id)
+                  const treated = detail.students.some(
+                    (student) => student.studentId === pateData.student.id
+                  )
+                  return treated ? meeting : null
+                } catch {
+                  return null
+                }
+              })
+            )
             if (!isMounted) return
-            setMeetings(meetingsData)
+            setMeetings(
+              availableMeetings.filter((meeting): meeting is EdteMeetingSummary => meeting !== null)
+            )
           } catch {
             // No bloqueante
           }
@@ -113,7 +149,7 @@ export const PateDetailPage: React.FC = () => {
     return () => {
       isMounted = false
     }
-  }, [id, canManage])
+  }, [pateId, canManage])
 
   const handleAddFollowUp = async (data: {
     edteMeetingId: string
@@ -121,13 +157,12 @@ export const PateDetailPage: React.FC = () => {
     evaluation: PateEvaluation
     observations?: string
   }) => {
-    if (!id) return
+    if (!pateId) return
     try {
       setSubmittingAction(true)
-      const created = await createPateFollowUp(id, data)
+      const created = await createPateFollowUp(pateId, data)
       setFollowUps((prev) => [created, ...prev])
-      setSuccessMessage('Seguimiento registrado exitosamente.')
-      setTimeout(() => setSuccessMessage(null), 4000)
+      showSuccess('Seguimiento registrado exitosamente.')
     } finally {
       setSubmittingAction(false)
     }
@@ -137,32 +172,30 @@ export const PateDetailPage: React.FC = () => {
     finalEvaluation: PateEvaluation
     finalObservations?: string
   }) => {
-    if (!id) return
+    if (!pateId) return
     try {
       setSubmittingAction(true)
-      const updated = await changePateStatus(id, {
+      const updated = await changePateStatus(pateId, {
         status: 'CLOSED',
         finalEvaluation: data.finalEvaluation,
         finalObservations: data.finalObservations,
       })
       setPate(updated)
-      setSuccessMessage('El PATE ha sido cerrado exitosamente.')
-      setTimeout(() => setSuccessMessage(null), 4000)
+      showSuccess('El PATE ha sido cerrado exitosamente.')
     } finally {
       setSubmittingAction(false)
     }
   }
 
   const handleConfirmPate = async () => {
-    if (!id) return
+    if (!pateId) return
     try {
       setSubmittingAction(true)
       setActionErrors([])
-      const updated = await changePateStatus(id, { status: 'IN_PROGRESS' })
+      const updated = await changePateStatus(pateId, { status: 'IN_PROGRESS' })
       setPate(updated)
       setConfirmDialogOpen(false)
-      setSuccessMessage('PATE confirmado y puesto en curso.')
-      setTimeout(() => setSuccessMessage(null), 4000)
+      showSuccess('PATE confirmado y puesto en curso.')
     } catch (err: unknown) {
       let messages: string[] = []
       if (err && typeof err === 'object' && 'details' in err) {
@@ -210,6 +243,7 @@ export const PateDetailPage: React.FC = () => {
   const isClosed = pate.status === 'CLOSED'
   const isDraft = pate.status === 'DRAFT'
   const isInProgress = pate.status === 'IN_PROGRESS'
+  const isCurricular = pate.view === 'CURRICULAR'
 
   return (
     <MainLayout>
@@ -219,7 +253,7 @@ export const PateDetailPage: React.FC = () => {
           subtitle={`${pate.student.lastName}, ${pate.student.firstName} · Ciclo Lectivo ${pate.year}`}
           breadcrumbs={[
             { label: 'Inicio', href: '/home' },
-            { label: 'Derivados EDTE', href: '/edte-referrals' },
+            { label: 'Ficha del alumno', href: `/students/${pate.student.id}` },
             { label: 'Detalle PATE' },
           ]}
           action={
@@ -352,7 +386,7 @@ export const PateDetailPage: React.FC = () => {
                   </Typography>
                 )}
               </Box>
-              {pate.finalObservations && (
+              {!isCurricular && pate.finalObservations && (
                 <Typography variant="body2" sx={{ whiteSpace: 'pre-line' }}>
                   {pate.finalObservations}
                 </Typography>
@@ -363,59 +397,62 @@ export const PateDetailPage: React.FC = () => {
           <Divider sx={{ my: 3 }} />
 
           {/* Diagnóstico y Estrategias */}
-          <Stack spacing={2}>
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                Diagnóstico de Situación
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
-                {pate.diagnosis || '—'}
-              </Typography>
-            </Box>
-
-            <Box>
-              <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                Estrategias de Acompañamiento
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
-                {pate.supportStrategies || '—'}
-              </Typography>
-            </Box>
-
-            {pate.schedule && (
+          {isCurricular ? (
+            <Alert severity="info">
+              La información pedagógica reservada del EDTE no está disponible en esta vista.
+            </Alert>
+          ) : (
+            <Stack spacing={2}>
               <Box>
                 <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                  Cronograma de Actividades
+                  Diagnóstico de Situación
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
-                  {pate.schedule}
+                  {pate.diagnosis || '—'}
                 </Typography>
               </Box>
-            )}
-          </Stack>
+
+              <Box>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  Estrategias de Acompañamiento
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'pre-line' }}>
+                  {pate.supportStrategies || '—'}
+                </Typography>
+              </Box>
+
+              {pate.schedule && (
+                <Box>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                    Cronograma de Actividades
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ whiteSpace: 'pre-line' }}
+                  >
+                    {pate.schedule}
+                  </Typography>
+                </Box>
+              )}
+            </Stack>
+          )}
+
+          <Divider sx={{ my: 3 }} />
+
+          <PateSubjectsSummary
+            subjectsToIntensify={pate.subjectsToIntensify ?? []}
+            subjectsToRepeat={pate.subjectsToRepeat ?? []}
+          />
         </ContentCard>
 
         {/* Historial de Seguimientos (CRM-080) */}
         <ContentCard>
-          <Box
-            sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}
-          >
-            <Box>
-              <Typography variant="h6">Historial de Seguimientos y Avances</Typography>
-              <Typography variant="caption" color="text.secondary">
-                Registros periódicos acordados en las reuniones posteriores del EDTE (E4-RF-07)
-              </Typography>
-            </Box>
-            {canManage && isInProgress && (
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<AddIcon />}
-                onClick={() => setAddDialogOpen(true)}
-              >
-                Agregar Seguimiento
-              </Button>
-            )}
+          <Box sx={{ mb: 2 }}>
+            <Typography variant="h6">Historial de Seguimientos y Avances</Typography>
+            <Typography variant="caption" color="text.secondary">
+              Registros periódicos acordados en las reuniones posteriores del EDTE (E4-RF-07)
+            </Typography>
           </Box>
 
           {followUpError && (
@@ -424,7 +461,7 @@ export const PateDetailPage: React.FC = () => {
             </Alert>
           )}
 
-          <FollowUpHistoryTable followUps={followUps} />
+          <FollowUpHistoryTable followUps={followUps} showObservations={!isCurricular} />
         </ContentCard>
 
         {/* Diálogos */}

@@ -39,6 +39,7 @@ import { SubjectRepeatsTab } from '@/components/subjectRepeats/SubjectRepeatsTab
 import { canManageSubjectRepeats } from '@/components/subjectRepeats/subjectRepeatLabels'
 import { useLazyResource } from '@/hooks/useLazyResource'
 import { deactivateStudent } from '@/services/students.service'
+import { listPates } from '@/services/pate.service'
 import { getStudentFortePlan } from '@/services/fortePlan.service'
 import {
   getStudentAttendance,
@@ -128,6 +129,11 @@ const StudentProfilePage = () => {
     canManageForte ||
     (fortePlan.data?.responsible?.id !== undefined &&
       fortePlan.data.responsible.id === currentUser().userId)
+
+  const patesResource = useLazyResource(id ? `student-pates:${id}` : null, (signal) =>
+    listPates({ studentId: id }, signal)
+  )
+  const latestPate = patesResource.data?.[0]
 
   const history = useLazyResource(
     visitedTabs.includes('enrollment') ? `history:${id}` : null,
@@ -383,6 +389,15 @@ const StudentProfilePage = () => {
           action={
             student ? (
               <Box sx={{ display: 'flex', gap: 1 }}>
+                {latestPate && (
+                  <Button
+                    variant="outlined"
+                    startIcon={<AssignmentIcon />}
+                    onClick={() => navigate(`/pates/${latestPate.id}`)}
+                  >
+                    Ver PATE {latestPate.year}
+                  </Button>
+                )}
                 {canManageTrajectories() && (
                   <Button
                     variant="outlined"

@@ -17,9 +17,13 @@ import { EVALUATION_LABELS } from '@/components/pate/pateLabels'
 
 interface FollowUpHistoryTableProps {
   followUps: PateFollowUp[]
+  showObservations?: boolean
 }
 
-export const FollowUpHistoryTable: React.FC<FollowUpHistoryTableProps> = ({ followUps }) => {
+export const FollowUpHistoryTable: React.FC<FollowUpHistoryTableProps> = ({
+  followUps,
+  showObservations = true,
+}) => {
   if (followUps.length === 0) {
     return (
       <Box sx={{ p: 3, textAlign: 'center' }}>
@@ -39,7 +43,7 @@ export const FollowUpHistoryTable: React.FC<FollowUpHistoryTableProps> = ({ foll
             <TableCell sx={{ fontWeight: 600, width: 170 }}>Reunión EDTE</TableCell>
             <TableCell sx={{ fontWeight: 600, width: 130 }}>Evaluación</TableCell>
             <TableCell sx={{ fontWeight: 600 }}>Avances Observados</TableCell>
-            <TableCell sx={{ fontWeight: 600 }}>Observaciones</TableCell>
+            {showObservations && <TableCell sx={{ fontWeight: 600 }}>Observaciones</TableCell>}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -79,11 +83,13 @@ export const FollowUpHistoryTable: React.FC<FollowUpHistoryTableProps> = ({ foll
               <TableCell sx={{ whiteSpace: 'pre-line' }}>
                 <Typography variant="body2">{f.progress}</Typography>
               </TableCell>
-              <TableCell sx={{ whiteSpace: 'pre-line' }}>
-                <Typography variant="body2" color="text.secondary">
-                  {f.observations || '—'}
-                </Typography>
-              </TableCell>
+              {showObservations && (
+                <TableCell sx={{ whiteSpace: 'pre-line' }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {f.observations || '—'}
+                  </Typography>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>

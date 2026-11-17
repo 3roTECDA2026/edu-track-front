@@ -30,12 +30,3 @@ export const EVALUATION_LABELS: Record<'FAVORABLE' | 'PARTIAL' | 'UNFAVORABLE', 
   PARTIAL: 'Parcial',
   UNFAVORABLE: 'Desfavorable',
 }
-
-export const EVALUATION_COLORS: Record<
-  'FAVORABLE' | 'PARTIAL' | 'UNFAVORABLE',
-  'success' | 'warning' | 'error'
-> = {
-  FAVORABLE: 'success',
-  PARTIAL: 'warning',
-  UNFAVORABLE: 'error',
-}

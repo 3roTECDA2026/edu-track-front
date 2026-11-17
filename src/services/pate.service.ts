@@ -87,10 +87,17 @@ export interface CreatePatePayload {
   subjectsToRepeat: PateSubjectToRepeatInput[]
 }
 
+export interface ListPatesParams {
+  studentId?: string
+  year?: number
+  status?: PateStatus
+}
+
 export interface PateResponse {
   id: string
   year: number
   status: PateStatus
+  view: 'FULL' | 'CURRICULAR'
   student: {
     id: string
     firstName: string
@@ -156,6 +163,18 @@ export function createPate(
     body: JSON.stringify(payload),
     signal,
   })
+}
+
+export function listPates(
+  params: ListPatesParams = {},
+  signal?: AbortSignal
+): Promise<PateResponse[]> {
+  const query = new URLSearchParams()
+  if (params.studentId) query.set('studentId', params.studentId)
+  if (params.year !== undefined) query.set('year', String(params.year))
+  if (params.status) query.set('status', params.status)
+  const suffix = query.toString()
+  return fetchApi<PateResponse[]>(suffix ? `${BASE}?${suffix}` : BASE, { signal })
 }
 
 export function getPate(id: string, signal?: AbortSignal): Promise<PateResponse> {
