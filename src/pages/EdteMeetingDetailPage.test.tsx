@@ -126,18 +126,32 @@ describe('detalle de una reunión del EDTE', () => {
   })
 
   describe('acta en PDF (CRM-076)', () => {
-    it.each(['TEACHER', 'PRECEPTOR', 'SCHOOL_MANAGEMENT'])(
-      '%s puede descargar el acta',
+    it('quien gestiona las reuniones puede descargar el acta aunque no haya sido convocado', async () => {
+      loginAs('SCHOOL_MANAGEMENT', 'u9')
+      renderDetail(detail())
+      await screen.findByText('Borrador')
+      expect(downloadButton()).toBeTruthy()
+    })
+
+    it('un integrante convocado puede descargar el acta, aunque haya estado ausente', async () => {
+      loginAs('TEACHER', 'u2')
+      renderDetail(detail())
+      await screen.findByText('Borrador')
+      expect(downloadButton()).toBeTruthy()
+    })
+
+    it.each(['TEACHER', 'PRECEPTOR'])(
+      '%s que no fue convocado no ve descargar el acta',
       async (role) => {
         loginAs(role, 'u9')
         renderDetail(detail())
         await screen.findByText('Borrador')
-        expect(downloadButton()).toBeTruthy()
+        expect(downloadButton()).toBeNull()
       }
     )
 
     it('la descarga pide el acta al back y la guarda con la fecha de la reunión', async () => {
-      loginAs('TEACHER', 'u9')
+      loginAs('TEACHER', 'u2')
       const fetchMock = renderDetail(detail())
       await screen.findByText('Borrador')
       fireEvent.click(downloadButton() as HTMLElement)

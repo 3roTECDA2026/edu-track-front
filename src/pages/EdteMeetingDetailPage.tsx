@@ -86,6 +86,8 @@ export const EdteMeetingDetailPage = () => {
   // El acta la firma cada integrante presente que todavía no firmó, sin importar su rol (CRM-076)
   const myMembership = data?.members.find((member) => member.userId === user.userId)
   const canSign = isDraft && Boolean(myMembership?.present) && !myMembership?.signedAt
+  // El acta tiene datos de alumnos: la bajan quienes gestionan y los convocados (igual que el back)
+  const canDownload = canManage || Boolean(myMembership)
 
   const handleSign = async () => {
     setSigning(true)
@@ -164,15 +166,17 @@ export const EdteMeetingDetailPage = () => {
           breadcrumbs={breadcrumbs}
           action={
             <Stack direction="row" spacing={1}>
-              <Button
-                variant="outlined"
-                color="inherit"
-                startIcon={<DownloadIcon />}
-                disabled={downloading}
-                onClick={() => void handleDownload()}
-              >
-                Descargar acta
-              </Button>
+              {canDownload && (
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  startIcon={<DownloadIcon />}
+                  disabled={downloading}
+                  onClick={() => void handleDownload()}
+                >
+                  Descargar acta
+                </Button>
+              )}
               {canManage && isDraft && (
                 <Button
                   variant="outlined"
