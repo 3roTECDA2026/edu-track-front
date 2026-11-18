@@ -1,3 +1,4 @@
+import AssignmentOutlined from '@mui/icons-material/AssignmentOutlined'
 import GroupAddOutlined from '@mui/icons-material/GroupAddOutlined'
 import NoteAddOutlined from '@mui/icons-material/NoteAddOutlined'
 import VisibilityIcon from '@mui/icons-material/Visibility'
@@ -38,6 +39,7 @@ interface EdteReferralsTableProps {
   pateUnavailable: boolean // No se sabe el estado del PATE: no se resalta ni se ofrece crearlo
   closedYear?: number // Ciclo que se cerró: aclara de qué año es el curso ("Curso en 2025")
   onViewProfile: (row: ReferralRow) => void
+  onViewPate: (row: ReferralRow) => void
   onCreatePate: (row: ReferralRow) => void
   onAddToMeeting: (row: ReferralRow) => void
 }
@@ -54,6 +56,7 @@ export function EdteReferralsTable({
   pateUnavailable,
   closedYear,
   onViewProfile,
+  onViewPate,
   onCreatePate,
   onAddToMeeting,
 }: EdteReferralsTableProps) {
@@ -113,6 +116,18 @@ export function EdteReferralsTable({
                           <VisibilityIcon fontSize="small" />
                         </IconButton>
                       </Tooltip>
+
+                      {row.pate !== null && !pateUnavailable && (
+                        <Tooltip title="Ver PATE">
+                          <IconButton
+                            size="small"
+                            aria-label={`Ver PATE de ${name}`}
+                            onClick={() => onViewPate(row)}
+                          >
+                            <AssignmentOutlined fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
 
                       {row.pate === null && !pateUnavailable && (
                         <Tooltip title="Crear PATE">

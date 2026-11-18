@@ -140,6 +140,9 @@ export const EdteReferralsPage = () => {
                     pateUnavailable={pateUnavailable}
                     closedYear={closedYear}
                     onViewProfile={(row) => navigate(`/students/${row.studentId}`)}
+                    onViewPate={(row) => {
+                      if (row.pate) navigate(`/pates/${row.pate.id}`)
+                    }}
                     onCreatePate={(row) => navigate(CREATE_PATE_PATH(row.studentId))}
                     onAddToMeeting={setMeetingStudent}
                   />

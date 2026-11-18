@@ -149,6 +149,13 @@ describe('EdteReferralsPage', () => {
     expect(screen.getByTestId('location').textContent).toBe('/students/s1')
   })
 
+  it('"Ver PATE" lleva al detalle del PATE', async () => {
+    stubApi({ '/api/edte-referrals': { body: REFERRALS }, '/api/pates': { body: PATES } })
+    renderPage()
+    fireEvent.click(await screen.findByRole('button', { name: 'Ver PATE de García, Mateo' }))
+    expect(screen.getByTestId('location').textContent).toBe('/pates/p2')
+  })
+
   it('"Agregar a reunión" ofrece las reuniones en borrador y lleva al formulario con el alumno', async () => {
     const fetchMock = stubApi({
       '/api/edte-referrals': { body: REFERRALS },
