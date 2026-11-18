@@ -334,7 +334,9 @@ const StudentProfilePage = () => {
                 onSaved={(message, severity) => setSnackbar({ message, severity })}
               />
             )}
-            {activeTab === 'interventions' && <InterventionsTab studentId={student.id} />}
+            {activeTab === 'interventions' && (
+              <InterventionsTab studentId={student.id} studentLastName={student.lastName} />
+            )}
             {activeTab === 'rite' && <RiteTab studentId={student.id} />}
             {activeTab === 'forte' && fortePlan.data && (
               <FortePlanTab

@@ -41,9 +41,12 @@ export interface InterventionAuthor {
   lastName: string
 }
 
-// Una intervención tal como la devuelve el listado: suma el autor con su nombre.
+// Una intervención tal como la devuelve el listado: suma el autor, el curso y cuántos adjuntos
+// tiene (CRM-088).
 export interface InterventionListItem extends Intervention {
   author: InterventionAuthor
+  classSection: { id: string; grade: number; division: string; shift: string } | null
+  _count?: { attachments: number }
 }
 
 // Forma del listado paginado del back (que a su vez viene dentro de { success, data, message }).
@@ -55,17 +58,51 @@ interface PaginatedInterventions {
   totalPages: number
 }
 
-// Intervenciones de un alumno, de la más reciente a la más vieja.
-// El back ordena por fecha desc; pedimos un límite alto para traerlas todas en la ficha.
+// Filtros de la línea de tiempo (CRM-088). Las fechas van como AAAA-MM-DD, inclusive.
+export interface InterventionFilters {
+  eventType?: InterventionEventType
+  from?: string
+  to?: string
+}
+
+// Parámetros de la consulta: alumno + filtros elegidos. Los mismos para el listado y el PDF.
+export function buildInterventionParams(
+  studentId: string,
+  filters: InterventionFilters
+): URLSearchParams {
+  const params = new URLSearchParams({ studentId })
+  if (filters.eventType) params.set('eventType', filters.eventType)
+  if (filters.from) params.set('from', filters.from)
+  if (filters.to) params.set('to', filters.to)
+  return params
+}
+
+// Máximo que devuelve el back por pedido: la ficha muestra las más recientes hasta ese número.
+export const INTERVENTIONS_PAGE_LIMIT = 100
+
+// Intervenciones de un alumno, de la más reciente a la más vieja (el back ordena por fecha).
+// Devuelve también el total, para avisar si hay más de las que se muestran.
 export async function listStudentInterventions(
   studentId: string,
+  filters: InterventionFilters = {},
   signal?: AbortSignal
-): Promise<InterventionListItem[]> {
+): Promise<{ items: InterventionListItem[]; total: number }> {
+  const params = buildInterventionParams(studentId, filters)
+  params.set('limit', String(INTERVENTIONS_PAGE_LIMIT))
   const res = await fetchApi<{ data: PaginatedInterventions }>(
-    `/api/interventions?studentId=${encodeURIComponent(studentId)}&limit=100`,
+    `/api/interventions?${params.toString()}`,
     { signal }
   )
-  return res.data.data
+  return { items: res.data.data, total: res.data.total }
+}
+
+// PDF de la línea de tiempo con los filtros aplicados (CRM-088). Se pide con token.
+export function downloadInterventionTimelinePdf(
+  studentId: string,
+  filters: InterventionFilters
+): Promise<Blob> {
+  const params = buildInterventionParams(studentId, filters)
+  return fetchApiBlob(`/api/interventions/export/pdf?${params.toString()}`)
 }
 
 // ---- Adjuntos (CRM-087) ----
