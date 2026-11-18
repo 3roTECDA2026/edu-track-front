@@ -6,6 +6,8 @@ export interface LegalConflict {
   conflictCode: string
   occurrenceDate: string | null
   registeredAt: string
+  withinDeadline: boolean | null
+  elapsedHours: number | null
   documentUuid: string
   // Hash de integridad (CRM-093); null en actas anteriores a ese ticket
   digitalSignHash: string | null
