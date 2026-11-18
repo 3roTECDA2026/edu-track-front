@@ -34,6 +34,12 @@ sube archivos sin tocar el resultado: sirve con AA (que no se vuelve a abrir), a
 para recuperar una subida que falló. Se ven en el historial de intentos de la ficha. Quitarlas: dirección y
 administración (`ATTACHMENT_DELETE_ROLES`, el back lo valida igual).
 
+**Integridad de actas de conflicto** (CRM-093): el detalle del acta ("Ver acta y anexos",
+`components/conflicts/ConflictAttachments.tsx`) muestra el UUID y el hash del acta y de cada anexo,
+y el botón "Verificar integridad" (`ConflictIntegrity.tsx`) llama a
+`GET /api/legal-conflicts/:id/verify`. Estados en `integrityLabels.ts`: "Íntegro", "Alterado" (rojo
+`#dc2626`, es un error) y "Sin hash" (actas anteriores), siempre con ícono y texto.
+
 ## 2. Stack
 
 | Componente | Tecnología |

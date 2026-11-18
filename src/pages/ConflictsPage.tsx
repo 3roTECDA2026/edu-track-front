@@ -31,14 +31,14 @@ import {
   type ConflictCode,
   type LegalConflict,
 } from '@/services/conflicts.service'
+import { formatDateTime } from '@/utils/dateTime'
 
 const studentLabel = (student: StudentListItem) =>
   `${student.lastName}, ${student.firstName} — DNI ${student.dni}`
 
 function formatDate(value: string | null) {
   if (!value) return 'Sin fecha'
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? 'Fecha inválida' : date.toLocaleString('es-AR')
+  return formatDateTime(value) ?? 'Fecha inválida'
 }
 
 export default function ConflictsPage() {
