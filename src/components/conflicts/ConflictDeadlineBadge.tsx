@@ -1,4 +1,8 @@
-import { Box } from '@mui/material'
+import { Chip } from '@mui/material'
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined'
+import ErrorOutlinedIcon from '@mui/icons-material/ErrorOutlined'
+import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined'
+import { ASSESSMENT_CONFIG } from '@/components/studentProfile/profileLabels'
 
 // E4-RF-18: indica si el conflicto se registró dentro de las 24 hs desde el suceso.
 interface ConflictDeadlineBadgeProps {
@@ -6,42 +10,44 @@ interface ConflictDeadlineBadgeProps {
   elapsedHours: number | null
 }
 
-const COLORS = {
-  onTime: { color: '#166534', background: '#dcfce7' },
-  late: { color: '#991b1b', background: '#fee2e2' },
-  unknown: { color: '#374151', background: '#f3f4f6' },
+// Semáforo con la misma paleta de las valoraciones TEA / TED (ver docs/standard-mui.md).
+// Cada estado lleva además texto e ícono, para que no dependa solo del color.
+const ON_TIME = { ...ASSESSMENT_CONFIG.TEA, Icon: CheckCircleOutlinedIcon }
+const LATE = { ...ASSESSMENT_CONFIG.TED, Icon: ErrorOutlinedIcon }
+// Sin fecha del suceso no es un semáforo: se usan los grises del tema
+const UNKNOWN = {
+  color: 'text.secondary',
+  background: 'action.hover',
+  Icon: HelpOutlineOutlinedIcon,
 }
 
 function getBadge({ withinDeadline, elapsedHours }: ConflictDeadlineBadgeProps) {
   // Sin fecha del suceso (conflictos viejos) el plazo no se puede calcular
-  if (withinDeadline === null) return { label: 'Sin fecha del suceso', ...COLORS.unknown }
+  if (withinDeadline === null) return { label: 'Sin fecha del suceso', ...UNKNOWN }
 
-  if (withinDeadline) return { label: 'Registrado en plazo', ...COLORS.onTime }
+  if (withinDeadline) return { label: 'Registrado en plazo', ...ON_TIME }
 
   const hours = elapsedHours === null ? '' : ` (${elapsedHours} hs)`
-  return { label: `Fuera de plazo${hours}`, ...COLORS.late }
+  return { label: `Fuera de plazo${hours}`, ...LATE }
 }
 
 export const ConflictDeadlineBadge = (props: ConflictDeadlineBadgeProps) => {
-  const { label, color, background } = getBadge(props)
+  const { label, color, background, Icon } = getBadge(props)
 
   return (
-    <Box
-      component="span"
+    <Chip
+      size="small"
+      icon={<Icon sx={{ fontSize: 16 }} />}
+      label={label}
       sx={{
-        display: 'inline-block',
-        px: 1,
-        py: 0.25,
+        height: 24,
         borderRadius: '4px',
-        fontSize: '0.75rem',
-        fontWeight: 500,
+        fontWeight: 600,
         color,
         backgroundColor: background,
-        whiteSpace: 'nowrap',
+        '& .MuiChip-icon': { color },
       }}
-    >
-      {label}
-    </Box>
+    />
   )
 }
 
