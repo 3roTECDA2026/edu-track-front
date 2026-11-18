@@ -411,11 +411,12 @@ export const EdteMeetingForm = ({ meeting, initialStudent }: EdteMeetingFormProp
                 <TextField
                   {...field}
                   size="small"
-                  label="Enlace al acta (opcional)"
+                  label="Enlace al acta escaneada (opcional)"
                   placeholder="https://"
                   error={Boolean(errors.minutesUrl)}
                   helperText={
-                    errors.minutesUrl?.message ?? 'Hace falta para marcar la reunión como firmada.'
+                    errors.minutesUrl?.message ??
+                    'Por si se escaneó el acta en papel. El acta en PDF la genera el sistema.'
                   }
                 />
               )}

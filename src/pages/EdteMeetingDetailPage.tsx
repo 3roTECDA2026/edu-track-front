@@ -20,6 +20,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
+import DownloadIcon from '@mui/icons-material/Download'
 import DrawIcon from '@mui/icons-material/Draw'
 import EditIcon from '@mui/icons-material/Edit'
 
@@ -36,14 +37,21 @@ import {
   MEETING_PERIOD_LABELS,
   MEETING_STATUS_CONFIG,
   formatMeetingDate,
+  formatSignedAt,
   getSignBlockedReason,
   isSafeWebUrl,
   memberRoleLabel,
+  memberSignatureLabel,
   pateStatusLabel,
 } from '@/components/edte/edteLabels'
 import { useLazyResource } from '@/hooks/useLazyResource'
-import { getEdteMeeting, signEdteMeeting } from '@/services/edteMeeting.service'
+import {
+  downloadEdteMeetingMinutes,
+  getEdteMeeting,
+  signEdteMeeting,
+} from '@/services/edteMeeting.service'
 import { currentUser } from '@/utils/currentUser'
+import { saveBlob } from '@/utils/saveBlob'
 
 const Field = ({ label, value }: { label: string; value: React.ReactNode }) => (
   <Box>
@@ -62,29 +70,53 @@ export const EdteMeetingDetailPage = () => {
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const notify = useNotify()
-  const canManage = EDTE_MANAGER_ROLES.includes(currentUser().role ?? '')
+  const user = currentUser()
+  const canManage = EDTE_MANAGER_ROLES.includes(user.role ?? '')
 
   const meeting = useLazyResource(id ? `edte-meeting:${id}` : null, (signal) =>
     getEdteMeeting(id, signal)
   )
   const [confirmSign, setConfirmSign] = useState(false)
   const [signing, setSigning] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
   const data = meeting.data
   const isDraft = data?.status === 'DRAFT'
-  const signBlockedReason = data ? getSignBlockedReason(data.minutesUrl, data.date) : null
+  const signBlockedReason = data ? getSignBlockedReason(data.date) : null
+  // El acta la firma cada integrante presente que todavía no firmó, sin importar su rol (CRM-076)
+  const myMembership = data?.members.find((member) => member.userId === user.userId)
+  const canSign = isDraft && Boolean(myMembership?.present) && !myMembership?.signedAt
+  // El acta tiene datos de alumnos: la bajan quienes gestionan y los convocados (igual que el back)
+  const canDownload = canManage || Boolean(myMembership)
 
   const handleSign = async () => {
     setSigning(true)
     try {
-      await signEdteMeeting(id)
-      notify.success('La reunión quedó marcada como firmada.')
+      const updated = await signEdteMeeting(id)
+      notify.success(
+        updated.status === 'SIGNED'
+          ? 'Firmaste el acta. Ya firmaron todos los presentes: la reunión quedó firmada.'
+          : 'Firmaste el acta. Falta que firmen los demás presentes.'
+      )
       setConfirmSign(false)
       meeting.reload()
     } catch (err: unknown) {
-      notify.error(err instanceof Error ? err.message : 'No se pudo marcar como firmada.')
+      notify.error(err instanceof Error ? err.message : 'No se pudo firmar el acta.')
     } finally {
       setSigning(false)
+    }
+  }
+
+  // El acta en PDF la arma el back al momento: en borrador sale marcada como tal (CRM-076)
+  const handleDownload = async () => {
+    if (!data) return
+    setDownloading(true)
+    try {
+      saveBlob(await downloadEdteMeetingMinutes(id), `acta-edte-${data.date}.pdf`)
+    } catch (err: unknown) {
+      notify.error(err instanceof Error ? err.message : 'No se pudo descargar el acta.')
+    } finally {
+      setDownloading(false)
     }
   }
 
@@ -123,6 +155,7 @@ export const EdteMeetingDetailPage = () => {
   const status = MEETING_STATUS_CONFIG[data.status]
   const present = data.members.filter((member) => member.present)
   const absent = data.members.filter((member) => !member.present)
+  const signedCount = present.filter((member) => member.signedAt).length
 
   return (
     <MainLayout>
@@ -132,8 +165,19 @@ export const EdteMeetingDetailPage = () => {
           subtitle={`Ciclo lectivo ${data.year}`}
           breadcrumbs={breadcrumbs}
           action={
-            canManage && isDraft ? (
-              <Stack direction="row" spacing={1}>
+            <Stack direction="row" spacing={1}>
+              {canDownload && (
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  startIcon={<DownloadIcon />}
+                  disabled={downloading}
+                  onClick={() => void handleDownload()}
+                >
+                  Descargar acta
+                </Button>
+              )}
+              {canManage && isDraft && (
                 <Button
                   variant="outlined"
                   color="inherit"
@@ -142,25 +186,31 @@ export const EdteMeetingDetailPage = () => {
                 >
                   Editar
                 </Button>
-                {/* El botón deshabilitado no muestra tooltip: se envuelve en un span */}
+              )}
+              {canSign && (
+                // El botón deshabilitado no muestra tooltip: se envuelve en un span
                 <Tooltip title={signBlockedReason ?? ''} disableHoverListener={!signBlockedReason}>
                   <span>
                     <AddButton
-                      label="Marcar como firmada"
+                      label="Firmar acta"
                       icon={<DrawIcon />}
                       disabled={Boolean(signBlockedReason)}
                       onClick={() => setConfirmSign(true)}
                     />
                   </span>
                 </Tooltip>
-              </Stack>
-            ) : undefined
+              )}
+            </Stack>
           }
         />
 
         <Stack spacing={3}>
-          {canManage && isDraft && signBlockedReason && (
-            <Alert severity="info">{signBlockedReason}</Alert>
+          {canSign && signBlockedReason && <Alert severity="info">{signBlockedReason}</Alert>}
+          {canManage && isDraft && signedCount > 0 && (
+            <Alert severity="info">
+              Ya firmaron {signedCount} de {present.length} presentes. Si editás la reunión, esas
+              firmas se borran y hay que volver a firmar el acta.
+            </Alert>
           )}
 
           {/* Datos de la reunión */}
@@ -182,29 +232,23 @@ export const EdteMeetingDetailPage = () => {
                 label="Turno"
                 value={data.shift ? SHIFT_LABELS[data.shift] : 'Sin especificar'}
               />
-              <Field
-                label="Acta"
-                value={
-                  isSafeWebUrl(data.minutesUrl) ? (
-                    <Link href={data.minutesUrl} target="_blank" rel="noopener noreferrer">
-                      Ver acta
-                    </Link>
-                  ) : data.minutesUrl ? (
-                    'Enlace no válido'
-                  ) : (
-                    'Sin cargar'
-                  )
-                }
-              />
+              <Field label="Firmas" value={`${signedCount} de ${present.length} presentes`} />
               <Field label="Cargada por" value={data.createdBy?.name ?? '—'} />
               <Field
-                label="Firmada"
-                value={
-                  data.signedAt
-                    ? `${new Date(data.signedAt).toLocaleDateString('es-AR')} · ${data.signedBy?.name ?? '—'}`
-                    : 'No'
-                }
+                label="Acta firmada"
+                value={data.signedAt ? formatSignedAt(data.signedAt) : 'No'}
               />
+              {/* Enlace opcional al acta en papel escaneada (el PDF lo genera el sistema) */}
+              {isSafeWebUrl(data.minutesUrl) && (
+                <Field
+                  label="Acta escaneada"
+                  value={
+                    <Link href={data.minutesUrl} target="_blank" rel="noopener noreferrer">
+                      Ver acta escaneada
+                    </Link>
+                  }
+                />
+              )}
             </Box>
             <Box sx={{ mt: 2 }}>
               <Field
@@ -235,6 +279,7 @@ export const EdteMeetingDetailPage = () => {
                       <TableCell>Integrante</TableCell>
                       <TableCell>Rol</TableCell>
                       <TableCell align="center">Asistencia</TableCell>
+                      <TableCell>Firma</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -251,6 +296,11 @@ export const EdteMeetingDetailPage = () => {
                           sx={{ color: member.present ? 'text.primary' : 'text.secondary' }}
                         >
                           {member.present ? 'Presente' : 'Ausente'}
+                        </TableCell>
+                        <TableCell
+                          sx={{ color: member.signedAt ? 'text.primary' : 'text.secondary' }}
+                        >
+                          {memberSignatureLabel(member)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -325,18 +375,19 @@ export const EdteMeetingDetailPage = () => {
           </ContentCard>
         </Stack>
 
-        {/* Confirmación para marcar como firmada: después ya no se puede editar */}
+        {/* Confirmación de la firma: con la del último presente, la reunión ya no se edita */}
         <Dialog
           open={confirmSign}
           onClose={() => !signing && setConfirmSign(false)}
           maxWidth="xs"
           fullWidth
         >
-          <DialogTitle sx={{ fontWeight: 700 }}>¿Marcar la reunión como firmada?</DialogTitle>
+          <DialogTitle sx={{ fontWeight: 700 }}>¿Firmar el acta?</DialogTitle>
           <DialogContent>
             <Typography variant="body2">
-              Después ya no se va a poder editar. Hace falta tener cargado el enlace al acta
-              firmada.
+              Firmás como integrante presente, con tu usuario y la fecha y hora de ahora. Podés
+              leerla antes con "Descargar acta". Cuando firmen todos los presentes, la reunión queda
+              firmada y ya no se puede editar.
             </Typography>
           </DialogContent>
           <DialogActions sx={{ px: 3, pb: 2 }}>
@@ -349,7 +400,7 @@ export const EdteMeetingDetailPage = () => {
               disabled={signing}
               onClick={() => void handleSign()}
             >
-              {signing ? 'Guardando...' : 'Marcar como firmada'}
+              {signing ? 'Firmando...' : 'Firmar'}
             </Button>
           </DialogActions>
         </Dialog>

@@ -1,4 +1,4 @@
-import { fetchApi } from '@/services/api'
+import { fetchApi, fetchApiBlob } from '@/services/api'
 import type { Shift } from '@/services/students.service'
 import type { BackendRole } from '@/services/users.service'
 
@@ -37,6 +37,7 @@ export interface EdteMeetingMember {
   role: BackendRole
   roleInMeeting: string | null // Rol con el que participó, guardado al cargar la reunión
   present: boolean
+  signedAt: string | null // Cuándo firmó el acta (CRM-076); null si todavía no firmó
 }
 
 // PATE armado en la reunión (CRM-078)
@@ -143,6 +144,13 @@ export function updateEdteMeeting(id: string, input: UpdateEdteMeetingInput) {
   })
 }
 
+// Firma del acta por el usuario logueado, que tiene que ser integrante presente (CRM-076).
+// Cuando firma el último presente, la reunión queda firmada.
 export function signEdteMeeting(id: string) {
   return fetchApi<EdteMeetingDetail>(`${BASE}/${id}/sign`, { method: 'PATCH' })
+}
+
+// Acta en PDF (CRM-076): se pide con el token, porque un link común no lo manda
+export function downloadEdteMeetingMinutes(id: string) {
+  return fetchApiBlob(`${BASE}/${id}/minutes`)
 }

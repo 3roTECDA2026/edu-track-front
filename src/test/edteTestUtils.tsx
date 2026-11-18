@@ -6,12 +6,16 @@ import type { EdteMeetingDetail, EdteMeetingSummary } from '@/services/edteMeeti
 
 // Ayudas para las pruebas de las pantallas del EDTE (CRM-075)
 
-// Inicia sesión como un usuario con ese rol (el token solo lleva el rol, como lo lee la app)
-export function loginAs(role: string | null) {
+// Inicia sesión como un usuario con ese rol (y ese id, para las pantallas que lo usan, como la
+// firma del acta de la CRM-076). El token lleva lo mismo que lee la app.
+export function loginAs(role: string | null, userId?: string) {
   sessionStorage.clear()
   localStorage.clear()
   if (role)
-    sessionStorage.setItem('token', `x.${btoa(JSON.stringify({ role })).replace(/=/g, '')}.y`)
+    sessionStorage.setItem(
+      'token',
+      `x.${btoa(JSON.stringify({ role, userId })).replace(/=/g, '')}.y`
+    )
 }
 
 // Responde a los pedidos de la app según la URL: la primera ruta que coincida gana. Devuelve el
@@ -19,7 +23,9 @@ export function loginAs(role: string | null) {
 export function stubApi(routes: Array<[test: (url: string) => boolean, body: unknown]>) {
   const fetchMock = vi.fn(async (url: string) => {
     const route = routes.find(([test]) => test(url))
-    return { ok: true, status: 200, json: async () => (route ? route[1] : []) }
+    const body = route ? route[1] : []
+    // blob: para las descargas de archivos (como el acta del EDTE, CRM-076)
+    return { ok: true, status: 200, json: async () => body, blob: async () => new Blob(['%PDF-']) }
   })
   vi.stubGlobal('fetch', fetchMock)
   return fetchMock
@@ -58,6 +64,7 @@ export const detail = (overrides: Partial<EdteMeetingDetail> = {}): EdteMeetingD
       role: 'SCHOOL_MANAGEMENT',
       roleInMeeting: 'SCHOOL_MANAGEMENT',
       present: true,
+      signedAt: null,
     },
     {
       userId: 'u2',
@@ -65,6 +72,7 @@ export const detail = (overrides: Partial<EdteMeetingDetail> = {}): EdteMeetingD
       role: 'TEACHER',
       roleInMeeting: 'TEACHER',
       present: false,
+      signedAt: null,
     },
   ],
   students: [
