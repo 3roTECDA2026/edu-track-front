@@ -10,13 +10,16 @@ import {
   DialogContent,
   DialogContentText,
   DialogTitle,
+  FormControlLabel,
   Stack,
+  Switch,
   TextField,
   Typography,
 } from '@mui/material'
 
 import AddButton from '@/components/common/AddButton'
 import ConflictAttachments from '@/components/conflicts/ConflictAttachments'
+import ConflictDeadlineBadge from '@/components/conflicts/ConflictDeadlineBadge'
 import MainLayout from '@/components/layout/MainLayout'
 import { PageContainer } from '@/components/common/PageContainer'
 import { PageHeader } from '@/components/common/PageHeader'
@@ -70,6 +73,7 @@ export default function ConflictsPage() {
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [reloadKey, setReloadKey] = useState(0)
+  const [onlyOverdue, setOnlyOverdue] = useState(false)
 
   useEffect(() => {
     const controller = new AbortController()
@@ -169,6 +173,11 @@ export default function ConflictsPage() {
       setSaving(false)
     }
   }
+
+  // Los conflictos sin fecha del suceso (withinDeadline null) no cuentan como fuera de plazo
+  const visibleConflicts = onlyOverdue
+    ? conflicts.filter((conflict) => conflict.withinDeadline === false)
+    : conflicts
 
   return (
     <MainLayout>
@@ -299,6 +308,19 @@ export default function ConflictsPage() {
                 Historial de conflictos del alumno
               </Typography>
 
+              {student && conflicts.length > 0 && (
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={onlyOverdue}
+                      onChange={(event) => setOnlyOverdue(event.target.checked)}
+                    />
+                  }
+                  label="Mostrar solo fuera de plazo"
+                  sx={{ mb: 2 }}
+                />
+              )}
+
               {!student ? (
                 <Typography color="text.secondary">
                   Seleccioná un alumno para consultar sus conflictos.
@@ -307,13 +329,13 @@ export default function ConflictsPage() {
                 <CircularProgress size={24} />
               ) : loadingError ? (
                 <Alert severity="error">{loadingError}</Alert>
-              ) : conflicts.length === 0 ? (
+              ) : visibleConflicts.length === 0 ? (
                 <Typography color="text.secondary">
-                  No se encontraron conflictos registrados para este alumno.
+                  Este alumno no tiene conflictos fuera de plazo.
                 </Typography>
               ) : (
                 <Stack spacing={2}>
-                  {conflicts.map((conflict) => (
+                  {visibleConflicts.map((conflict) => (
                     <Box
                       key={conflict.id}
                       sx={{
@@ -327,8 +349,17 @@ export default function ConflictsPage() {
                         Código: {conflict.conflictCode}
                       </Typography>
                       <Typography variant="body2">
-                        Fecha: {formatDate(conflict.occurrenceDate ?? conflict.registeredAt)}
+                        Fecha del suceso: {formatDate(conflict.occurrenceDate)}
                       </Typography>
+                      <Typography variant="body2">
+                        Fecha de registro: {formatDate(conflict.registeredAt)}
+                      </Typography>
+                      <Box sx={{ my: 1 }}>
+                        <ConflictDeadlineBadge
+                          withinDeadline={conflict.withinDeadline}
+                          elapsedHours={conflict.elapsedHours}
+                        />
+                      </Box>
                       <Typography variant="body2" sx={{ overflowWrap: 'anywhere' }}>
                         UUID: {conflict.documentUuid}
                       </Typography>
