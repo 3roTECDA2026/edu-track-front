@@ -53,7 +53,8 @@ const PATE_STATUS_LABELS: Record<string, string> = {
 
 export const pateStatusLabel = (status: string) => PATE_STATUS_LABELS[status] ?? status
 
-// Quienes cargan, editan y firman las reuniones. El back valida igual los permisos.
+// Quienes cargan y editan las reuniones. El acta la firma cada integrante presente, sin importar
+// su rol (CRM-076). El back valida igual los permisos.
 export const EDTE_MANAGER_ROLES = ['ADMINISTRATOR', 'SCHOOL_MANAGEMENT', 'EOE_DIRECTIVE']
 
 // Quienes ven las reuniones: el personal de la escuela (mismos roles que en el back)
@@ -89,17 +90,31 @@ const todayIso = () => {
   return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10)
 }
 
-// Por qué todavía no se puede marcar como firmada una reunión (mismas reglas que el back): hace
-// falta el enlace al acta, que sea una dirección web válida, y que la reunión ya haya ocurrido.
-// Devuelve null si se puede firmar.
-export function getSignBlockedReason(
-  minutesUrl: string | null | undefined,
-  date: string,
-  today: string = todayIso()
-): string | null {
-  if (!isSafeWebUrl(minutesUrl)) {
-    return 'Para marcarla como firmada, cargá primero un enlace válido al acta (desde "Editar").'
-  }
-  if (date > today) return 'La reunión todavía no ocurrió: no se puede marcar como firmada.'
+// Por qué todavía no se puede firmar el acta (misma regla que el back): la reunión tiene que
+// haber ocurrido. Devuelve null si se puede firmar (CRM-076).
+export function getSignBlockedReason(date: string, today: string = todayIso()): string | null {
+  if (date > today) return 'La reunión todavía no ocurrió: no se puede firmar el acta.'
   return null
+}
+
+// Fecha y hora de una firma en la zona horaria de la escuela, como DD/MM/AAAA HH:MM
+export function formatSignedAt(value: string) {
+  const parts = new Intl.DateTimeFormat('es-AR', {
+    timeZone: 'America/Argentina/Buenos_Aires',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(new Date(value))
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((item) => item.type === type)?.value ?? ''
+  return `${part('day')}/${part('month')}/${part('year')} ${part('hour')}:${part('minute')}`
+}
+
+// Estado de la firma de un convocado (CRM-076): solo firman los presentes
+export const memberSignatureLabel = (member: { present: boolean; signedAt: string | null }) => {
+  if (!member.present) return '—'
+  return member.signedAt ? `Firmó el ${formatSignedAt(member.signedAt)}` : 'Pendiente'
 }
