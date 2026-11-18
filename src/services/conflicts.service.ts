@@ -7,6 +7,8 @@ export interface LegalConflict {
   occurrenceDate: string | null
   registeredAt: string
   documentUuid: string
+  // Hash de integridad (CRM-093); null en actas anteriores a ese ticket
+  digitalSignHash: string | null
   detailedReport: string
   editLocked: boolean
 }
@@ -83,6 +85,9 @@ export interface LegalConflictAttachment {
   } | null
   content: string
   date: string
+  // CRM-093: identificador y hash de integridad del anexo (null en anexos anteriores)
+  documentUuid: string
+  digitalSignHash: string | null
 }
 
 export interface LegalConflictDetail extends LegalConflict {
@@ -109,6 +114,41 @@ export async function createLegalConflictAttachment(
       cache: 'no-store',
       body: JSON.stringify({ content }),
     }
+  )
+  return response.data
+}
+
+// ---- Integridad del acta (CRM-093, E4-RF-17) ----
+
+export type IntegrityStatus = 'INTACT' | 'ALTERED' | 'NOT_HASHED'
+export type IntegrityReason = 'CONTENT_CHANGED' | 'UNREADABLE' | 'AUDIT_LOG_MISMATCH'
+export type SignatureStatus = 'MATCH' | 'MISMATCH' | 'UNSIGNED'
+
+export interface AttachmentIntegrity {
+  id: string
+  documentUuid: string
+  status: IntegrityStatus
+  reasons: IntegrityReason[]
+}
+
+export interface ConflictVerification {
+  conflictId: string
+  documentUuid: string
+  status: IntegrityStatus // resultado general: acta, anexos y firma
+  conflictStatus: IntegrityStatus // solo el acta
+  storedHash: string | null
+  calculatedHash: string | null
+  reasons: IntegrityReason[]
+  signature: { status: SignatureStatus; signedAt: string | null }
+  attachments: AttachmentIntegrity[]
+  verifiedAt: string
+}
+
+// Recalcula en el back los hashes del acta y de sus anexos
+export async function verifyLegalConflict(id: string): Promise<ConflictVerification> {
+  const response = await fetchApi<ConflictResponse<ConflictVerification>>(
+    `/api/legal-conflicts/${encodeURIComponent(id)}/verify`,
+    { cache: 'no-store' }
   )
   return response.data
 }

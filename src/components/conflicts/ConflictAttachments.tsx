@@ -14,6 +14,7 @@ import {
   Typography,
 } from '@mui/material'
 import AddButton from '@/components/common/AddButton'
+import ConflictIntegrity, { DocumentIdentity } from '@/components/conflicts/ConflictIntegrity'
 import {
   createLegalConflictAttachment,
   getLegalConflictDetail,
@@ -144,6 +145,18 @@ export default function ConflictAttachments({ conflictId }: { conflictId: string
 
               <Divider />
 
+              {/* CRM-093: la clave reinicia la verificación cuando se suma un anexo */}
+              <ConflictIntegrity
+                key={detail.attachments?.length ?? 0}
+                conflict={detail}
+                attachmentLabel={(attachmentId) => {
+                  const attachment = detail.attachments?.find((a) => a.id === attachmentId)
+                  return attachment ? `Anexo del ${dateLabel(attachment.date)}` : 'Anexo'
+                }}
+              />
+
+              <Divider />
+
               <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                 Historial de anexos
               </Typography>
@@ -180,6 +193,13 @@ export default function ConflictAttachments({ conflictId }: { conflictId: string
                       >
                         {attachment.content}
                       </Typography>
+
+                      <Box sx={{ mt: 1 }}>
+                        <DocumentIdentity
+                          uuid={attachment.documentUuid}
+                          hash={attachment.digitalSignHash}
+                        />
+                      </Box>
                     </Box>
                   ))
               ) : (
