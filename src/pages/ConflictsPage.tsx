@@ -205,6 +205,7 @@ export default function ConflictsPage() {
                   getOptionLabel={studentLabel}
                   onChange={(_, value) => {
                     setStudent(value)
+                    setOnlyOverdue(false)
                     setSaveError('')
                     setSuccess('')
                   }}
@@ -331,7 +332,9 @@ export default function ConflictsPage() {
                 <Alert severity="error">{loadingError}</Alert>
               ) : visibleConflicts.length === 0 ? (
                 <Typography color="text.secondary">
-                  Este alumno no tiene conflictos fuera de plazo.
+                  {onlyOverdue
+                    ? 'Este alumno no tiene conflictos fuera de plazo.'
+                    : 'No se encontraron conflictos registrados para este alumno.'}
                 </Typography>
               ) : (
                 <Stack spacing={2}>
