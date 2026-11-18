@@ -40,6 +40,7 @@ export const INTEGRITY_REASON_LABELS: Record<IntegrityReason, string> = {
   CONTENT_CHANGED: 'El contenido no coincide con el hash guardado.',
   UNREADABLE: 'El contenido cifrado fue modificado y no se puede leer.',
   AUDIT_LOG_MISMATCH: 'El hash guardado no coincide con el registrado en la auditoría.',
+  AUDIT_LOG_MISSING: 'Falta el registro de auditoría del alta: no se guardó por el sistema.',
 }
 
 export const SIGNATURE_STATUS_LABELS: Record<SignatureStatus, string> = {

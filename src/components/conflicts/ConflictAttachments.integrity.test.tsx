@@ -132,6 +132,26 @@ describe('integridad del acta en el detalle (CRM-093)', () => {
     expect(within(result).getByText('El contenido no coincide con el hash guardado.')).toBeTruthy()
   })
 
+  it('explica cuando falta el registro de auditoría del alta', async () => {
+    openDetail(
+      detail(),
+      verification({
+        status: 'ALTERED',
+        conflictStatus: 'ALTERED',
+        reasons: ['AUDIT_LOG_MISSING'],
+      })
+    )
+    await screen.findByText('Integridad del documento')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Verificar integridad' }))
+
+    expect(
+      await screen.findByText(
+        'Falta el registro de auditoría del alta: no se guardó por el sistema.'
+      )
+    ).toBeTruthy()
+  })
+
   it('avisa si el contenido cambió después de la firma electrónica', async () => {
     openDetail(
       detail(),

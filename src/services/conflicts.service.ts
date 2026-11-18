@@ -121,7 +121,8 @@ export async function createLegalConflictAttachment(
 // ---- Integridad del acta (CRM-093, E4-RF-17) ----
 
 export type IntegrityStatus = 'INTACT' | 'ALTERED' | 'NOT_HASHED'
-export type IntegrityReason = 'CONTENT_CHANGED' | 'UNREADABLE' | 'AUDIT_LOG_MISMATCH'
+export type IntegrityReason =
+  'CONTENT_CHANGED' | 'UNREADABLE' | 'AUDIT_LOG_MISMATCH' | 'AUDIT_LOG_MISSING'
 export type SignatureStatus = 'MATCH' | 'MISMATCH' | 'UNSIGNED'
 
 export interface AttachmentIntegrity {
