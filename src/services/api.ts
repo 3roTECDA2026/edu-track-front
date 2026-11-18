@@ -1,4 +1,15 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+const configuredApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
+// En desarrollo, si abrimos el front desde la IP de la red (para escanear el QR con el celular),
+// el localhost del .env apuntaría al propio celular. Se usa la misma IP del front.
+const API_URL = (() => {
+  if (!import.meta.env.DEV || typeof window === 'undefined') return configuredApiUrl;
+  const hostname = window.location.hostname;
+  if (hostname === 'localhost' || hostname === '127.0.0.1') return configuredApiUrl;
+  const url = new URL(configuredApiUrl);
+  url.hostname = hostname;
+  return url.toString();
+})();
 
 export interface HealthResponse {
   status: string;

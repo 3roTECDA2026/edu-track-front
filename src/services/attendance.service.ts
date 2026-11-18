@@ -1,4 +1,4 @@
-import { fetchApi } from '@/services/api'
+import { fetchApi, fetchApiBlob } from '@/services/api'
 
 // PRESENT = presente · ABSENT = ausente · QUARTER = retardo de ¼ · HALF = retardo de ½
 export type AttendanceValue = 'PRESENT' | 'ABSENT' | 'HALF' | 'QUARTER'
@@ -9,6 +9,15 @@ export interface AttendanceEntry {
   value: AttendanceValue
   // true para la J del wireframe: una falta (ABSENT) marcada como justificada
   justified?: boolean
+}
+
+// Respuesta del check-in por QR: el back ya guardó la asistencia de hoy
+export interface AttendanceQrCheckIn {
+  studentId: string
+  date: string
+  sectionId: string
+  value: AttendanceValue
+  alreadyRegistered: boolean
 }
 
 export interface DailyAttendanceRecord {
@@ -138,5 +147,21 @@ export const attendanceService = {
     fetchApi<SchoolDays>('/api/attendance/school-days', {
       method: 'PUT',
       body: JSON.stringify(data),
+    }),
+
+  // PNG con el link de check-in del alumno ya codificado (lo genera el back).
+  // Se manda el origen real del navegador: en el celular no sirve un localhost ni una IP vieja.
+  getQrImage: (studentId: string, signal?: AbortSignal) => {
+    const checkInUrl = `${window.location.origin}/attendance/qr/${encodeURIComponent(studentId)}`
+    const query = new URLSearchParams({ url: checkInUrl })
+    return fetchApiBlob(`/api/attendance/qr/${encodeURIComponent(studentId)}/image?${query}`, {
+      signal,
+    })
+  },
+
+  // Al escanear el QR, el back marca la asistencia de hoy
+  checkInByQr: (studentId: string, signal?: AbortSignal) =>
+    fetchApi<AttendanceQrCheckIn>(`/api/attendance/qr/${encodeURIComponent(studentId)}`, {
+      signal,
     }),
 }

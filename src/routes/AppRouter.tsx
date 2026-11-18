@@ -8,6 +8,7 @@ import HomePage from '@/pages/HomePage'
 import LoginPage from '@/pages/LoginPage'
 import AttendanceSummaryPage from '@/pages/AttendanceSummaryPage'
 import DailyAttendancePage from '@/pages/DailyAttendancePage'
+import { AttendanceQrCheckInPage } from '@/pages/AttendanceQrCheckInPage'
 import StudentsPage from '@/pages/StudentsPage'
 import CalificationGridPage from '@/pages/CalificationGridPage'
 import CoursesPage from '@/pages/CoursesPage'
@@ -37,8 +38,10 @@ const AppRouter = () => {
   return (
     <BrowserRouter>
       <Routes>
-        {/* Pública */}
+        {/* Públicas */}
         <Route path="/login" element={<LoginPage />} />
+        {/* Destino del QR de asistencia: se escanea desde el celular, sin sesión */}
+        <Route path="/attendance/qr/:studentId" element={<AttendanceQrCheckInPage />} />
 
         {/* Privadas: requieren sesión */}
         <Route element={<ProtectedRoute />}>
