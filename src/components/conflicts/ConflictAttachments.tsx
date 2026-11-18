@@ -20,11 +20,11 @@ import {
   getLegalConflictDetail,
   type LegalConflictDetail,
 } from '@/services/conflicts.service'
+import { formatDateTime } from '@/utils/dateTime'
 
 function dateLabel(value: string | undefined) {
   if (!value) return 'Fecha no disponible'
-  const date = new Date(value)
-  return Number.isNaN(date.getTime()) ? 'Fecha no disponible' : date.toLocaleString('es-AR')
+  return formatDateTime(value) ?? 'Fecha no disponible'
 }
 
 export default function ConflictAttachments({ conflictId }: { conflictId: string }) {

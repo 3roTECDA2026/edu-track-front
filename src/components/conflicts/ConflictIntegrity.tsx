@@ -15,6 +15,7 @@ import {
   type IntegrityStatus,
   type LegalConflictDetail,
 } from '@/services/conflicts.service'
+import { formatDateTime } from '@/utils/dateTime'
 
 const monoSx = { fontFamily: 'monospace', overflowWrap: 'anywhere' } as const
 
@@ -176,7 +177,7 @@ export default function ConflictIntegrity({ conflict, attachmentLabel }: Conflic
           </Stack>
 
           <Typography variant="caption" color="text.secondary" component="div" sx={{ mt: 1 }}>
-            Verificado el {new Date(result.verifiedAt).toLocaleString('es-AR')}
+            Verificado el {formatDateTime(result.verifiedAt, { seconds: true })}
           </Typography>
         </Box>
       )}
