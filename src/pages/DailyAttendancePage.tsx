@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import {
   Alert,
   Box,
@@ -25,12 +25,14 @@ import SaveIcon from '@mui/icons-material/Save'
 import CheckIcon from '@mui/icons-material/Check'
 import SearchIcon from '@mui/icons-material/Search'
 import EditIcon from '@mui/icons-material/Edit'
+import QrCodeIcon from '@mui/icons-material/QrCode'
 
 import MainLayout from '../components/layout/MainLayout'
 import PageHeader from '../components/common/PageHeader'
 import { ContentCard } from '@/components/common/ContentCard'
 import { StandardTablePagination } from '@/components/common/StandardTablePagination'
 import { SHIFT_LABELS } from '@/components/students/studentLabels'
+import { AttendanceQrDialog } from '@/components/studentProfile/AttendanceQrDialog'
 import { useAttendance } from '@/hooks/useAttendance'
 import {
   attendanceService,
@@ -163,6 +165,7 @@ export const DailyAttendancePage = () => {
   const [editingPast, setEditingPast] = useState(false)
   // Menú de la R: para qué alumno se está eligiendo el retardo
   const [lateMenu, setLateMenu] = useState<{ anchor: HTMLElement; studentId: string } | null>(null)
+  const [qrStudent, setQrStudent] = useState<{ id: string; name: string } | null>(null)
   const [snackbar, setSnackbar] = useState<SnackbarState | null>(null)
   const [page, setPage] = useState(0)
   const [rowsPerPage, setRowsPerPage] = useState(10)
@@ -503,27 +506,60 @@ export const DailyAttendancePage = () => {
                             {BUTTONS.map((option) => {
                               const mark = marks[student.id]
                               return (
-                                <Tooltip key={option.value} title={option.label} arrow>
-                                  <span>
-                                    <Button
-                                      size="small"
-                                      variant="outlined"
-                                      disabled={!canEdit}
-                                      onClick={(event) => handleButton(event, student.id, option.value)}
-                                      sx={{
-                                        minWidth: 40,
-                                        height: 30,
-                                        p: 0,
-                                        fontWeight: 700,
-                                        borderRadius: 1,
-                                        boxShadow: 'none',
-                                        ...getButtonStyle(isSelected(option.value, mark), option),
-                                      }}
-                                    >
-                                      {buttonText(option.value, mark)}
-                                    </Button>
-                                  </span>
-                                </Tooltip>
+                                <Fragment key={option.value}>
+                                  <Tooltip title={option.label} arrow>
+                                    <span>
+                                      <Button
+                                        size="small"
+                                        variant="outlined"
+                                        disabled={!canEdit}
+                                        onClick={(event) =>
+                                          handleButton(event, student.id, option.value)
+                                        }
+                                        sx={{
+                                          minWidth: 40,
+                                          height: 30,
+                                          p: 0,
+                                          fontWeight: 700,
+                                          borderRadius: 1,
+                                          boxShadow: 'none',
+                                          ...getButtonStyle(isSelected(option.value, mark), option),
+                                        }}
+                                      >
+                                        {buttonText(option.value, mark)}
+                                      </Button>
+                                    </span>
+                                  </Tooltip>
+                                  {option.value === 'P' && (
+                                    <Tooltip title="Ver QR de asistencia" arrow>
+                                      <Button
+                                        size="small"
+                                        variant="outlined"
+                                        onClick={() =>
+                                          setQrStudent({
+                                            id: student.id,
+                                            name: `${student.lastName}, ${student.firstName}`,
+                                          })
+                                        }
+                                        sx={{
+                                          minWidth: 40,
+                                          height: 30,
+                                          p: 0,
+                                          borderColor: '#d1d5db',
+                                          color: '#4b5563',
+                                          borderRadius: 1,
+                                          boxShadow: 'none',
+                                          '&:hover': {
+                                            borderColor: '#9ca3af',
+                                            backgroundColor: '#f3f4f6',
+                                          },
+                                        }}
+                                      >
+                                        <QrCodeIcon fontSize="small" />
+                                      </Button>
+                                    </Tooltip>
+                                  )}
+                                </Fragment>
                               )
                             })}
                           </Box>
@@ -591,6 +627,13 @@ export const DailyAttendancePage = () => {
           </ContentCard>
         )}
       </Box>
+
+      <AttendanceQrDialog
+        open={qrStudent !== null}
+        studentId={qrStudent?.id ?? ''}
+        studentName={qrStudent?.name ?? ''}
+        onClose={() => setQrStudent(null)}
+      />
 
       {/* Menú de la R: retardo de ¼ o de ½ falta */}
       <Menu anchorEl={lateMenu?.anchor} open={lateMenu !== null} onClose={() => setLateMenu(null)}>
