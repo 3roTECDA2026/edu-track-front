@@ -15,30 +15,33 @@ afterEach(() => {
 const CONFLICT_HASH = '7e370adaa828c3547e7ad644342a4340d630f602e32d6cf7105dc7951aaeb118'
 const ATTACHMENT_HASH = '10d4f1241611f238d43d26581cdc898fd9fd18c03585ca70559704d67695e4b9'
 
-const detail = (overrides: Partial<LegalConflictDetail> = {}): LegalConflictDetail => ({
-  id: 'c1',
-  studentId: 's1',
-  conflictCode: 'CON-001',
-  occurrenceDate: '2026-11-17T10:00:00.000Z',
-  registeredAt: '2026-11-17T12:00:00.000Z',
-  documentUuid: '556cc977-21bf-470d-81c3-ecccf24c9627',
-  digitalSignHash: CONFLICT_HASH,
-  detailedReport: 'Informe del conflicto',
-  editLocked: true,
-  attachments: [
-    {
-      id: 'a1',
-      conflictId: 'c1',
-      authorId: 'u1',
-      author: { firstName: 'Ana', lastName: 'Pérez' },
-      content: 'Anexo de seguimiento',
-      date: '2026-11-17T13:00:00.000Z',
-      documentUuid: 'b33ab5cb-d67d-4b51-8149-ddc6b952a9f2',
-      digitalSignHash: ATTACHMENT_HASH,
-    },
-  ],
-  ...overrides,
-})
+// Con "as" para que el armado siga compilando si el tipo suma campos que este test no usa
+// (por ejemplo, withinDeadline y elapsedHours de CRM-094)
+const detail = (overrides: Partial<LegalConflictDetail> = {}): LegalConflictDetail =>
+  ({
+    id: 'c1',
+    studentId: 's1',
+    conflictCode: 'CON-001',
+    occurrenceDate: '2026-11-17T10:00:00.000Z',
+    registeredAt: '2026-11-17T12:00:00.000Z',
+    documentUuid: '556cc977-21bf-470d-81c3-ecccf24c9627',
+    digitalSignHash: CONFLICT_HASH,
+    detailedReport: 'Informe del conflicto',
+    editLocked: true,
+    attachments: [
+      {
+        id: 'a1',
+        conflictId: 'c1',
+        authorId: 'u1',
+        author: { firstName: 'Ana', lastName: 'Pérez' },
+        content: 'Anexo de seguimiento',
+        date: '2026-11-17T13:00:00.000Z',
+        documentUuid: 'b33ab5cb-d67d-4b51-8149-ddc6b952a9f2',
+        digitalSignHash: ATTACHMENT_HASH,
+      },
+    ],
+    ...overrides,
+  }) as LegalConflictDetail
 
 const verification = (overrides: Partial<ConflictVerification> = {}): ConflictVerification => ({
   conflictId: 'c1',
