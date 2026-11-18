@@ -37,6 +37,8 @@ export const EVENT_TYPES = Object.keys(EVENT_TYPE_CONFIG) as InterventionEventTy
 
 // Igual que en el back: el autor puede sumar adjuntos durante 48 hs desde que la registró.
 export const ATTACHMENT_WINDOW_HOURS = 48
+// Tolerancia para la diferencia de hora entre la PC y el servidor.
+const CLOCK_TOLERANCE_HOURS = 1
 
 // ¿Puede este usuario sumar adjuntos a la intervención? (CRM-087/088)
 export function canAddAttachments(
@@ -45,8 +47,23 @@ export function canAddAttachments(
   now: number = Date.now()
 ): boolean {
   if (!userId || intervention.authorId !== userId) return false
-  const hours = (now - new Date(intervention.createdAt).getTime()) / (1000 * 60 * 60)
+  const createdAt = new Date(intervention.createdAt).getTime()
+  // Fecha que no se puede leer: no se ofrece (el back igual lo valida)
+  if (Number.isNaN(createdAt)) return false
+  const hours = (now - createdAt) / (1000 * 60 * 60)
+  // Un poco en el futuro puede ser el reloj de la PC atrasado; mucho más es un dato inválido
+  if (hours < -CLOCK_TOLERANCE_HOURS) return false
   return hours <= ATTACHMENT_WINDOW_HOURS
+}
+
+// Nombre del PDF exportado: "intervenciones-Perez-2026-11-18.pdf". Así no quedan todos con el
+// mismo nombre al exportar los de varios alumnos. Se sacan los caracteres que Windows no acepta.
+export function timelinePdfFileName(studentLastName: string | undefined, today: string): string {
+  const name = (studentLastName ?? '')
+    .replace(/[\\/:*?"<>|]/g, '')
+    .replace(/\s+/g, '-')
+    .trim()
+  return name ? `intervenciones-${name}-${today}.pdf` : `intervenciones-${today}.pdf`
 }
 
 // Mensaje si el rango de fechas no tiene sentido; null si está bien.

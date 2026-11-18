@@ -70,69 +70,91 @@ function renderForm() {
   )
 }
 
+// Estos tests completan el formulario entero (MUI Select, Autocomplete, archivos). Aislados
+// tardan 2-4 s, pero con la suite completa corriendo en paralelo pasaban los 5 s por defecto
+// de Vitest. Les damos más margen, y también a las esperas de la pantalla.
+const FORM_TEST_TIMEOUT_MS = 20_000
+const SCREEN_WAIT = { timeout: 5_000 }
+
 afterEach(() => {
   cleanup()
   vi.unstubAllGlobals()
 })
 
 describe('formulario de intervención con adjuntos (CRM-087)', () => {
-  it('si falla la subida, permite reintentar sin crear otra intervención', async () => {
-    const back = stubBackWithFailingUpload()
-    const { container } = renderForm()
+  it(
+    'si falla la subida, permite reintentar sin crear otra intervención',
+    async () => {
+      const back = stubBackWithFailingUpload()
+      const { container } = renderForm()
 
-    // Esperar a que cargue el alumno que viene de la ficha
-    await screen.findByDisplayValue('Pérez, Ana (DNI 40111222)')
+      // Esperar a que cargue el alumno que viene de la ficha
+      await screen.findByDisplayValue('Pérez, Ana (DNI 40111222)', {}, SCREEN_WAIT)
 
-    // Completar los obligatorios que faltan: tipo de evento y situación
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: /tipo de evento/i }))
-    fireEvent.click(await screen.findByRole('option', { name: 'Pedagógico' }))
-    fireEvent.change(screen.getByLabelText(/situación detectada/i), {
-      target: { value: 'No entrega las tareas' },
-    })
+      // Completar los obligatorios que faltan: tipo de evento y situación
+      fireEvent.mouseDown(screen.getByRole('combobox', { name: /tipo de evento/i }))
+      fireEvent.click(await screen.findByRole('option', { name: 'Pedagógico' }, SCREEN_WAIT))
+      fireEvent.change(screen.getByLabelText(/situación detectada/i), {
+        target: { value: 'No entrega las tareas' },
+      })
 
-    // Elegir un archivo (un PDF, para que no haga falta generar una miniatura)
-    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement
-    const file = new File(['%PDF-1.7'], 'acta.pdf', { type: 'application/pdf' })
-    fireEvent.change(fileInput, { target: { files: [file] } })
-    expect(screen.getByText('acta.pdf')).toBeTruthy()
+      // Elegir un archivo (un PDF, para que no haga falta generar una miniatura)
+      const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement
+      const file = new File(['%PDF-1.7'], 'acta.pdf', { type: 'application/pdf' })
+      fireEvent.change(fileInput, { target: { files: [file] } })
+      expect(screen.getByText('acta.pdf')).toBeTruthy()
 
-    // Guardar: se crea la intervención, pero la subida falla
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+      // Guardar: se crea la intervención, pero la subida falla
+      fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
 
-    expect(await screen.findByText(/no se pudieron subir los archivos/i)).toBeTruthy()
-    const retryButton = await screen.findByRole('button', { name: /reintentar subida/i })
-    // Los campos quedan bloqueados: la intervención ya está guardada
-    expect((screen.getByLabelText(/situación detectada/i) as HTMLTextAreaElement).disabled).toBe(
-      true
-    )
-    expect(back.createCalls()).toBe(1)
-    expect(back.uploadCalls()).toBe(1)
+      expect(
+        await screen.findByText(/no se pudieron subir los archivos/i, {}, SCREEN_WAIT)
+      ).toBeTruthy()
+      const retryButton = await screen.findByRole(
+        'button',
+        { name: /reintentar subida/i },
+        SCREEN_WAIT
+      )
+      // Los campos quedan bloqueados: la intervención ya está guardada
+      expect((screen.getByLabelText(/situación detectada/i) as HTMLTextAreaElement).disabled).toBe(
+        true
+      )
+      expect(back.createCalls()).toBe(1)
+      expect(back.uploadCalls()).toBe(1)
 
-    // Reintentar: solo se vuelve a intentar la subida
-    fireEvent.click(retryButton)
+      // Reintentar: solo se vuelve a intentar la subida
+      fireEvent.click(retryButton)
 
-    await waitFor(() => expect(back.uploadCalls()).toBe(2))
-    expect(back.createCalls()).toBe(1)
-  })
+      await waitFor(() => expect(back.uploadCalls()).toBe(2), SCREEN_WAIT)
+      expect(back.createCalls()).toBe(1)
+    },
+    FORM_TEST_TIMEOUT_MS
+  )
 
-  it('no deja guardar con un archivo de un tipo no permitido', async () => {
-    const back = stubBackWithFailingUpload()
-    const { container } = renderForm()
-    await screen.findByDisplayValue('Pérez, Ana (DNI 40111222)')
+  it(
+    'no deja guardar con un archivo de un tipo no permitido',
+    async () => {
+      const back = stubBackWithFailingUpload()
+      const { container } = renderForm()
+      await screen.findByDisplayValue('Pérez, Ana (DNI 40111222)', {}, SCREEN_WAIT)
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: /tipo de evento/i }))
-    fireEvent.click(await screen.findByRole('option', { name: 'Pedagógico' }))
-    fireEvent.change(screen.getByLabelText(/situación detectada/i), {
-      target: { value: 'No entrega las tareas' },
-    })
-    const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement
-    fireEvent.change(fileInput, { target: { files: [new File(['x'], 'virus.exe')] } })
+      fireEvent.mouseDown(screen.getByRole('combobox', { name: /tipo de evento/i }))
+      fireEvent.click(await screen.findByRole('option', { name: 'Pedagógico' }, SCREEN_WAIT))
+      fireEvent.change(screen.getByLabelText(/situación detectada/i), {
+        target: { value: 'No entrega las tareas' },
+      })
+      const fileInput = container.querySelector('input[type="file"]') as HTMLInputElement
+      fireEvent.change(fileInput, { target: { files: [new File(['x'], 'virus.exe')] } })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Guardar' }))
 
-    // Avisa en el selector y no manda nada al back
-    expect(await screen.findByText(/"virus.exe": tipo de archivo no permitido/i)).toBeTruthy()
-    expect(back.createCalls()).toBe(0)
-    expect(back.uploadCalls()).toBe(0)
-  })
+      // Avisa en el selector y no manda nada al back
+      expect(
+        await screen.findByText(/"virus.exe": tipo de archivo no permitido/i, {}, SCREEN_WAIT)
+      ).toBeTruthy()
+      expect(back.createCalls()).toBe(0)
+      expect(back.uploadCalls()).toBe(0)
+    },
+    FORM_TEST_TIMEOUT_MS
+  )
 })

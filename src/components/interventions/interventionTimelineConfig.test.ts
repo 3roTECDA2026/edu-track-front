@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   canAddAttachments,
   summarize,
+  timelinePdfFileName,
   validateDateRange,
 } from '@/components/interventions/interventionTimelineConfig'
 import { buildInterventionParams } from '@/services/interventions.service'
@@ -18,6 +19,15 @@ describe('canAddAttachments', () => {
 
   it('después de 48 hs ya no', () => {
     expect(canAddAttachments({ authorId: 'u1', createdAt }, 'u1', hoursLater(49))).toBe(false)
+  })
+
+  it('con una fecha de registro que no se puede leer, no se ofrece', () => {
+    expect(canAddAttachments({ authorId: 'u1', createdAt: 'no-es-fecha' }, 'u1')).toBe(false)
+  })
+
+  it('tolera una hora de diferencia con el servidor, pero no una fecha muy futura', () => {
+    expect(canAddAttachments({ authorId: 'u1', createdAt }, 'u1', hoursLater(-0.5))).toBe(true)
+    expect(canAddAttachments({ authorId: 'u1', createdAt }, 'u1', hoursLater(-2))).toBe(false)
   })
 
   it('otro usuario, o sin sesión, no puede', () => {
@@ -62,5 +72,25 @@ describe('summarize', () => {
     expect(result.endsWith('…')).toBe(true)
     expect(result).not.toMatch(/palab…$/)
     expect(result.length).toBeLessThanOrEqual(41)
+  })
+})
+
+describe('timelinePdfFileName', () => {
+  it('incluye el apellido y la fecha', () => {
+    expect(timelinePdfFileName('Pérez', '2026-11-18')).toBe('intervenciones-Pérez-2026-11-18.pdf')
+    expect(timelinePdfFileName("D'Angelo", '2026-11-18')).toBe(
+      "intervenciones-D'Angelo-2026-11-18.pdf"
+    )
+  })
+
+  it('cambia los espacios por guiones y saca caracteres que Windows no acepta', () => {
+    expect(timelinePdfFileName('García López', '2026-11-18')).toBe(
+      'intervenciones-García-López-2026-11-18.pdf'
+    )
+    expect(timelinePdfFileName('a/b:c', '2026-11-18')).toBe('intervenciones-abc-2026-11-18.pdf')
+  })
+
+  it('sin apellido, usa solo la fecha', () => {
+    expect(timelinePdfFileName(undefined, '2026-11-18')).toBe('intervenciones-2026-11-18.pdf')
   })
 })

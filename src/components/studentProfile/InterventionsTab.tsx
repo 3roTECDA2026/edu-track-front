@@ -3,13 +3,16 @@ import { Alert, Box, Button, Typography } from '@mui/material'
 import EventNoteIcon from '@mui/icons-material/EventNote'
 import PictureAsPdfOutlinedIcon from '@mui/icons-material/PictureAsPdfOutlined'
 
-import { getAttachmentErrorMessage } from '@/components/common/attachmentRules'
 import { InterventionDetailDialog } from '@/components/interventions/InterventionDetailDialog'
 import { InterventionTimeline } from '@/components/interventions/InterventionTimeline'
 import { InterventionTimelineFilters } from '@/components/interventions/InterventionTimelineFilters'
-import { validateDateRange } from '@/components/interventions/interventionTimelineConfig'
+import {
+  timelinePdfFileName,
+  validateDateRange,
+} from '@/components/interventions/interventionTimelineConfig'
 import { useNotify } from '@/components/layout/NotificationProvider'
 import { TabEmpty, TabError, TabLoading } from '@/components/studentProfile/TabStates'
+import { useDebounce } from '@/hooks/useDebounce'
 import { useLazyResource } from '@/hooks/useLazyResource'
 import {
   INTERVENTIONS_PAGE_LIMIT,
@@ -18,41 +21,61 @@ import {
   type InterventionFilters,
   type InterventionListItem,
 } from '@/services/interventions.service'
+import { getApiErrorMessage } from '@/utils/apiErrorMessage'
 import { saveBlob } from '@/utils/saveBlob'
 
 interface InterventionsTabProps {
   studentId: string
+  // Para el nombre del PDF exportado ("intervenciones-Perez-2026-11-18.pdf")
+  studentLastName?: string
+}
+
+// Espera antes de consultar al cambiar un filtro: al escribir una fecha a mano no se pide al
+// back con cada número intermedio.
+const FILTERS_DEBOUNCE_MS = 400
+
+// Fecha de hoy en AAAA-MM-DD, en hora local.
+function todayIso() {
+  const now = new Date()
+  return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 10)
 }
 
 // Pestaña "Intervenciones" de la ficha del alumno (CRM-088, E4-RF-13): línea de tiempo con
 // filtros, detalle al hacer clic y exportación a PDF para las entrevistas con las familias.
-export const InterventionsTab = ({ studentId }: InterventionsTabProps) => {
+export const InterventionsTab = ({ studentId, studentLastName }: InterventionsTabProps) => {
   const notify = useNotify()
   const [filters, setFilters] = useState<InterventionFilters>({})
   const [selected, setSelected] = useState<InterventionListItem | null>(null)
   const [exporting, setExporting] = useState(false)
 
+  // El listado y el PDF usan los filtros "asentados": los últimos que no cambiaron en 400 ms
+  const appliedFilters = useDebounce(filters, FILTERS_DEBOUNCE_MS)
+  const filtersPending = appliedFilters !== filters
+
   // Con un rango de fechas inválido no se pide nada: se muestra el error en los filtros
   const rangeError = validateDateRange(filters.from, filters.to)
-  const resourceKey = rangeError
+  const appliedRangeError = validateDateRange(appliedFilters.from, appliedFilters.to)
+  const resourceKey = appliedRangeError
     ? null
-    : `interventions:${studentId}:${filters.eventType ?? ''}:${filters.from ?? ''}:${filters.to ?? ''}`
+    : `interventions:${studentId}:${appliedFilters.eventType ?? ''}:${appliedFilters.from ?? ''}:${appliedFilters.to ?? ''}`
 
   const interventions = useLazyResource(resourceKey, (signal) =>
-    listStudentInterventions(studentId, filters, signal)
+    listStudentInterventions(studentId, appliedFilters, signal)
   )
 
   const items = interventions.data?.items ?? []
   const total = interventions.data?.total ?? 0
-  const hasFilters = Boolean(filters.eventType || filters.from || filters.to)
+  // Describe lo que se está mostrando, por eso usa los filtros ya aplicados
+  const hasFilters = Boolean(appliedFilters.eventType || appliedFilters.from || appliedFilters.to)
 
   const handleExport = async () => {
     setExporting(true)
     try {
-      const pdf = await downloadInterventionTimelinePdf(studentId, filters)
-      saveBlob(pdf, 'intervenciones.pdf')
+      // Los mismos filtros que el listado que se ve en pantalla
+      const pdf = await downloadInterventionTimelinePdf(studentId, appliedFilters)
+      saveBlob(pdf, timelinePdfFileName(studentLastName, todayIso()))
     } catch (err: unknown) {
-      notify.error(getAttachmentErrorMessage(err, 'No se pudo generar el PDF.'))
+      notify.error(getApiErrorMessage(err, 'No se pudo generar el PDF.'))
     } finally {
       setExporting(false)
     }
@@ -102,7 +125,7 @@ export const InterventionsTab = ({ studentId }: InterventionsTabProps) => {
           color="inherit"
           startIcon={<PictureAsPdfOutlinedIcon />}
           onClick={handleExport}
-          disabled={exporting || Boolean(rangeError) || items.length === 0}
+          disabled={exporting || filtersPending || Boolean(rangeError) || items.length === 0}
           sx={{ textTransform: 'none' }}
         >
           {exporting ? 'Generando PDF…' : 'Exportar a PDF'}

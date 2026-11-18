@@ -77,6 +77,25 @@ describe('pestaña Intervenciones: línea de tiempo (CRM-088)', () => {
     fireEvent.change(screen.getByLabelText('Hasta'), { target: { value: '2026-03-01' } })
 
     expect(await screen.findByText(/no puede ser posterior/i)).toBeTruthy()
-    expect(fetchMock.mock.calls.length).toBe(callsBefore + 1) // solo el del "desde"
+    // Pasada la espera de los filtros, tampoco se pidió nada: el rango quedó inválido
+    await new Promise((resolve) => setTimeout(resolve, 600))
+    expect(fetchMock.mock.calls.length).toBe(callsBefore)
+  })
+
+  it('al escribir una fecha, espera a que se termine de escribir para consultar', async () => {
+    const fetchMock = stubApi([[(url) => url.includes('/api/interventions?'), page([])]])
+    render(withNotifications(<InterventionsTab studentId="s1" />))
+    await screen.findByText('Sin intervenciones')
+    const callsBefore = fetchMock.mock.calls.length
+
+    // Tres cambios seguidos, como al tipear: solo se consulta con el último
+    const from = screen.getByLabelText('Desde')
+    fireEvent.change(from, { target: { value: '2026-01-01' } })
+    fireEvent.change(from, { target: { value: '2026-02-01' } })
+    fireEvent.change(from, { target: { value: '2026-03-01' } })
+
+    await waitFor(() => expect(fetchMock.mock.calls.length).toBe(callsBefore + 1))
+    const lastCall = fetchMock.mock.calls[fetchMock.mock.calls.length - 1]
+    expect(String(lastCall?.[0])).toContain('from=2026-03-01')
   })
 })
